@@ -14,7 +14,7 @@ Status: v1.0, in daily use on one Shinobi BLE5 (US layout) over USB and Bluetoot
 
 ## What works
 
-* All keys, the three-position profile switch (Fn/Ctrl swap, Mac layout, both) and the Fn layer, taken from the
+* All keys, DIP switches 1-3 on the bottom (Fn/Ctrl swap, Mac layout, both) and the Fn layer, taken from the
   stock firmware's own tables.
 * TrackPoint with stock sensitivity levels, middle-button scrolling, and a fix for the stock slow-wake bug.
 * Bluetooth: three hosts, pairing, and the battery level reported to the host.

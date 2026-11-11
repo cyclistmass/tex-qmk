@@ -18,15 +18,26 @@ For the QMK firmware v1.0 from this repository. To install it, see [README.md](R
 
 The layout is the stock Shinobi layout, read from TEX's own firmware tables.
 
-### The profile switch
+### The DIP switches
 
-The three-position switch on the keyboard picks a profile, as on stock firmware:
+The DIP switch block on the bottom of the keyboard is read as on stock firmware (without a TEX profile file),
+for switches 1 to 3 only. Turn on at most one of them:
 
-| Position | Profile |
+| Switch on | Does |
 |---|---|
 | 1 | Fn and left Ctrl swapped |
-| 2 | Mac layout (Alt and Win/Cmd swapped) |
-| 3 | both |
+| 2 | Mac layout: left Alt and left Win swapped, right Alt and right Win swapped, App becomes right Alt |
+| 3 | both 1 and 2 |
+| none, or more than one of 1-3 | stock layout |
+
+This firmware ignores switches 4 and up:
+
+* **4 (Fn + TrackPoint scrolls):** on QMK the middle button always scrolls, whatever switch 4 is set to.
+* **5 (reverse scrolling):** not ported.
+* **6 (file system mode for TEX's configurator):** not available, because the configurator doesn't work with
+  this firmware.
+
+The DIP switches are separate from the Fn keys: Fn+F1...F9 set the sleep time whatever the switches say.
 
 ### Fn combinations
 
@@ -92,7 +103,7 @@ battery changes, USB plugging and unplugging, and power cuts.
 | TrackPoint doesn't move | Wait a few seconds: the keyboard restarts a stuck TrackPoint by itself. Unplugging and replugging USB restarts the whole keyboard. |
 | TrackPoint too fast or slow | Fn+1 ... Fn+9. |
 | Middle button scrolls when you want a click | Tap it without moving the stick. |
-| Keys are swapped (Fn/Ctrl, Alt/Win) | Check the profile switch position. |
+| Keys are swapped (Fn/Ctrl, Alt/Win) | Check DIP switches 1-3 on the bottom; turn them all off for the stock layout. |
 | Battery percentage looks low | With NiMH rechargeables it reads low; see [Known issues](#known-issues). |
 | Flashing can't find the keyboard | Turn the PC's Bluetooth off. Or hold Esc while plugging in the USB cable: the keyboard starts in the bootloader, ready to flash. |
 | Want the stock firmware back | Run TEX's `AP_0407_4.04.exe`, with `-force` if it says there is nothing to update. |
@@ -107,7 +118,9 @@ battery changes, USB plugging and unplugging, and power cuts.
 * **No VIA/Vial live remapping.** TEX's bootloader takes images up to 28,076 bytes; v1.0 is 28,072.
 * **ISO and JIS boards are untested.** The extra keys are in the keymap.
 * **No Bluetooth firmware updates.** Updates go over USB through TEX's bootloader.
-* **Not ported:** stock's Up+LAlt+Fn hold combo.
+* **Not ported:** stock's Up+LAlt+Fn hold combo, and DIP switches 4-6 (Fn scrolling, reverse scrolling, file
+  system mode).
+* **DIP switches 1-3 are untested on the keyboard.** Their handling follows the stock firmware's code.
 * **Flashing from stock** has not been tested yet with either install method; both were tested over earlier QMK
   builds.
 
