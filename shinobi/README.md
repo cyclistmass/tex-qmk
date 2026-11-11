@@ -8,6 +8,8 @@ three hosts, the TrackPoint, battery sleep, and settings that survive a power cu
 thanks to TEX for sharing the schematic and answering questions. Install it at your own risk. TEX's bootloader is
 never touched, so you can always go back to the stock firmware (see [Going back to stock](#going-back-to-stock)).
 
+The **[owner's manual](MANUAL.md)** covers every key and light, Bluetooth, sleep, troubleshooting and known issues.
+
 Status: v1.0, in daily use on one Shinobi BLE5 (US layout) over USB and Bluetooth since 2026-11-04.
 
 ## What works

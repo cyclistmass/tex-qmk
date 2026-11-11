@@ -1,0 +1,4 @@
+# GitHub Pages: every Markdown file in the repository becomes a page, rebuilt on each push to main.
+title: QMK firmware for TEX keyboards
+description: Unofficial open-source QMK firmware for TEX keyboards
+theme: jekyll-theme-primer
