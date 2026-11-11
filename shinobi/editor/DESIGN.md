@@ -4,6 +4,49 @@ TEX's configurator and macro tool used the stock vendor commands 0x40-0x7C, whic
 don't fit, because the IAP takes images up to 28,076 bytes and v1.0 is 28,072. This note proposes a replacement that
 needs no C and no toolchain.
 
+## What TEX's tools offered, and what this editor does instead
+
+TEX had two configuration paths, and they differ:
+
+* **TEX's web configurator**, at `program.tex.com.tw/shinobi/` (the Shinobi manual gives the older address
+  `shinobi.tex-design.com.tw`). It builds a `.TEX` file, and the owner copies that file onto the keyboard in
+  USB-disk mode (DIP port 6). This is TEX's documented tool. A research agent read its HTML and `build/tex.js` as
+  text and ran none of it. The manuals are in `~/Documents/manuals/tex/shinobi/` (`Shinobi_A5.pdf`,
+  `BLE_5.0_User_manual.pdf`).
+* **The BLE5 firmware's own HID config commands**, `0x40-0x7C` in `FUN_6d60` (`firmware_ghidra_decompile.c` in
+  `Downloads/AP_0407_4.04/analysis`). This is what our board's stock firmware actually stores. No public tool for it
+  was found.
+
+Tags: [T] stated by TEX (page or manual), [C] read from the configurator's code, [O] read from the stock firmware,
+[I] inferred.
+
+| TEX feature | Source | Here |
+|---|---|---|
+| Remap every key, on every layer | [T]: Top and FN1-FN3 layers, all editable. [O]: 5 layers × 112 matrix positions, 10-bit codes (`51 20` / `51 21`, `FUN_5e44`) | **Covered** on QMK's 4 layers |
+| 3 profiles with their own keymaps | [T]: DIP ports 1/2/3 pick profiles 1-3 when a `.TEX` file is loaded. [O]: one 0x340-byte block per profile, `50 20 n` | **Adapted:** the 3-position switch turns the Mac and Fn-Ctrl overlay layers on or off, and both overlays are editable. Three full keymaps would need 3 × 960 bytes |
+| FN1-FN3 keys, up to 4 positions each | [T], [C] | **Adapted:** `MO()` / `TG()` keys anywhere, for the Fn layer and the two overlays. There is no FN2 or FN3 layer, because the keymap space holds 4 layers |
+| Disable a key | [T] | **Covered** (`KC_NO`) |
+| Letters, symbols, ISO/JIS keys, regional label sets (UK, FR, DE, SP, RU, NOR) | [T] | **Covered.** The keycodes are the same; the editor offers the same label sets |
+| Media keys: play, stop, previous, next, mute, volume | [T] | **Covered** (extrakey is on) |
+| App keys: Mail, Calculator, My Computer, Back, Forward | [T] | **Covered** (extrakey) |
+| F13-F24 | [T] | **Covered** |
+| Mouse left, right and middle click | [T] | **Covered** (`tp_buttons`) |
+| Mouse buttons 4 and 5, and pointer movement from keys (8 directions) | [T] | **Not possible:** mousekey is compiled out for size |
+| TrackPoint speed 1-9 | [T] | **Covered** (`TP_SEN1-9`) |
+| TrackPoint speed −/+ | [T] | **Not in v1.0.** It needs a few bytes of code |
+| Macros: 12 (M1-M12), up to 15 steps each, each step a chord of up to 5 keys, fixed timing | [T] 12 macros; [C] 15 steps, 5-key limit, timing value 128, not editable | **Adapted (v1.1):** 16 macros sharing about 100 bytes, 1 byte per key, modifiers held for the next key. The 12 × 15 maximum does not fit |
+| Mouse and TrackPoint keycodes inside macros | [C] | **Not possible** in the budget |
+| Firmware-level macros: 24 slots, per-event delays, mouse movement, repeat once / N times / until stopped, 4 KB | [O] (`51 18`, `44 xx`, `FUN_8698`); no tool for them was found | **Not possible** in the budget, beyond one optional fixed delay code |
+| Reset to default | [T] | **Covered:** "Reset" in the editor, or flash the release image |
+| Save the configuration online (Firebase sign-in) | [C] | **Adapted:** the owner keeps `keymap.json`. No accounts |
+| Changes without a firmware flash (`.TEX` file copy, or HID writes) | [T], [O] | **Not possible:** 4 bytes free, so every change is a reflash |
+| DIP-port features: Mouse_Fn dual function, reverse scroll, USB-disk mode | [T] | Not editor features; the QMK port's behaviour is in MANUAL.md |
+| Hidden settings: TrackPoint sensitivity, scroll direction, debounce, key repeat, LED timeout | [C]: hidden in TEX's page and not written to the file | Out of scope |
+
+Not found: the BLE5 configurator itself, which TEX's download page doesn't list. The meaning of CODE150 and "Lan1"
+in TEX's key list is unknown. TEX's manuals describe a 6-port DIP switch, while the BLE5 board has a 3-position
+profile switch (stock `FUN_8598`) [I]: a newer revision than the manuals.
+
 ## Measured budget (v1.0 ELF, `arm-none-eabi-size` and the link map)
 
 | Region | Size | Used | Free |
@@ -78,7 +121,7 @@ address, sequences become patchable too. Getting more room would mean trimming f
 `__udivmoddi4` (408 bytes of 64-bit division pulled in somewhere), but that is separate work and needs its own
 measurement.
 
-No delays, no recording, and no per-profile macro sets. Those were in TEX's tool, but they don't fit.
+Left out, because they don't fit: editable delays, recording, repeat modes, mouse steps, and per-profile macro sets.
 
 ## Proposed order of work
 
