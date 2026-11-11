@@ -1,0 +1,11 @@
+# Never commit firmware images, stock or built, or anything secret.
+*.bin
+*.hex
+*.elf
+*.uf2
+*.map
+*.TEX
+*.exe
+.build/
+.env
+__pycache__/

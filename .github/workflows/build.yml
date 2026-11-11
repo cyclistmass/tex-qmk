@@ -1,0 +1,25 @@
+name: build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  firmware:
+    runs-on: ubuntu-latest
+    container: ghcr.io/qmk/qmk_cli:latest
+    strategy:
+      matrix:
+        keymap: [default]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build against the pinned QMK commit
+        run: |
+          git config --global --add safe.directory '*'
+          shinobi/tools/build_firmware.sh "$RUNNER_TEMP/qmk_firmware" ${{ matrix.keymap }}
+          cp "$RUNNER_TEMP/qmk_firmware/.build/tex_shinobi_${{ matrix.keymap }}.bin" .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tex_shinobi_${{ matrix.keymap }}
+          path: tex_shinobi_${{ matrix.keymap }}.bin
