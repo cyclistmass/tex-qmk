@@ -5,18 +5,27 @@ on:
   pull_request:
   workflow_dispatch:
 
+# The toolchain is pinned to the one the released firmware was built and tested with: Ubuntu 24.04's
+# gcc-arm-none-eabi 13.2.rel1 and QMK CLI 1.2.0. The ghcr.io/qmk/qmk_cli image moves (gcc 15.2 in 2026-11),
+# and a different compiler makes a different image that has not been tested on a keyboard.
 jobs:
   firmware:
-    runs-on: ubuntu-latest
-    container: ghcr.io/qmk/qmk_cli:latest
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         keymap: [default]
     steps:
       - uses: actions/checkout@v4
+      - name: Install the pinned toolchain
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q gcc-arm-none-eabi=15:13.2.rel1-2 binutils-arm-none-eabi libnewlib-arm-none-eabi
+          python3 -m venv "$RUNNER_TEMP/qmkenv"
+          "$RUNNER_TEMP/qmkenv/bin/pip" install -q qmk==1.2.0
+          echo "$RUNNER_TEMP/qmkenv/bin" >> "$GITHUB_PATH"
+          arm-none-eabi-gcc --version | head -1
       - name: Build against the pinned QMK commit
         run: |
-          git config --global --add safe.directory '*'
           shinobi/tools/build_firmware.sh "$RUNNER_TEMP/qmk_firmware" ${{ matrix.keymap }}
           cp "$RUNNER_TEMP/qmk_firmware/.build/tex_shinobi_${{ matrix.keymap }}.bin" .
       - uses: actions/upload-artifact@v4
