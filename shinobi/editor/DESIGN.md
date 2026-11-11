@@ -23,7 +23,7 @@ Tags: [T] stated by TEX (page or manual), [C] read from the configurator's code,
 | TEX feature | Source | Here |
 |---|---|---|
 | Remap every key, on every layer | [T]: Top and FN1-FN3 layers, all editable. [O]: 5 layers × 112 matrix positions, 10-bit codes (`51 20` / `51 21`, `FUN_5e44`) | **Covered** on QMK's 4 layers |
-| 3 profiles with their own keymaps | [T]: DIP ports 1/2/3 pick profiles 1-3 when a `.TEX` file is loaded. [O]: one 0x340-byte block per profile, `50 20 n` | **Adapted:** the 3-position switch turns the Mac and Fn-Ctrl overlay layers on or off, and both overlays are editable. Three full keymaps would need 3 × 960 bytes |
+| 3 profiles with their own keymaps | [T]: DIP ports 1/2/3 pick profiles 1-3 when a `.TEX` file is loaded. [O]: one 0x340-byte block per profile, `50 20 n` | **Adapted:** DIP switches 1-3 turn the Fn-Ctrl and Mac overlay layers on or off (MANUAL.md), and both overlays are editable. Three full keymaps would need 3 × 960 bytes |
 | FN1-FN3 keys, up to 4 positions each | [T], [C] | **Adapted:** `MO()` / `TG()` keys anywhere, for the Fn layer and the two overlays. There is no FN2 or FN3 layer, because the keymap space holds 4 layers |
 | Disable a key | [T] | **Covered** (`KC_NO`) |
 | Letters, symbols, ISO/JIS keys, regional label sets (UK, FR, DE, SP, RU, NOR) | [T] | **Covered.** The keycodes are the same; the editor offers the same label sets |
@@ -44,8 +44,8 @@ Tags: [T] stated by TEX (page or manual), [C] read from the configurator's code,
 | Hidden settings: TrackPoint sensitivity, scroll direction, debounce, key repeat, LED timeout | [C]: hidden in TEX's page and not written to the file | Out of scope |
 
 Not found: the BLE5 configurator itself, which TEX's download page doesn't list. The meaning of CODE150 and "Lan1"
-in TEX's key list is unknown. TEX's manuals describe a 6-port DIP switch, while the BLE5 board has a 3-position
-profile switch (stock `FUN_8598`) [I]: a newer revision than the manuals.
+in TEX's key list is unknown. QMK reads DIP switches 1-3 (matrix column 14) the way stock does without a `.TEX`
+file. MANUAL.md notes that this is untested on the keyboard.
 
 ## Measured budget (v1.0 ELF, `arm-none-eabi-size` and the link map)
 
