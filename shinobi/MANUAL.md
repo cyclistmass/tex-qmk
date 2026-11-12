@@ -114,8 +114,11 @@ battery changes, USB plugging and unplugging, and power cuts.
   voltmeter reading next to the Fn+B `adc` value, for alkaline and NiMH, would fix the scale. Please send one
   if you can.
 * **USB plug and unplug restart the keyboard.** The processor sees a power-on reset each time. Settings are kept.
-* **TEX's configurator and macro tool don't work.** Keymaps and macros are set at build time in `keymap.c`.
-* **No VIA/Vial live remapping.** TEX's bootloader takes images up to 28,076 bytes; v1.0 is 28,072.
+* **TEX's configurator and macro tool don't work.** Remap keys and add shortcuts with the
+  [keymap editor](https://cyclistmass.github.io/tex-qmk/shinobi/editor/) instead, then flash the image it gives
+  you. Sequence macros aren't supported yet. ([How the editor works](editor/README.md).)
+* **No VIA/Vial live remapping.** TEX's bootloader takes images up to 28,076 bytes; v1.0 is 28,072. The keymap
+  editor changes the keymap in the image, so a change takes a flash.
 * **ISO and JIS boards are untested.** The extra keys are in the keymap.
 * **No Bluetooth firmware updates.** Updates go over USB through TEX's bootloader.
 * **Not ported:** stock's Up+LAlt+Fn hold combo, and DIP switches 4-6 (Fn scrolling, reverse scrolling, file

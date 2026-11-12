@@ -17,6 +17,8 @@ jobs:
         keymap: [default]
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # the editor check unpacks the release tag's sources
       - name: Install the pinned toolchain
         run: |
           # The runner's Azure Ubuntu mirror has hung or failed DNS here (2026-11-11); use the main archive.
@@ -36,3 +38,8 @@ jobs:
         with:
           name: tex_shinobi_${{ matrix.keymap }}
           path: tex_shinobi_${{ matrix.keymap }}.bin
+      # The keymap editor patches the release image, so it is checked against the release's own sources: the
+      # editor's export of the default keymap must compile to the release, and a patched image to its own build.
+      - name: Keymap editor byte-identity check
+        if: matrix.keymap == 'default'
+        run: shinobi/editor/test/ci_check.sh "$RUNNER_TEMP/qmk_firmware" "$RUNNER_TEMP/editor_check"

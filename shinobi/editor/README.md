@@ -6,13 +6,10 @@ for people who build the firmware themselves. Why it works this way is in [DESIG
 
 ## Using it
 
-1. Serve this folder and open the page:
-
-       python -I -m http.server 8765 --bind 127.0.0.1
-
-   then open <http://127.0.0.1:8765/index.html>. (Opening `index.html` straight from disk has not been tested.)
-2. Load `tex_shinobi_v1.0.bin` from the release page. The page checks its SHA-256 and the default keymap and refuses
-   any other image.
+1. Open the page: <https://cyclistmass.github.io/tex-qmk/shinobi/editor/>, or `index.html` from a checkout,
+   straight from disk or served with `python -I -m http.server 8765 --bind 127.0.0.1`.
+2. Download `tex_shinobi_v1.0.bin` from the release page and load it with **Choose the .bin file**. The page checks
+   its SHA-256 and the default keymap and refuses any other image.
 3. Pick a layer (Base, Mac, Fn-Ctrl swap, Fn), click a key, and pick what it should do. Tick Ctrl, Shift, Alt or Win
    for a shortcut such as Ctrl+C.
 4. **Download firmware** saves `tex_shinobi_v1.0_custom.bin`. Flash it like a release:
@@ -49,6 +46,11 @@ the QMK CLI and the ARM toolchain (in WSL on Windows). It:
 * compiles the editor's export of the default keymap with the release's build date, which must equal the release;
 * changes a key on every layer and adds shortcuts, then checks that the patched release equals a compiled build of
   the exported `keymap.c`.
+
+`test/ci_check.sh <qmk_firmware dir> <work dir>` is what CI runs on every push. It downloads the release image,
+checks its SHA-256, unpacks the release tag's sources, checks that `shinobi_data.js` regenerates identically from
+them, and runs `byte_identity.sh` against them. Later firmware changes don't affect it: the editor targets one
+release.
 
 `test/qmk_fixed_date.sh` and `test/build_wsl.sh` are its helpers: QMK stamps the build date into the image, so the
 test pins it.
