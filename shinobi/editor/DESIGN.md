@@ -14,7 +14,7 @@ TEX had two configuration paths, and they differ:
   text and ran none of it. The manuals are in `~/Documents/manuals/tex/shinobi/` (`Shinobi_A5.pdf`,
   `BLE_5.0_User_manual.pdf`).
 * **The BLE5 firmware's own HID config commands**, `0x40-0x7C` in `FUN_6d60` (`firmware_ghidra_decompile.c` in
-  `Downloads/AP_0407_4.04/analysis`). This is what our board's stock firmware actually stores. No public tool for it
+  `Documents/tex-shinobi/AP_0407_4.04/analysis`). This is what our board's stock firmware actually stores. No public tool for it
   was found.
 
 Tags: [T] stated by TEX (page or manual), [C] read from the configurator's code, [O] read from the stock firmware,
