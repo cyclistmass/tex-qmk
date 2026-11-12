@@ -5,7 +5,7 @@ has its own README with what works, how to install it, and how to go back to the
 
 | Keyboard | Folder | Status |
 |---|---|---|
-| TEX Shinobi BLE5 | [`shinobi/`](shinobi/) ([manual](shinobi/MANUAL.md)) | v1.0: USB, Bluetooth with three hosts, TrackPoint, battery sleep |
+| TEX Shinobi BLE5 | [`shinobi/`](shinobi/) ([manual](shinobi/MANUAL.md), [keymap editor](https://cyclistmass.github.io/tex-qmk/shinobi/editor/)) | v1.0: USB, Bluetooth with three hosts, TrackPoint, battery sleep |
 
 **Unofficial.** This is not TEX firmware, and TEX does not support it. It is published with TEX's permission.
 TEX's bootloader is never touched, so the stock firmware can always be flashed back.
@@ -22,6 +22,7 @@ Each keyboard folder holds:
 * `PORT_NOTES.md`: how the port works, the hardware map, and the reverse-engineered protocols.
 * `qmk/`: the QMK keyboard source, copied into a QMK tree as `keyboards/tex/<keyboard>`.
 * `tools/`: the build, flashing and updater scripts for that keyboard.
+* `editor/`: a web page that remaps keys in a release image, with its tests.
 * `qmk_firmware.commit`: the QMK commit it builds against.
 
 ## License
