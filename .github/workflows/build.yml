@@ -40,6 +40,10 @@ jobs:
           path: tex_shinobi_${{ matrix.keymap }}.bin
       # The keymap editor patches the release image, so it is checked against the release's own sources: the
       # editor's export of the default keymap must compile to the release, and a patched image to its own build.
+      - uses: actions/setup-node@v4
+        if: matrix.keymap == 'default'
+        with:
+          node-version: 22
       - name: Keymap editor byte-identity check
         if: matrix.keymap == 'default'
         run: shinobi/editor/test/ci_check.sh "$RUNNER_TEMP/qmk_firmware" "$RUNNER_TEMP/editor_check"
