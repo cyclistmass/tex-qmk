@@ -1,4 +1,4 @@
-# Keymap editor: design note (proposal, 2026-11-11)
+# Keymap editor: design note (proposed 2026-11-11, built 2026-11-12)
 
 TEX's configurator and macro tool used the stock vendor commands 0x40-0x7C, which QMK does not implement. VIA and Vial
 don't fit, because the IAP takes images up to 28,076 bytes and v1.0 is 28,072. This note proposes a replacement that
@@ -122,6 +122,13 @@ address, sequences become patchable too. Getting more room would mean trimming f
 measurement.
 
 Left out, because they don't fit: editable delays, recording, repeat modes, mouse steps, and per-profile macro sets.
+
+## Status (2026-11-12)
+
+Built: the editor page, the keycode data generated from the pinned QMK, patching and C export, and the
+byte-identity test (`test/byte_identity.sh`), which passes. Instead of a separate `gen_keymap.py`, the page's own
+code (`editor_core.js`) writes `keymap.c`, and the test compiles it. Not built: CI running the test, the GitHub
+Pages copy, and the v1.1 macro firmware. Not yet tested on the keyboard.
 
 ## Proposed order of work
 

@@ -1,0 +1,372 @@
+<!doctype html>
+<!-- Copyright 2026 Mauro DiBenedetto. SPDX-License-Identifier: GPL-2.0-or-later -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shinobi Keymap Editor</title>
+<style>
+:root {
+  --bg: #f6f7f9; --panel: #ffffff; --text: #1d2228; --muted: #5d6670; --line: #d5dae0;
+  --key: #fdfdfd; --key-edge: #b9c0c8; --key-text: #1d2228; --accent: #c2410c; --accent-soft: #fde7da;
+  --sel: #1d4ed8; --ok: #15803d; --ok-soft: #dcfce7; --bad: #b91c1c; --bad-soft: #fee2e2; --faded: #a3abb4;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15181c; --panel: #1e2227; --text: #e6e9ec; --muted: #9aa3ad; --line: #343a42;
+    --key: #2a2f36; --key-edge: #454c55; --key-text: #e6e9ec; --accent: #fb923c; --accent-soft: #43271a;
+    --sel: #60a5fa; --ok: #4ade80; --ok-soft: #173622; --bad: #f87171; --bad-soft: #3d1c1c; --faded: #6b737c;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15181c; --panel: #1e2227; --text: #e6e9ec; --muted: #9aa3ad; --line: #343a42;
+  --key: #2a2f36; --key-edge: #454c55; --key-text: #e6e9ec; --accent: #fb923c; --accent-soft: #43271a;
+  --sel: #60a5fa; --ok: #4ade80; --ok-soft: #173622; --bad: #f87171; --bad-soft: #3d1c1c; --faded: #6b737c;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width: 1060px; margin: 0 auto; padding: 20px 16px 60px; }
+a { color: var(--sel); }
+a:visited { color: var(--sel); }
+h1 { font-size: 1.45rem; margin: 0 0 4px; }
+h2 { font-size: 1.05rem; margin: 0 0 10px; }
+p { margin: 0 0 10px; }
+.sub { color: var(--muted); margin-bottom: 18px; }
+section { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+button, .filebtn { font: inherit; border: 1px solid var(--key-edge); background: var(--key); color: var(--text); border-radius: 7px; padding: 6px 12px; cursor: pointer; }
+button:hover:not(:disabled), .filebtn:hover { border-color: var(--sel); }
+button:disabled { opacity: .45; cursor: not-allowed; }
+button.primary { background: var(--sel); border-color: var(--sel); color: #fff; }
+.filebtn input { display: none; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.status { margin-top: 10px; padding: 8px 10px; border-radius: 7px; font-size: .92rem; }
+.status.ok { background: var(--ok-soft); color: var(--ok); }
+.status.bad { background: var(--bad-soft); color: var(--bad); }
+.status.info { background: var(--bg); color: var(--muted); }
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.tabs button[aria-selected="true"] { background: var(--sel); border-color: var(--sel); color: #fff; }
+.kbwrap { overflow-x: auto; padding-bottom: 4px; }
+.kb { position: relative; margin: 0 auto; }
+.key { position: absolute; border: 1px solid var(--key-edge); border-bottom-width: 3px; background: var(--key); color: var(--key-text);
+  border-radius: 6px; padding: 2px; display: flex; align-items: center; justify-content: center; text-align: center;
+  font-size: 11px; line-height: 1.1; cursor: pointer; overflow: hidden; word-break: break-word; }
+.key:hover { border-color: var(--sel); }
+.key.trans { color: var(--faded); }
+.key.changed { background: var(--accent-soft); border-color: var(--accent); }
+.key.sel { outline: 3px solid var(--sel); outline-offset: 1px; z-index: 2; }
+.legend { color: var(--muted); font-size: .85rem; margin-top: 8px; }
+.legend span { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -1px; margin: 0 4px 0 10px; border: 1px solid var(--key-edge); }
+.picker { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.cur { font-size: .95rem; }
+.cur code { background: var(--bg); padding: 1px 5px; border-radius: 4px; }
+input[type="search"] { font: inherit; width: 100%; max-width: 360px; padding: 6px 10px; border: 1px solid var(--key-edge); border-radius: 7px; background: var(--key); color: var(--text); }
+.mods label { margin-right: 12px; white-space: nowrap; }
+.groups { max-height: 340px; overflow-y: auto; border-top: 1px solid var(--line); padding-top: 8px; }
+.group h3 { font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 8px 0 6px; }
+.group .row button { padding: 4px 9px; font-size: .88rem; }
+.group .row button.on { border-color: var(--sel); box-shadow: inset 0 0 0 1px var(--sel); }
+pre { background: var(--bg); padding: 10px; border-radius: 7px; overflow-x: auto; font-size: .85rem; }
+.muted { color: var(--muted); }
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+<h1>TEX Shinobi keymap editor</h1>
+<p class="sub">For the open-source QMK firmware. Remap keys on every layer, then download a firmware image to flash. Everything happens in this page; nothing is uploaded.</p>
+
+<section id="fw">
+  <h2>1. Firmware image</h2>
+  <p>The editor writes your keymap into the released image <code id="relfile"></code> (<span id="reltag"></span>), and only into the keymap bytes. Download it from the <a href="https://github.com/cyclistmass/tex-qmk/releases" target="_blank" rel="noopener">releases page</a>, then load it here.</p>
+  <div class="row">
+    <label class="filebtn">Choose the .bin file…<input type="file" id="binfile" accept=".bin,application/octet-stream"></label>
+    <button id="binlocal">Use the copy next to this page</button>
+  </div>
+  <div id="fwstatus" class="status info">No image loaded yet. You can edit the keymap first.</div>
+</section>
+
+<section id="edit">
+  <h2>2. Keymap</h2>
+  <div class="tabs" id="tabs" role="tablist"></div>
+  <p class="muted" id="layerhelp"></p>
+  <div class="kbwrap"><div class="kb" id="kb"></div></div>
+  <div class="legend"><span style="background:var(--accent-soft);border-color:var(--accent)"></span>changed from the default<span style="background:var(--key)"></span>▽ / grey: transparent, the layer below decides</div>
+</section>
+
+<section id="pick">
+  <h2>3. Assign</h2>
+  <div class="picker">
+    <div class="cur" id="cur">Click a key on the keyboard above.</div>
+    <div class="row hidden" id="keyactions">
+      <button id="keydefault">Back to default</button>
+      <button id="layerreset">Reset this layer</button>
+    </div>
+    <div class="mods hidden" id="mods">
+      Shortcut: hold
+      <label><input type="checkbox" data-mod="0"> Ctrl</label>
+      <label><input type="checkbox" data-mod="1"> Shift</label>
+      <label><input type="checkbox" data-mod="2"> Alt</label>
+      <label><input type="checkbox" data-mod="3"> Win</label>
+      with the key
+    </div>
+    <input type="search" id="search" autocomplete="off" placeholder="Search keys (e.g. f13, mute, calc)" class="hidden">
+    <div class="groups hidden" id="groups"></div>
+  </div>
+</section>
+
+<section id="out">
+  <h2>4. Save and build</h2>
+  <p id="changes" class="muted"></p>
+  <div class="row">
+    <button id="dlbin" class="primary" disabled>Download firmware (.bin)</button>
+    <button id="dljson">Save keymap.json</button>
+    <label class="filebtn">Load keymap.json…<input type="file" id="jsonfile" accept=".json,application/json"></label>
+    <button id="dlc">Download keymap.c</button>
+    <button id="resetall">Reset everything</button>
+  </div>
+  <div id="outstatus" class="status info hidden"></div>
+  <p class="muted" style="margin-top:12px">Flash the downloaded image like a release, with the keyboard on USB and the PC's Bluetooth off:</p>
+  <pre id="flashcmd"></pre>
+  <p class="muted">or wrap it into TEX's updater: <code>python -I build_updater.py AP_0407_4.04.exe &lt;image&gt; out\</code> and run the result with <code>-force</code>. Both tools are in <code>shinobi/tools</code>. Hold Esc while plugging in to reach the bootloader if anything goes wrong.</p>
+  <p class="muted">keymap.c is for building it yourself: put it in <code>shinobi/qmk/keymaps/&lt;name&gt;/</code> and run <code>shinobi/tools/build_firmware.sh</code>. The downloaded image is byte-for-byte what that build gives when the keymap is named <code>default</code> and built with the release's date (<code>shinobi/editor/test/byte_identity.sh</code>).</p>
+</section>
+</main>
+
+<script src="shinobi_data.js"></script>
+<script src="editor_core.js"></script>
+<script>
+(function () {
+  "use strict";
+  const core = ShinobiCore.makeCore(SHINOBI_DATA);
+  const data = core.data;
+  const rel = data.release;
+  const outName = rel.file.replace(/\.bin$/, "_custom.bin");
+  const defaults = core.defaultLayers();
+  let layers = core.defaultLayers();
+  let current = core.layerIds[0];
+  let selected = -1;
+  let image = null; // a verified release image
+  const $ = (id) => document.getElementById(id);
+  const HELP = {
+    _BASE: "What each key does normally.",
+    _MAC: "Turned on by DIP switch 2 or 3. ▽ keys fall through to Base.",
+    _FNCTL: "Turned on by DIP switch 1 or 3. ▽ keys fall through to Base (or Mac).",
+    _FN: "While Fn is held. ▽ keys fall through to the layers below.",
+  };
+
+  $("relfile").textContent = rel.file;
+  $("reltag").textContent = rel.tag;
+  $("flashcmd").textContent = `python -I tex_flash.py ${outName} AP_0407_4.04.exe`;
+
+  // Tabs
+  for (const l of data.layers) {
+    const b = document.createElement("button");
+    b.textContent = l.name;
+    b.setAttribute("role", "tab");
+    b.dataset.layer = l.id;
+    b.addEventListener("click", () => { current = l.id; render(); renderPicker(); });
+    $("tabs").appendChild(b);
+  }
+
+  // Keyboard
+  const W = Math.max(...data.keys.map((k) => k.x + k.w)), H = Math.max(...data.keys.map((k) => k.y + 1));
+  function unit() { return Math.max(34, Math.min(54, Math.floor(($("kb").parentElement.clientWidth - 2) / W))); }
+  const keyEls = data.keys.map((k, i) => {
+    const el = document.createElement("div");
+    el.className = "key";
+    el.tabIndex = 0;
+    el.setAttribute("role", "button");
+    el.addEventListener("click", () => select(i));
+    el.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); select(i); } });
+    $("kb").appendChild(el);
+    return el;
+  });
+  function layout() {
+    const u = unit();
+    $("kb").style.width = W * u + "px";
+    $("kb").style.height = H * u + "px";
+    data.keys.forEach((k, i) => {
+      const s = keyEls[i].style;
+      s.left = k.x * u + 1 + "px"; s.top = k.y * u + 1 + "px";
+      s.width = k.w * u - 3 + "px"; s.height = u - 3 + "px";
+      s.fontSize = (u < 42 ? 9.5 : 11) + "px";
+    });
+  }
+  window.addEventListener("resize", layout);
+
+  // What a transparent key falls through to with no DIP switch on: Base. With switch 2 or 3 the Mac and Fn-Ctrl layers
+  // are active too and sit in between; the tooltip says so.
+  function below(id, i) {
+    return layers[core.layerIds[0]][i];
+  }
+
+  function render() {
+    for (const b of $("tabs").children) b.setAttribute("aria-selected", String(b.dataset.layer === current));
+    $("layerhelp").textContent = HELP[current] || "";
+    data.keys.forEach((k, i) => {
+      const v = layers[current][i];
+      const el = keyEls[i];
+      const trans = v === 1;
+      el.textContent = trans ? core.label(below(current, i)) : core.label(v);
+      el.title = (trans ? "▽ transparent → Base " + core.tokenFor(below(current, i)) + ({ _FN: " (or Mac / Fn-Ctrl when a DIP switch turns them on)", _FNCTL: " (or Mac with DIP switch 3)" }[current] || "") : core.title(v)) + `  [matrix ${k.matrix.join(",")}]`;
+      el.classList.toggle("trans", trans);
+      el.classList.toggle("changed", v !== defaults[current][i]);
+      el.classList.toggle("sel", i === selected);
+      el.setAttribute("aria-label", `${el.textContent} (${core.tokenFor(v)})`);
+    });
+    const n = core.layerIds.reduce((a, id) => a + layers[id].filter((v, i) => v !== defaults[id][i]).length, 0);
+    $("changes").textContent = n ? `${n} key${n === 1 ? "" : "s"} changed from the ${rel.tag} default.` : `No changes from the ${rel.tag} default yet.`;
+    $("dlbin").disabled = !image;
+    $("dlbin").title = image ? "" : "Load the release image in step 1 first";
+  }
+
+  function select(i) {
+    selected = i;
+    render();
+    renderPicker();
+  }
+
+  function assign(v) {
+    layers[current][selected] = v;
+    render();
+    renderPicker();
+  }
+
+  function renderPicker() {
+    const show = selected >= 0;
+    for (const id of ["keyactions", "mods", "search", "groups"]) $(id).classList.toggle("hidden", !show);
+    if (!show) return;
+    const v = layers[current][selected];
+    const name = data.layers.find((l) => l.id === current).name;
+    $("cur").innerHTML = "";
+    const parts = [
+      document.createTextNode(`${name} layer, the key that is `),
+      Object.assign(document.createElement("b"), { textContent: core.label(defaults[core.layerIds[0]][selected]) }),
+      document.createTextNode(" on Base: "),
+      Object.assign(document.createElement("b"), { textContent: core.label(v) }),
+      document.createTextNode(" "),
+      Object.assign(document.createElement("code"), { textContent: core.tokenFor(v) }),
+    ];
+    if (v !== defaults[current][selected]) parts.push(document.createTextNode(` (default: ${core.label(defaults[current][selected])})`));
+    parts.forEach((p) => $("cur").appendChild(p));
+    const m = core.modsOf(v);
+    const basic = v <= 0xff || m;
+    for (const cb of document.querySelectorAll("#mods input")) {
+      cb.checked = !!(m && m.mods & (1 << cb.dataset.mod));
+      cb.disabled = !basic || (v <= 0xff && (v < 4 || (v >= 0xe0 && v <= 0xe7)));
+    }
+    const q = $("search").value.trim().toLowerCase();
+    const base = m ? m.base : v;
+    $("groups").innerHTML = "";
+    for (const g of core.catalog) {
+      const items = g.items.filter((it) => {
+        if (it.token === "_______" && current === core.layerIds[0]) return false;
+        if (!q) return true;
+        return (core.label(it.value) + " " + it.token + " " + g.group).toLowerCase().includes(q);
+      });
+      if (!items.length) continue;
+      const div = document.createElement("div");
+      div.className = "group";
+      div.appendChild(Object.assign(document.createElement("h3"), { textContent: g.group }));
+      const row = document.createElement("div");
+      row.className = "row";
+      for (const it of items) {
+        const b = document.createElement("button");
+        b.textContent = core.label(it.value);
+        b.title = core.title(it.value);
+        b.dataset.token = it.token;
+        if (it.value === base) b.classList.add("on");
+        b.addEventListener("click", () => {
+          const mm = core.modsOf(layers[current][selected]);
+          const keepMods = mm && it.value <= 0xff && it.value >= 4 && !(it.value >= 0xe0 && it.value <= 0xe7);
+          assign(keepMods ? core.withMods(it.value, mm.mods, mm.right) : it.value);
+        });
+        row.appendChild(b);
+      }
+      div.appendChild(row);
+      $("groups").appendChild(div);
+    }
+  }
+
+  for (const cb of document.querySelectorAll("#mods input")) {
+    cb.addEventListener("change", () => {
+      const v = layers[current][selected];
+      const m = core.modsOf(v) || { mods: 0, right: false, base: v };
+      const bit = 1 << cb.dataset.mod;
+      assign(core.withMods(m.base, cb.checked ? m.mods | bit : m.mods & ~bit, m.right));
+    });
+  }
+  $("search").addEventListener("input", renderPicker);
+  $("keydefault").addEventListener("click", () => assign(defaults[current][selected]));
+  $("layerreset").addEventListener("click", () => { layers[current] = defaults[current].slice(); render(); renderPicker(); });
+  $("resetall").addEventListener("click", () => {
+    if (!confirm("Reset every layer to the default keymap?")) return;
+    layers = core.defaultLayers(); render(); renderPicker();
+  });
+
+  // Firmware
+  function fwStatus(cls, text) { const s = $("fwstatus"); s.className = "status " + cls; s.textContent = text; }
+  async function loadImage(bytes, from) {
+    image = null;
+    const r = await core.checkImage(bytes);
+    if (r.ok) {
+      image = bytes;
+      fwStatus("ok", `✓ ${from}: this is ${rel.file} (${rel.tag}), sha256 ${r.sha256.slice(0, 16)}…, with the default keymap in place. Ready.`);
+    } else {
+      fwStatus("bad", `✗ ${from} is not the ${rel.tag} release image, so the editor won't patch it: ${r.problems.join("; ")}.`);
+    }
+    render();
+  }
+  $("binfile").addEventListener("change", async (e) => {
+    const f = e.target.files[0];
+    if (f) await loadImage(new Uint8Array(await f.arrayBuffer()), f.name);
+    e.target.value = "";
+  });
+  $("binlocal").addEventListener("click", async () => {
+    try {
+      const r = await fetch(rel.file, { cache: "no-store" });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      await loadImage(new Uint8Array(await r.arrayBuffer()), rel.file + " next to this page");
+    } catch (e) {
+      image = null;
+      fwStatus("bad", `✗ No ${rel.file} next to this page (${e.message}). Choose the file instead.`);
+      render();
+    }
+  });
+
+  // Output
+  function save(name, bytes, type) {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([bytes], { type }));
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  }
+  function outStatus(cls, text) { const s = $("outstatus"); s.className = "status " + cls; s.textContent = text; }
+  $("dlbin").addEventListener("click", async () => {
+    try {
+      const out = await core.patch(image, layers);
+      save(outName, out, "application/octet-stream");
+      outStatus("ok", `Saved ${outName}: ${out.length} bytes, sha256 ${await core.sha256(out)}.`);
+    } catch (e) { outStatus("bad", e.message); }
+  });
+  $("dljson").addEventListener("click", () => save("keymap.json", core.toJSON(layers), "application/json"));
+  $("dlc").addEventListener("click", () => save("keymap.c", core.keymapC(layers), "text/x-csrc"));
+  $("jsonfile").addEventListener("change", async (e) => {
+    const f = e.target.files[0];
+    e.target.value = "";
+    if (!f) return;
+    try {
+      layers = core.fromJSON(await f.text());
+      outStatus("ok", `Loaded ${f.name}.`);
+    } catch (err) { outStatus("bad", `${f.name}: ${err.message}`); }
+    render(); renderPicker();
+  });
+
+  layout();
+  render();
+})();
+</script>
+</body>
+</html>

@@ -89,8 +89,8 @@ Run TEX's original `AP_0407_4.04.exe` the same way. Add `-force` if it says ther
 * **USB plug and unplug restart the keyboard.** The keyboard's processor sees a power-on reset each
   time, as if its supply dropped for a moment. Settings are kept.
 * **No Bluetooth firmware updates.** Updates go over USB through TEX's bootloader.
-* **TEX's configurator and macro tool don't work** with this firmware. Keymaps and macros are set at build time
-  (edit `keymap.c`, see [Building](#building)). VIA/Vial live remapping does not fit yet: TEX's bootloader takes
+* **TEX's configurator and macro tool don't work** with this firmware. To remap keys and add shortcuts
+  without a compiler, use the [keymap editor](editor/README.md). Otherwise edit `keymap.c` (see [Building](#building)). VIA/Vial live remapping does not fit yet: TEX's bootloader takes
   images up to 28,076 bytes, and v1.0 is 28,072.
 * **ISO and JIS boards are untested.** The keymap comes from the stock table, which has the extra ISO key and the
   JIS keys (Ro, Yen, Kana, Henkan, Muhenkan), so they should work. Please report what you find.
