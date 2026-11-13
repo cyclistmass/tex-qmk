@@ -22,6 +22,8 @@ PIECES = {
         ("line", r"^#define MK_(UP|DOWN|LEFT|RIGHT)\b"),
         ("line", r"^static uint8_t\s+mk_held, mk_ticks;"),
         ("func", "mousekey_record"),
+        ("line", r"^#define TEX_DIP_SWITCHES\b"),
+        ("func", "dip_read"),
     ],
     "power.c": [
         ("line", r"^#define TYPE_SETTLE_MS\b"),

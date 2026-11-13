@@ -9,7 +9,7 @@
 // Both axes came out reversed (Mauro, 2026-11-03): the stick reads as turned 180 degrees.
 #define PS2_MOUSE_ROTATE 180
 
-// DIP switches 1-5: matrix column 14 (C13), rows 0-4 (stock FUN_4c74, FUN_8598).
+// The six DIP switches: matrix column 14 (C13), rows 0-5 (stock FUN_4c74, FUN_8598).
 #define PROFILE_SWITCH_COL 14
 
 // Stock vendor interface (report descriptor at 0x9B94): usage page 0xFF00,

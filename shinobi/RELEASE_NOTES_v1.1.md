@@ -15,7 +15,7 @@ never touched: you can flash the stock firmware back at any time with TEX's own 
 | `tex_shinobi_v1.1.bin` | The firmware image, for `shinobi/tools/tex_flash.py` (needs Python 3, `hidapi`, and TEX's `AP_0407_4.04.exe` as the key source), and the image the keymap editor patches. |
 | `SHA256SUMS.txt` | SHA-256 of both files. |
 
-`tex_shinobi_v1.1.bin` is 27,728 bytes, SHA-256 `54c75d0148796ca4dca060127c2b0a0244af944a7f9cec4f82f273c802069652`.
+`tex_shinobi_v1.1.bin` is 27,728 bytes, SHA-256 `ac8aaf4cb543a9552b6346aaa004eaf9da62f552f95f5e541a6a1fc427489813`.
 The keymap editor knows the release by this hash, so the release must carry exactly this image.
 
 Turn the PC's Bluetooth off before flashing. Full instructions: [shinobi/README.md](https://github.com/cyclistmass/tex-qmk/blob/main/shinobi/README.md). Keys, Fn combinations and
@@ -38,7 +38,7 @@ known issues: the [owner's manual](https://github.com/cyclistmass/tex-qmk/blob/m
   time, also when Fn+F1...F9 types it back, and `tp3` for Fn+1...9). The [manual](https://github.com/cyclistmass/tex-qmk/blob/main/shinobi/MANUAL.md#what-the-keyboard-types)
   translates every field. It is all one line now, with no Enter (v1.0 typed two lines, each ending in Enter):
 
-      v1.1 default 2026-11-13-09:56:36 bat85% adc2900 aa zzz15m tp3 dip24 idl15m34s wk1420ms
+      v1.1 default 2026-11-13-10:05:42 bat85% adc2900 aa zzz15m tp3 dip24 idl15m34s wk1420ms
 
 ## Fixed
 
@@ -63,8 +63,7 @@ known issues: the [owner's manual](https://github.com/cyclistmass/tex-qmk/blob/m
   QMK builds.
 * Stock's factory flash self-test is written, as a USB command run by `tools/tex_selftest.py`, but not in this
   build: it is in builds with `TEX_SELFTEST` (88 bytes).
-* DIP switch 6 (TEX's file system mode) isn't ported. Switches 7 and 8: stock doesn't read them, and it isn't known
-  whether they are wired; Fn+B's `dip` shows what the keyboard sees.
+* DIP switch 6 (TEX's file system mode) isn't ported; Fn+B's `dip` still shows it, like switches 1-5.
 * Sequence macros play with no delays. Fn+B's answers type as on a US layout. Fn+B reports the keymap as `default`
   in an editor-made image.
 * Two slot keys (Fn+Mute / Vol- / Vol+, or the pair button) held at once: the first one held wins and the other is
@@ -86,4 +85,4 @@ press and release sequences
 (`shinobi/test/host/run.sh`, also in CI). The signed division the scroll scaling uses runs correctly as linked
 in the image, on a Thumb interpreter, for edge values and 20,000 random pairs (`shinobi/test/host/div_asm.sh`,
 also in CI). Built with QMK `f5db962` and arm-none-eabi-gcc 13.2.1, with the build date pinned to
-`2026-11-13-09:56:36`.
+`2026-11-13-10:05:42`.

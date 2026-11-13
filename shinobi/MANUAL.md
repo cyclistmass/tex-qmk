@@ -20,8 +20,8 @@ The layout is the stock Shinobi layout, read from TEX's own firmware tables.
 
 ### The DIP switches
 
-The DIP switch block on the bottom of the keyboard is read as on stock firmware (without a TEX profile file),
-for switches 1 to 5. Turn on at most one of switches 1 to 3:
+The block of six DIP switches on the bottom of the keyboard is read as on stock firmware (without a TEX profile
+file), for switches 1 to 5. Turn on at most one of switches 1 to 3:
 
 | Switch on | Does |
 |---|---|
@@ -36,10 +36,7 @@ Switches 4 and 5 work from v1.1 (v1.0 ignores them):
   another key doesn't click. The middle button scrolls with the switch on or off.
 * **5 on:** vertical scrolling is reversed.
 * **6 (file system mode for TEX's configurator):** not available, because the configurator doesn't work with
-  this firmware.
-* **7 and 8:** stock doesn't use them. Switch n is read from matrix column 14, row n-1; stock reads switch 6 there
-  but never rows 6 and 7, so it is not known whether 7 and 8 are wired to them. Fn+B's `dip` shows what the
-  keyboard reads (from v1.1): if 7 or 8 never shows up when on, it isn't wired there.
+  this firmware. Fn+B's `dip` still shows it (from v1.1), like the other five.
 
 The DIP switches are separate from the Fn keys: Fn+F1...F9 set the sleep time whatever the switches say.
 
@@ -79,20 +76,20 @@ a US keyboard layout: with another layout on the computer some characters come o
 
 **Fn+B** types one line, for example:
 
-    v1.1 default 2026-11-13-09:56:36 bat85% adc2900 aa zzz15m tp3 dip24 idl15m34s wk1420ms
+    v1.1 default 2026-11-13-10:05:42 bat85% adc2900 aa zzz15m tp3 dip24 idl15m34s wk1420ms
 
 One space separates the fields; within a field the label and value run together. No answer presses Enter, so
 one typed into a chat or a search box doesn't send it.
 
 | Typed | Means | Useful for |
 |---|---|---|
-| `v1.1 default 2026-11-13-09:56:36` | Firmware version, keymap name and build time. An image made with the keymap editor also says `default`. | Knowing which firmware is on the keyboard. Quote it in bug reports. |
+| `v1.1 default 2026-11-13-10:05:42` | Firmware version, keymap name and build time. An image made with the keymap editor also says `default`. | Knowing which firmware is on the keyboard. Quote it in bug reports. |
 | `bat85%` | Battery level, worked out from `adc` for two alkaline AA cells. | Knowing when to change the cells. NiMH rechargeables read low (see [Known issues](#known-issues)). |
 | `adc2900` | The raw battery reading the level comes from. | Calibrating the battery scale: a voltmeter reading across the cells, sent with this number, fixes it. |
 | `aa` / `usb` | Running on the AA cells, or on USB power. | On USB power the keyboard never sleeps. |
 | `zzz15m` | Sleep time on battery, as set with Fn+F1...F9 (`zzz never` if it never sleeps). | Checking the setting, which survives battery changes and power cuts. |
 | `tp3` | TrackPoint sensitivity, as set with Fn+1...9. | Checking the setting, which is saved the same way. |
-| `dip24` | The DIP switches that are on: here switches 2 and 4. `dip0` means none. | Checking a switch is read after you flip it. If 7 or 8 never shows up when on, it isn't wired (see [The DIP switches](#the-dip-switches)). |
+| `dip24` | The DIP switches that are on: here switches 2 and 4. `dip0` means none. | Checking a switch is read after you flip it (see [The DIP switches](#the-dip-switches)). |
 | `idl15m34s` | The last stretch of at least a second with no key and no TrackPoint movement: 15 minutes 34 seconds here, `idl37s` under a minute. Sleep doesn't count: a stretch that included sleep counts only its awake part. | Leave the keyboard alone for a while, then press Fn+B: it should show about how long you left it. If `idl` stays small and the keyboard never sleeps on battery, something keeps it busy, most likely a drifting TrackPoint. |
 | `wk1420ms` | After the last wake from sleep, the milliseconds from the keyboard waking up to the Bluetooth link being back. `wk0ms` if it hasn't slept since it was powered on. | Telling where wake time goes. A large `wk` is Bluetooth reconnecting; if waking feels slow but `wk` is small, the delay is elsewhere (the keyboard's own wake-up, or the computer). |
 

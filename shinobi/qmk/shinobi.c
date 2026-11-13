@@ -530,11 +530,12 @@ void ps2_mouse_moved_user(report_mouse_t *mouse_report) {
 uint8_t tex_dip;
 
 // DIP switch n closes matrix column 14, row n-1 (stock FUN_4c74 keeps the same bits; FUN_8598 decodes 1-3,
-// FUN_5614 tests 4, the scroll code FUN_5cc8 tests 5, FUN_541c tests 6 as bit 5). All eight rows are read so
-// Fn+B can show them; nothing in stock reads rows 6 and 7, so switches 7 and 8 may not be wired there.
+// FUN_5614 tests 4, the scroll code FUN_5cc8 tests 5, FUN_541c tests 6 as bit 5). The block has six switches
+// (counted by Mauro, 2026-11-13) and stock never reads rows 6 and 7, so only rows 0-5 are read.
+#define TEX_DIP_SWITCHES 6
 static uint8_t dip_read(void) {
     uint8_t dip = 0;
-    for (uint8_t row = 0; row < MATRIX_ROWS; row++) {
+    for (uint8_t row = 0; row < TEX_DIP_SWITCHES; row++) {
         if (matrix_is_on(row, PROFILE_SWITCH_COL)) dip |= 1 << row;
     }
     return dip;

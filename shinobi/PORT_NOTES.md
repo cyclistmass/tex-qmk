@@ -31,7 +31,7 @@ HT32F523x2 family, stock IAP kept, BLE module on a UART.
 | Flash map | IAP 0x0000-0x2FFF, version block 0x3000, app 0x3200 (VTOR) | [O] |
 | IAP entry | 0x55AAFAF5 at 0x20003FFC, USB IRQ off, ~30 ms, reset (FUN_6528); IAP enumerates as 04D9:1407 | [O], PID seen live |
 | Matrix | Rows A1-A8 (inputs), cols D2 B8 B11 D0 B13 B14 A15 A14 A10 C14 C15 B15 C0 A11 C13. Stock drives cols high and reads rows; QMK `COL2ROW` | [O] pins, [I] diode direction |
-| DIP switches 1-3 | Column 14 (C13), rows 0-2; exactly one closed = profile 1-3, else 0. DIP 4-6 (Fn scroll, reverse scroll, file system) not read by QMK. Defaults: 1 Fn/Ctrl swapped, 2 Mac, 3 both | [O] FUN_8598, FUN_4948 |
+| DIP switches | Six switches (Mauro counted them, 2026-11-13) on column 14 (C13), rows 0-5; stock never reads rows 6-7 there, and QMK reads rows 0-5 only. Switches 1-3: exactly one closed = profile 1-3, else 0; defaults 1 Fn/Ctrl swapped, 2 Mac, 3 both. 4 Fn scroll and 5 reverse scroll are read from v1.1; 6 (file system) isn't ported | [O] FUN_8598, FUN_4948 |
 | Keymap | 0x9DCB (14×8, index col×8+row); Mac swap 0x9E5A; Fn tables 0x9E62 (actions), 0x9E7C (codes) | [O] |
 | Fn | Code 0xD8, placed on positions 48 and 70 by default; 70 is the TrackPoint middle button (the "weird mouse buttons" users report) | [O] positions, [I] which key |
 | Codes | <0xE0 HID usages; 0xEC-0xFD = consumer bits in order (report 2: 0x183, Mail, Calc, MyComputer, Play, Stop, Prev, Next, Mute, Vol−, Vol+, AC Search/Home/Back/Fwd/Stop/Refresh/Bookmarks); 0xC8/0xCA/0xC9 = mouse left/right/middle | [O] |

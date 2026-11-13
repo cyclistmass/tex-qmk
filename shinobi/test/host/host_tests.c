@@ -87,6 +87,12 @@ static void ble_flush_keys(uint16_t ms) { (void)ms; }
 static int     tp_buttons;
 static uint8_t tex_dip;
 
+// The matrix as dip_read sees it: bit r of matrix_rows[c] is row r of column c closed.
+#define PROFILE_SWITCH_COL 14
+#define MATRIX_ROWS 8
+static uint8_t matrix_rows[15];
+static bool    matrix_is_on(uint8_t row, uint8_t col) { return matrix_rows[col] >> row & 1; }
+
 static const uint8_t macro_table[] = {
     0xE1, 0x0B, 0x08, 0, // 0: Shift held for "h", then "e": "He"
     0xE0, 0x06, 0,       // 1: Ctrl+C
@@ -240,8 +246,19 @@ static void test_divsi3(void) {
     }
 }
 
+// --- The DIP block has six switches, rows 0-5 of column 14: rows 6 and 7 never show up, whatever closes them.
+static void test_dip(void) {
+    for (int rows = 0; rows < 256; rows++) {
+        matrix_rows[PROFILE_SWITCH_COL] = (uint8_t)rows;
+        matrix_rows[13] = 0xFF; // a neighbouring column changes nothing
+        uint8_t dip = dip_read();
+        CHECK(dip == (rows & 0x3F), "rows %02x: dip %02x, want %02x", rows, dip, rows & 0x3F);
+    }
+}
+
 int main(void) {
     srand(1);
+    test_dip();
     test_mousekeys();
     test_middle();
     test_typing();
@@ -250,6 +267,6 @@ int main(void) {
         printf("FAIL host tests: %d failures\n", failures);
         return 1;
     }
-    printf("PASS host tests: mouse keys, Fn scroll and middle button, macros and typed text with held modifiers, divsi3\n");
+    printf("PASS host tests: mouse keys, Fn scroll and middle button, macros and typed text with held modifiers, six DIP switches, divsi3\n");
     return 0;
 }

@@ -77,7 +77,7 @@ extern uint32_t ps2_last_packet;
 
 // Called when DIP switches 1-3 change: 0 = none or several on, 1-3 = the one that is on.
 void profile_switch_user(uint8_t profile);
-// DIP switches as read from matrix column 14 rows 0-7, bit n = switch n+1 on (shinobi.c).
+// DIP switches as read from matrix column 14 rows 0-5 (the six switches), bit n = switch n+1 on (shinobi.c).
 extern uint8_t tex_dip;
 #define TEX_DIP4_FN_SCROLL (1 << 3) // Fn + stick scrolls, an Fn tap is a middle click
 #define TEX_DIP5_REVERSE   (1 << 4) // vertical scrolling reversed
