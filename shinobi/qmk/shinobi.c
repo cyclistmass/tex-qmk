@@ -163,7 +163,13 @@ extern int tp_buttons; // action.c: the matrix mouse buttons, merged into the PS
 // past PS2_MOUSE_SCROLL_BTN_SEND, so Fn+F1 doesn't click.
 // The middle button has two owners, its own key and Fn (while fn_scroll isn't 0); it is down while either holds
 // it. Housekeeping calls this with KC_NO, which only runs out the wait after a release.
+// Fn is MO(TEX_FN_LAYER), the editor's and the default keymap's last layer; another MO() key is an ordinary key
+// here. fn_down counts the Fn keys held (the Fn/Ctrl swap layer has a second one), so Fn ends when the last is let go.
+#ifndef TEX_FN_LAYER
+#    define TEX_FN_LAYER 3
+#endif
 static uint8_t  fn_scroll; // 0 off, 1 Fn down, 2 Fn down and another key pressed, 3 released, waiting
+static uint8_t  fn_down;
 static uint16_t fn_scroll_time;
 static bool     mid_key;
 
@@ -171,12 +177,14 @@ static void fn_scroll_record(uint16_t keycode, bool pressed) {
     if (fn_scroll == 3 && timer_elapsed(fn_scroll_time) > PS2_MOUSE_SCROLL_BTN_SEND) fn_scroll = 0;
     if (keycode == MS_BTN3) {
         mid_key = pressed;
-    } else if (IS_QK_MOMENTARY(keycode)) {
-        if (pressed && (tex_dip & TEX_DIP4_FN_SCROLL)) {
-            fn_scroll = 1;
-        } else if (!pressed && fn_scroll == 1) {
+    } else if (keycode == MO(TEX_FN_LAYER)) {
+        if (pressed) {
+            if (!fn_down++ && (tex_dip & TEX_DIP4_FN_SCROLL)) fn_scroll = 1;
+        } else if (fn_down && --fn_down) {
+            // another Fn key is still down
+        } else if (fn_scroll == 1) {
             fn_scroll = 0; // a tap clicks, a hold that scrolled doesn't
-        } else if (!pressed && fn_scroll == 2) {
+        } else if (fn_scroll == 2) {
             fn_scroll      = 3; // held on until the click window has passed since this release
             fn_scroll_time = timer_read();
         }
@@ -232,15 +240,16 @@ static void mousekey_task(void) {
 
 bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
     power_input();
-#ifndef TEX_NO_DIP4
-    // First, so a key another handler takes (Fn+Esc, Fn+slot) still cancels Fn's click. The middle button's key
-    // is handled here, not by action.c, which would let go of the button while Fn still holds it.
-    fn_scroll_record(keycode, record->event.pressed);
-    if (keycode == MS_BTN3) return false;
-#endif
     if (!process_record_user(keycode, record)) {
         return false;
     }
+#ifndef TEX_NO_DIP4
+    // Before the board's own keys, so a key they take (Fn+Esc, Fn+slot) still cancels Fn's click; after the
+    // keymap's hook, which may take or remap any key. The middle button's key is handled here, not by action.c,
+    // which would let go of the button while Fn still holds it.
+    fn_scroll_record(keycode, record->event.pressed);
+    if (keycode == MS_BTN3) return false;
+#endif
     if (!ble_process_record(keycode, record)) {
         return false;
     }

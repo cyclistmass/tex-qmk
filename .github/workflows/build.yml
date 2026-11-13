@@ -38,6 +38,9 @@ jobs:
         run: |
           shinobi/tools/build_firmware.sh "$RUNNER_TEMP/qmk_firmware" ${{ matrix.keymap }}
           cp "$RUNNER_TEMP/qmk_firmware/.build/tex_shinobi_${{ matrix.keymap }}.bin" .
+      - name: Signed division as linked (divsi3.S)
+        if: matrix.keymap == 'default'
+        run: shinobi/test/host/div_asm.sh "$RUNNER_TEMP/qmk_firmware/.build/tex_shinobi_default.elf"
       - uses: actions/upload-artifact@v4
         with:
           name: tex_shinobi_${{ matrix.keymap }}

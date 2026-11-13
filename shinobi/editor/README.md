@@ -49,7 +49,7 @@ Known limits:
 
       python -I ../tools/gen_editor_data.py <qmk_firmware dir> \
           shinobi-v1.0 tex_shinobi_v1.0.bin 2026-11-04-12:22:53 \
-          shinobi-v1.1 tex_shinobi_v1.1.bin 2026-11-12-23:45:00
+          shinobi-v1.1 tex_shinobi_v1.1.bin 2026-11-13-08:17:00
 
   Each release's sources are read at its git tag; one with no tag yet is read from the working tree. The date is
   the release's build date, which Fn+B prints and which a rebuild needs to match the image. A release that isn't

@@ -4,8 +4,9 @@
 // Signed 32-bit division, replacing libgcc's: its Thumb-1 __divsi3 is 460 bytes, too many for the IAP's
 // image limit. This one divides the magnitudes with __udivsi3, which every build links anyway, and gives the
 // quotient the sign of a ^ b, so it rounds toward zero as C requires; INT_MIN works, its magnitude being
-// 0x80000000 unsigned. Division by zero reaches __udivsi3, which handles it as libgcc's own __divsi3 does
-// (__aeabi_idiv0). The only caller today is ps2_mouse.c's scroll scaling.
+// 0x80000000 unsigned. Division by zero reaches __udivsi3, whose __aeabi_idiv0 just returns: the quotient is 0
+// (and __aeabi_idivmod's remainder the dividend). The only caller today is ps2_mouse.c's scroll scaling.
+// test/host/div_asm.sh runs these routines as linked, on a Thumb interpreter.
 //
 // Assembly, not C: under LTO a C function of this name clashes with libgcc's at link time. libgcc keeps
 // __divsi3, __aeabi_idiv and __aeabi_idivmod in one object, so all three are defined here to keep it out:
@@ -16,11 +17,9 @@
     .thumb
     .section .text.__divsi3, "ax", %progbits
     .global __divsi3
-    .global __aeabi_idiv
     .thumb_func
     .type   __divsi3, %function
 __divsi3:
-__aeabi_idiv:
     push    {r4, lr}
     movs    r4, r0
     eors    r4, r1          // bit 31: the quotient's sign
@@ -36,6 +35,10 @@ __aeabi_idiv:
     subs    r0, r0, r4      // negated when the signs differ
     pop     {r4, pc}
     .size   __divsi3, . - __divsi3
+// The AEABI name GCC calls. .thumb_func marks only the label after it, so a second label here would be an untyped
+// symbol whose address could lack the Thumb bit; .thumb_set makes it a Thumb function at __divsi3's address.
+    .global __aeabi_idiv
+    .thumb_set __aeabi_idiv, __divsi3
 
 // Quotient in r0, remainder a - q * b in r1 (the remainder takes the dividend's sign, as C's % does).
     .section .text.__aeabi_idivmod, "ax", %progbits

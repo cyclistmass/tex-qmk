@@ -5,7 +5,8 @@
 // macros and typed text. extract.py copies the real functions from shinobi.c and power.c into extracted.c; this
 // file gives them the QMK pieces they use, as stubs that keep QMK's behaviour where it matters (register_code on a
 // modifier changes the real mods), drives them with random press and release sequences, and checks each step
-// against a model of what the keyboard should do. Also checks divsi3.S's arithmetic, step by step, against C's.
+// against a model of what the keyboard should do. Also checks divsi3.S's arithmetic, step by step, against C's;
+// div_asm.sh runs the assembly itself.
 //
 // Not covered here: the order of the handlers in process_record_kb (Fn+Esc and Fn+slot reaching the Fn-scroll
 // bookkeeping), and the wake timer in ble.c; both need the keyboard.
@@ -25,6 +26,7 @@ enum {
     MS_UPLEFT = 0x7E00, MS_UPRIGHT, MS_DOWNLEFT, MS_DOWNRIGHT, // shinobi.h's custom keycodes, in order
 };
 #define IS_QK_MOMENTARY(code) ((code) >= QK_MOMENTARY && (code) <= QK_MOMENTARY_MAX)
+#define MO(layer) (QK_MOMENTARY | (layer))
 #define TEX_DIP4_FN_SCROLL (1 << 3)
 #define PS2_MOUSE_BTN_MIDDLE 2
 #define PS2_MOUSE_SCROLL_BTN_SEND 300
@@ -125,13 +127,15 @@ static void test_mousekeys(void) {
 
 // --- Fn scrolling (DIP 4) and the middle button's own key share the middle button. Model: it is down while the
 // key is held, while Fn (pressed with DIP 4 on) is held, and after such an Fn hold that saw another key, until
-// more than PS2_MOUSE_SCROLL_BTN_SEND ms after its release (so the hold doesn't end in a click).
+// more than PS2_MOUSE_SCROLL_BTN_SEND ms after its release (so the hold doesn't end in a click). There are two Fn
+// keys, MO(3) on Base and on the Fn/Ctrl swap layer; Fn is down while either is. Another layer's key, MO(1), is an
+// ordinary key.
 static void test_middle(void) {
-    bool     btn3 = false, fn = false, fn_dip = false, fn_other = false, waiting = false;
+    bool     btn3 = false, fn[2] = {0}, fn_dip = false, fn_other = false, waiting = false;
     uint32_t released = 0;
-    fn_scroll = 0, mid_key = false, tp_buttons = 0;
+    fn_scroll = 0, fn_down = 0, mid_key = false, tp_buttons = 0;
     for (int step = 0; step < 200000; step++) {
-        int r = rand() % 10;
+        int r = rand() % 11;
         if (r == 0) {
             tex_dip ^= TEX_DIP4_FN_SCROLL;
             continue;
@@ -141,26 +145,28 @@ static void test_middle(void) {
         if (r <= 3) { // time passes; housekeeping calls with KC_NO
             now += rand() % 2 ? rand() % 40 : rand() % 400;
         } else if (r <= 5) {
-            keycode = QK_MOMENTARY + 1, pressed = !fn;
-            fn = pressed;
-            if (pressed) {
+            int  k    = rand() % 2;
+            bool any  = fn[0] || fn[1];
+            keycode   = MO(3), pressed = fn[k] = !fn[k];
+            bool now_ = fn[0] || fn[1];
+            if (!any && now_) {
                 if (waiting && now - released > PS2_MOUSE_SCROLL_BTN_SEND) waiting = false;
                 if (tex_dip & TEX_DIP4_FN_SCROLL) fn_dip = true, fn_other = false, waiting = false;
-            } else if (fn_dip) {
+            } else if (any && !now_ && fn_dip) {
                 fn_dip = false;
                 if (fn_other) waiting = true, released = now;
             }
         } else if (r <= 7) {
             keycode = MS_BTN3, pressed = btn3 = !btn3;
         } else {
-            keycode = r == 8 ? KC_A : KC_ESC, pressed = rand() % 2;
+            keycode = r == 8 ? KC_A : r == 9 ? KC_ESC : MO(1), pressed = rand() % 2;
             if (pressed && fn_dip) fn_other = true;
         }
         fn_scroll_record(keycode, pressed);
         if (waiting && now - released > PS2_MOUSE_SCROLL_BTN_SEND) waiting = false;
         bool want = btn3 || fn_dip || waiting;
         bool down = tp_buttons & 1 << PS2_MOUSE_BTN_MIDDLE;
-        CHECK(down == want, "step %d: middle %d, want %d (key %d, Fn %d, other %d, waiting %d)", step, down, want, btn3, fn_dip, fn_other, waiting);
+        CHECK(down == want, "step %d: middle %d, want %d (key %d, Fn %d%d, other %d, waiting %d)", step, down, want, btn3, fn[0], fn[1], fn_other, waiting);
         CHECK((tp_buttons & ~(1 << PS2_MOUSE_BTN_MIDDLE)) == 0, "step %d: other buttons changed: %x", step, tp_buttons);
     }
 }

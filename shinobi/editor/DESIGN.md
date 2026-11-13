@@ -138,8 +138,10 @@ bytes, a number and its trailing text in one call 4 more, and minutes in `idl` c
 fixes then cost 192 (mouse keys keep a bit per key held, the middle button has two owners, typed text and macros
 save and restore the held modifiers, the wake time is 32-bit), cut to 124 by testing the mouse directions as masks
 and folding the Fn-scroll timeout into its handler; `divsi3.S` replaced libgcc's 460-byte signed division (one
-caller, ps2_mouse.c's scroll scaling) with 30 bytes around the unsigned one. The image is 27,704 bytes, leaving
-372, all of it after the code in flash2 except 4 in flash0. The editor accepts both releases and picks one by the
+caller, ps2_mouse.c's scroll scaling) with 30 bytes around the unsigned one. A second review's fixes cost 36
+(only the Fn layer's key is Fn, counted per key held; a 32-bit key-ack time; the first slot key held wins;
+`__aeabi_idiv` marked Thumb, 0 bytes). The image is 27,740 bytes, leaving
+336, all of it after the code in flash2 except 4 in flash0. The editor accepts both releases and picks one by the
 image's sha256; macros and mouse keys appear for v1.1 only. Stock's factory flash self-test is a raw HID command
 (`14 00`, `tools/tex_selftest.py`) behind `TEX_SELFTEST` and off: 88 bytes (the Up+LAlt+Fn hold and Caps Lock
 display stock uses cost 312).

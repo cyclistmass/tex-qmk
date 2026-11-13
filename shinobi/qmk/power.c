@@ -309,6 +309,8 @@ static void type_event(uint8_t code, bool pressed) {
 
 // Text and macros are typed with the modifiers cleared, so a held Shift or Ctrl changes nothing, and the held ones
 // come back afterwards (register_code on a modifier changes the same real-mods state the keys use).
+// Only the real (held) modifiers are set aside; weak and one-shot mods aren't, so a keymap using one-shot
+// modifiers could see one apply to typed text. The default keymap and the editor use neither.
 static uint8_t type_begin(void) {
     uint8_t mods = get_mods();
     clear_mods();

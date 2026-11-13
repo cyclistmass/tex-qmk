@@ -13,7 +13,9 @@ import sys
 
 PIECES = {
     "shinobi.c": [
+        ("line", r"^#\s+define TEX_FN_LAYER\b"),
         ("line", r"^static uint8_t\s+fn_scroll;"),
+        ("line", r"^static uint8_t\s+fn_down;"),
         ("line", r"^static uint16_t fn_scroll_time;"),
         ("line", r"^static bool\s+mid_key;"),
         ("func", "fn_scroll_record"),

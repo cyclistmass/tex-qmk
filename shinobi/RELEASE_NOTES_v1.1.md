@@ -15,7 +15,7 @@ never touched: you can flash the stock firmware back at any time with TEX's own 
 | `tex_shinobi_v1.1.bin` | The firmware image, for `shinobi/tools/tex_flash.py` (needs Python 3, `hidapi`, and TEX's `AP_0407_4.04.exe` as the key source), and the image the keymap editor patches. |
 | `SHA256SUMS.txt` | SHA-256 of both files. |
 
-`tex_shinobi_v1.1.bin` is 27,704 bytes, SHA-256 `384d81971df6dd6021832dbddf47cc91c2d17c22cd2f0c6d9448a6d14774acb5`.
+`tex_shinobi_v1.1.bin` is 27,740 bytes, SHA-256 `e55c20cec4142c768aa0c1a6c49deba45e04233f9673935f0d279df56f45d9a8`.
 The keymap editor knows the release by this hash, so the release must carry exactly this image.
 
 Turn the PC's Bluetooth off before flashing. Full instructions: [shinobi/README.md](https://github.com/cyclistmass/tex-qmk/blob/main/shinobi/README.md). Keys, Fn combinations and
@@ -26,8 +26,9 @@ known issues: the [owner's manual](https://github.com/cyclistmass/tex-qmk/blob/m
 * **Keymap editor** (a web page, also for v1.0): remap any key on the Base, Mac, Fn-Ctrl swap and Fn layers, add
   shortcuts such as Ctrl+C, and download a ready-to-flash image or the `keymap.c`. It changes only the keymap
   bytes, and macro bytes for v1.1, of the released image, and refuses any image it doesn't know.
-* **Sequence macros:** keys that type a short phrase or a run of keys (US layout, 96 bytes in all). The editor
-  makes Macro 0-15.
+* **Sequence macros:** keys that type a short phrase or a run of keys (96 bytes in all), typed for the computer's
+  keyboard layout chosen in the editor (US, UK, German, French, Spanish, Nordic or Japanese). The editor makes
+  Macro 0-15.
 * **Mouse movement keys:** up, down, left, right and four diagonals, accelerating while held; the editor has an Fn +
   U I O / J K L / M , preset.
 * **DIP switch 4:** hold Fn and push the TrackPoint to scroll; a tap of Fn alone is a middle click.
@@ -37,7 +38,7 @@ known issues: the [owner's manual](https://github.com/cyclistmass/tex-qmk/blob/m
   time, also when Fn+F1...F9 types it back, and `tp3` for Fn+1...9). The [manual](https://github.com/cyclistmass/tex-qmk/blob/main/shinobi/MANUAL.md#what-the-keyboard-types)
   translates every field:
 
-      v1.1 default 2026-11-12-23:45:00
+      v1.1 default 2026-11-13-08:17:00
       bat85% adc2900 aa zzz15m tp3 dip24 idl15m34s wk1420ms
 
 ## Fixed
@@ -65,17 +66,24 @@ known issues: the [owner's manual](https://github.com/cyclistmass/tex-qmk/blob/m
   build: it is in builds with `TEX_SELFTEST` (88 bytes).
 * DIP switch 6 (TEX's file system mode) isn't ported. Switches 7 and 8: stock doesn't read them, and it isn't known
   whether they are wired; Fn+B's `dip` shows what the keyboard sees.
-* Sequence macros type a US layout with no delays. Fn+B reports the keymap as `default` in an editor-made image.
+* Sequence macros play with no delays. Fn+B's answers type as on a US layout. Fn+B reports the keymap as `default`
+  in an editor-made image.
+* Two slot keys (Fn+Mute / Vol- / Vol+, or the pair button) held at once: the first one held wins and the other is
+  ignored.
+* Typed answers and macros set aside the held modifiers only, not weak or one-shot ones; the default keymap and the
+  editor use neither.
 
 ## Tested
 
 **Not yet on the keyboard.** Pending before release: flashing v1.1 (over stock and over v1.0), DIP switches 1-5,
 the Fn+B readouts, macros and mouse keys over USB and Bluetooth, and an editor-made image.
 
-Checked off the keyboard (2026-11-12): the image is 27,704 of the 28,076 bytes TEX's bootloader takes, with the
+Checked off the keyboard (2026-11-13): the image is 27,740 of the 28,076 bytes TEX's bootloader takes, with the
 settings record in place; two pinned rebuilds give the same SHA-256; the editor's byte-identity test passes for
 v1.0 and v1.1 (a patched release equals a compiled build of the exported `keymap.c`, with changed keys, shortcuts,
 mouse keys and three macros). Host tests of the input logic pass: mouse keys, DIP 4's Fn scrolling with the
 middle button's own key, and macros and typed text with modifiers held, in random press and release sequences
-(`shinobi/test/host/run.sh`, also in CI). Built with QMK `f5db962` and arm-none-eabi-gcc 13.2.1, with the build date pinned to
-`2026-11-12-23:45:00`.
+(`shinobi/test/host/run.sh`, also in CI). The signed division the scroll scaling uses runs correctly as linked
+in the image, on a Thumb interpreter, for edge values and 20,000 random pairs (`shinobi/test/host/div_asm.sh`,
+also in CI). Built with QMK `f5db962` and arm-none-eabi-gcc 13.2.1, with the build date pinned to
+`2026-11-13-08:17:00`.

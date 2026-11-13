@@ -79,14 +79,14 @@ a US keyboard layout: with another layout on the computer some characters come o
 
 **Fn+B** types two lines, for example:
 
-    v1.1 default 2026-11-12-23:45:00
+    v1.1 default 2026-11-13-08:17:00
     bat85% adc2900 aa zzz15m tp3 dip24 idl15m34s wk1420ms
 
 One space separates the fields; within a field the label and value run together.
 
 | Typed | Means | Useful for |
 |---|---|---|
-| `v1.1 default 2026-11-12-23:45:00` | Firmware version, keymap name and build time. An image made with the keymap editor also says `default`. | Knowing which firmware is on the keyboard. Quote it in bug reports. |
+| `v1.1 default 2026-11-13-08:17:00` | Firmware version, keymap name and build time. An image made with the keymap editor also says `default`. | Knowing which firmware is on the keyboard. Quote it in bug reports. |
 | `bat85%` | Battery level, worked out from `adc` for two alkaline AA cells. | Knowing when to change the cells. NiMH rechargeables read low (see [Known issues](#known-issues)). |
 | `adc2900` | The raw battery reading the level comes from. | Calibrating the battery scale: a voltmeter reading across the cells, sent with this number, fixes it. |
 | `aa` / `usb` | Running on the AA cells, or on USB power. | On USB power the keyboard never sleeps. |
@@ -155,7 +155,7 @@ battery changes, USB plugging and unplugging, and power cuts.
   you. From v1.1 it also makes sequence macros (a key types a short phrase or a run of keys, 96 bytes in total)
   and mouse movement keys. Macros are typed for the keyboard layout you choose for the computer (US, UK, German,
   French, Spanish, Nordic or Japanese); Fn+B's answers stay US. ([How the editor works](editor/README.md).)
-* **No VIA/Vial live remapping.** TEX's bootloader takes images up to 28,076 bytes; v1.0 is 28,072 and v1.1 27,704. The keymap
+* **No VIA/Vial live remapping.** TEX's bootloader takes images up to 28,076 bytes; v1.0 is 28,072 and v1.1 27,740. The keymap
   editor changes the keymap in the image, so a change takes a flash.
 * **ISO and JIS boards are untested.** The extra keys are in the keymap.
 * **No Bluetooth firmware updates.** Updates go over USB through TEX's bootloader.
