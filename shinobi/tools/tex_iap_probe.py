@@ -29,11 +29,14 @@ checksum query) and 13 00-13 0A (the diag build's state queries and raw TrackPoi
 to the v6 peek build, 12 01 <u32 addr> (a 60-byte memory read; use 4-aligned peripheral addresses). Erase (1D 00), set-pointer and write (1E/1F) are not in it: flashing is
 tex_flash.py's job. Needs the keyboard on USB with the PC's Bluetooth off, and the hidapi package.
 """
+import os
 import struct
 import sys
 import time
 
-import hid
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import tex_i18n  # noqa: E402
+from tex_i18n import t  # noqa: E402
 
 VID = 0x04D9
 APP, IAP, BLE = 0x0407, 0x1407, 0x2521
@@ -42,8 +45,32 @@ VENDOR_PAGE = 0xFF00
 REFUSED = b"\xff\xaa"
 
 
+def hid_module():
+    """The hidapi module (`pip install hidapi`; Debian's python3-hid is the same module), or exit with a hint."""
+    try:
+        import hid
+    except ImportError as e:
+        hints = {"win32": "pip install hidapi",
+                 "linux": "pip install hidapi (in a venv), or on Debian/Ubuntu: apt install python3-hid",
+                 }
+        sys.exit(t("hid_missing", err=e, hint=hints.get(sys.platform, "pip install hidapi; see unix/README.md")))
+    return hid
+
+
+def open_device(path):
+    """Open one HID interface by the path hidapi enumerated; exit with a permission hint if the OS refuses."""
+    h = hid_module().device()
+    try:
+        h.open_path(path)
+    except OSError as e:
+        if sys.platform == "win32":
+            sys.exit(t("open_failed_win", err=e))
+        sys.exit(t("open_failed_unix", err=e, doc="shinobi/tools/unix/README.md"))
+    return h
+
+
 def interfaces():
-    return [d for d in hid.enumerate(VID) if d["product_id"] in NAMES]
+    return [d for d in hid_module().enumerate(VID) if d["product_id"] in NAMES]
 
 
 def modes():
@@ -51,7 +78,7 @@ def modes():
 
 
 def describe(m):
-    return ", ".join(NAMES[p] for p in m) or "nothing (keyboard off, unplugged or rebooting)"
+    return ", ".join(NAMES[p] for p in m) or t("modes_none")
 
 
 def vendor_path(pid):
@@ -68,9 +95,8 @@ def vendor_path(pid):
 def send(pid, payload, want_reply):
     path = vendor_path(pid)
     if path is None:
-        sys.exit(f"no update interface for {NAMES[pid]}; run 'list'")
-    h = hid.device()
-    h.open_path(path)
+        sys.exit(t("no_update_iface", name=NAMES[pid]))
+    h = open_device(path)
     try:
         # 65 bytes on the wire: report ID 0, then the 64-byte report.
         h.write([0x00] + payload + [0x00] * (64 - len(payload)))
@@ -117,18 +143,18 @@ def cmd_info():
 
 def cmd_switch(src, dst, sub):
     if src not in modes():
-        sys.exit(f"needs {NAMES[src]}; present: {describe(modes())}")
+        sys.exit(t("need_mode", name=NAMES[src], present=describe(modes())))
     print(f"sending 11 {sub:02x} to {NAMES[src]}")
     send(src, [0x11, sub], False)
-    t = wait_for(dst, 20)
-    print(f"{NAMES[dst]} after {t:.1f} s" if t is not None else f"{NAMES[dst]} did not appear in 20 s")
-    return 0 if t is not None else 1
+    secs = wait_for(dst, 20)
+    print(f"{NAMES[dst]} after {secs:.1f} s" if secs is not None else f"{NAMES[dst]} did not appear in 20 s")
+    return 0 if secs is not None else 1
 
 
 def cmd_checksum(ranges):
     """The updater's verify query (0x408780): 1D 01 <u32 start> <u32 len>, answer u32 at reply byte 4."""
     if IAP not in modes():
-        sys.exit(f"needs {NAMES[IAP]}; present: {describe(modes())}")
+        sys.exit(t("need_mode", name=NAMES[IAP], present=describe(modes())))
     for start, length in ranges:
         reply = send(IAP, [0x1D, 0x01] + list(struct.pack("<II", start, length)), True)
         if not reply:
@@ -150,9 +176,8 @@ def cmd_matrix(seconds):
     copied step for step (8 x u16), then a byte of any-key flags seen since the last 13 04."""
     path = vendor_path(APP)
     if path is None:
-        sys.exit(f"needs {NAMES[APP]}; present: {describe(modes())}")
-    h = hid.device()
-    h.open_path(path)
+        sys.exit(t("need_mode", name=NAMES[APP], present=describe(modes())))
+    h = open_device(path)
 
     def query(sub):
         h.write([0x00, 0x13, sub] + [0x00] * 62)
@@ -189,9 +214,8 @@ def cmd_regs():
     """The diag build's 13 02 (GPIO/AFIO registers per port) and 13 03 (output loopback of the matrix pins)."""
     path = vendor_path(APP)
     if path is None:
-        sys.exit(f"needs {NAMES[APP]}; present: {describe(modes())}")
-    h = hid.device()
-    h.open_path(path)
+        sys.exit(t("need_mode", name=NAMES[APP], present=describe(modes())))
+    h = open_device(path)
     try:
         def query(*req):
             h.write([0x00, 0x13, *req] + [0x00] * (63 - len(req)))
@@ -228,9 +252,8 @@ def cmd_pairs(seconds):
     is a (driven, moved) pair. A held key should show up as its column and row joined."""
     path = vendor_path(APP)
     if path is None:
-        sys.exit(f"needs {NAMES[APP]}; present: {describe(modes())}")
-    h = hid.device()
-    h.open_path(path)
+        sys.exit(t("need_mode", name=NAMES[APP], present=describe(modes())))
+    h = open_device(path)
 
     def sweep(high):
         h.write([0x00, 0x13, 0x05, 1 if high else 0] + [0x00] * 61)
@@ -275,9 +298,8 @@ def cmd_pins(seconds):
     that changed in each window (and the USART0 RX edges on B1) whenever that set changes, and every 10 s."""
     path = vendor_path(APP)
     if path is None:
-        sys.exit(f"needs {NAMES[APP]}; present: {describe(modes())}")
-    h = hid.device()
-    h.open_path(path)
+        sys.exit(t("need_mode", name=NAMES[APP], present=describe(modes())))
+    h = open_device(path)
     start, last, beat = time.monotonic(), None, 0.0
     try:
         while time.monotonic() - start < seconds:
@@ -300,9 +322,8 @@ def cmd_pins(seconds):
 def ps2_open():
     path = vendor_path(APP)
     if path is None:
-        sys.exit(f"needs {NAMES[APP]}; present: {describe(modes())}")
-    h = hid.device()
-    h.open_path(path)
+        sys.exit(t("need_mode", name=NAMES[APP], present=describe(modes())))
+    h = open_device(path)
     return h
 
 
@@ -393,9 +414,8 @@ class Peek:
     def __init__(self):
         path = vendor_path(APP)
         if path is None:
-            sys.exit(f"needs {NAMES[APP]}; present: {describe(modes())}")
-        self.h = hid.device()
-        self.h.open_path(path)
+            sys.exit(t("need_mode", name=NAMES[APP], present=describe(modes())))
+        self.h = open_device(path)
 
     def read(self, addr):
         self.h.write([0x00, 0x12, 0x01, 0, 0] + list(struct.pack("<I", addr)) + [0x00] * 56)
@@ -470,6 +490,7 @@ def cmd_watch(seconds):
 
 
 def main():
+    tex_i18n.setup()
     args = sys.argv[1:] or ["list"]
     if args[0] == "list":
         cmd_list()

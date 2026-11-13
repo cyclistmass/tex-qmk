@@ -20,6 +20,9 @@ import os
 import struct
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from tex_i18n import t  # noqa: E402
+
 HDR = 0xB24
 STOCK_EXE_SHA = "f14658e73b1956641b72b80eca8f873bf95db21968baf1fb79ff7cc9e39621a7"
 STOCK_IMAGE_SHA = "395008231fd9851f3456095d89a3c3c3579200d94b4c25c5244e1d18689482ce"
@@ -32,8 +35,8 @@ RECORD_AT, RECORD = 0x3BF8 - APP_BASE, bytes.fromhex("005104040100003404000200")
 
 T = [((((v - 7) & 0xFF) << 4) + (v >> 4)) & 0xFF for v in range(256)]
 INV = [0] * 256
-for v, t in enumerate(T):
-    INV[t] = v
+for v, tv in enumerate(T):
+    INV[tv] = v
 
 
 def swaps(n):
@@ -83,14 +86,14 @@ def sha(b):
 def check_image(img, size=SLOT):
     """Exit unless img fits the slot, starts with a plausible vector table at APP_BASE and keeps the record."""
     if not 0 < len(img) <= size:
-        sys.exit(f"image is {len(img)} bytes, slot holds {size}")
+        sys.exit(t("image_size", n=len(img), max=size))
     sp, reset = struct.unpack_from("<II", img, 0)
     if not (RAM_BASE < sp <= RAM_END and sp % 4 == 0):
-        sys.exit(f"initial SP {sp:#x} is not in SRAM")
+        sys.exit(t("image_sp", sp=f"{sp:#x}"))
     if not (reset & 1 and APP_BASE <= reset < APP_BASE + len(img)):
-        sys.exit(f"reset vector {reset:#x} is not a Thumb address inside the image at {APP_BASE:#x}")
+        sys.exit(t("image_reset", reset=f"{reset:#x}", base=f"{APP_BASE:#x}"))
     if img[RECORD_AT:RECORD_AT + len(RECORD)] != RECORD:
-        sys.exit(f"no stock record at {APP_BASE + RECORD_AT:#x}; the IAP would refuse the checksum")
+        sys.exit(t("image_record", at=f"{APP_BASE + RECORD_AT:#x}"))
     return sp, reset
 
 

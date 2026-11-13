@@ -2,8 +2,12 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 """Flash the TEX Shinobi through its stock IAP, without the vendor updater.
 
-usage: python -I tex_flash.py <image.bin> <key> [--wait SECONDS]
+usage: python -I tex_flash.py <image.bin> <key> [--wait SECONDS] [--lang LANG]
        python -I tex_flash.py <image.bin> <key> --dry-run <transcript.jsonl>
+
+Runs unchanged on Windows, Linux, FreeBSD and OpenBSD (Linux and the BSDs need a permission rule, see
+unix/README.md). Messages are in English, Traditional Chinese, Japanese, German, French or Spanish (--lang, else
+the system locale; tex_i18n.py); hex dumps and mismatch details stay English for bug reports.
 
 <image.bin> is the plain app image linked at 0x3200 (a QMK .bin, or a stock image); <key> is TEX's stock
 updater AP_0407_4.04.exe or the keyboard's 52-byte key file (tex_key.py). The reports are the vendor
@@ -18,6 +22,7 @@ leaves the keyboard in the IAP, ready for another try. --dry-run builds the same
 with a recorded vendor transcript (tex updater_trace.py output) without opening the keyboard.
 Needs the keyboard on USB with the PC's Bluetooth off, and the hidapi package.
 """
+import argparse
 import json
 import os
 import struct
@@ -26,8 +31,10 @@ import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import build_updater as bu  # noqa: E402
+import tex_i18n  # noqa: E402
 import tex_iap_probe as probe  # noqa: E402
 import tex_key  # noqa: E402
+from tex_i18n import t  # noqa: E402
 
 BLOCK = 52  # the updater's block size; also the key length, so every block starts at key index 0
 APP_PTR = 0x200  # write pointers are relative to 0x3000: the app at 0x3200, the version block at 0
@@ -66,9 +73,10 @@ def padded(payload):
     return bytes(payload) + bytes(64 - len(payload))
 
 
-def dry_run(steps, transcript):
-    """Compare our reports with the vendor's, from its first erase to its first start (info reads left out)."""
-    sent = [bytes.fromhex(r["hex"]) for r in map(json.loads, open(transcript)) if r["dir"] == "write"]
+def dry_run(steps, rows):
+    """Compare our reports with the vendor's, from its first erase to its first start (info reads left out).
+    rows are the transcript's records (tex updater_trace.py output, one JSON object per line)."""
+    sent = [bytes.fromhex(r["hex"]) for r in rows if r["dir"] == "write"]
     first = next(i for i, b in enumerate(sent) if b[:2] == b"\x1d\x00")
     last = next(i for i, b in enumerate(sent) if b[:2] == b"\x11\x01")
     vendor = [b for b in sent[first:last + 1] if b[0] != 0x12]
@@ -78,16 +86,15 @@ def dry_run(steps, transcript):
             sys.exit(f"report {i} ({steps[i][0]}) differs:\n  ours   {a.hex()}\n  vendor {b.hex()}")
     if len(ours) != len(vendor):
         sys.exit(f"{len(ours)} reports here, {len(vendor)} from the vendor")
-    print(f"dry run: all {len(ours)} reports from erase to start match the vendor transcript byte for byte")
+    print(t("dry_ok", n=len(ours)))
 
 
 class Iap:
     def __init__(self):
         path = probe.vendor_path(probe.IAP)
         if path is None:
-            sys.exit("no IAP update interface; run tex_iap_probe.py list")
-        self.h = probe.hid.device()
-        self.h.open_path(path)
+            sys.exit(t("no_iap_iface"))
+        self.h = probe.open_device(path)
         while self.h.read(64, timeout_ms=50):
             pass  # drop anything left from an earlier session
 
@@ -128,44 +135,90 @@ def run(iap, steps, image_len):
         if kind == "checksum":
             if got != expect:
                 raise IOError(f"checksum: IAP {got:08x}, image {expect:08x}")
-            print(f"  checksum {got:08x} matches ({image_len} bytes written in {time.monotonic() - t0:.1f} s)")
+            print(t("checksum_ok", sum=f"{got:08x}", n=image_len, s=f"{time.monotonic() - t0:.1f}"))
         if kind == "block":
             done += 1
             if done <= image_blocks and done % 135 == 0:
-                print(f"  {done}/{image_blocks} blocks")
+                print(t("blocks", done=done, total=image_blocks))
 
 
-def main():
-    args = sys.argv[1:]
-    if len(args) < 2:
-        sys.exit(__doc__)
-    img, key = open(args[0], "rb").read(), tex_key.load(args[1])
+def lang_arg(value):
+    lang = tex_i18n.normalize(value)
+    if lang is None:
+        raise argparse.ArgumentTypeError(f"{value!r}: use one of {', '.join(tex_i18n.LANGS)}")
+    return lang
+
+
+def parse_args(argv):
+    """Parse the command line; the language (--lang, else the locale) is chosen first so --help is in it."""
+    pre = argparse.ArgumentParser(prog="tex_flash.py", add_help=False)
+    pre.add_argument("--lang", type=lang_arg)
+    known, _ = pre.parse_known_args(argv)
+    tex_i18n.setup(known.lang)
+    ap = argparse.ArgumentParser(prog="tex_flash.py", description=t("help_desc"))
+    ap.add_argument("image", help=t("help_image"))
+    ap.add_argument("key", help=t("help_key"))
+    ap.add_argument("--wait", type=float, default=15, metavar="SECONDS", help=t("help_wait"))
+    ap.add_argument("--dry-run", metavar="TRANSCRIPT", help=t("help_dry"))
+    ap.add_argument("--lang", type=lang_arg, metavar="LANG", help=t("help_lang"))
+    return ap.parse_args(argv)
+
+
+def read_file(path):
+    try:
+        with open(path, "rb") as f:
+            return f.read()
+    except OSError as e:
+        sys.exit(t("cannot_read", path=path, err=e))
+
+
+def read_transcript(path):
+    return [json.loads(r) for r in read_file(path).decode("utf-8").splitlines() if r.strip()]
+
+
+def save_version_block(path, vb):
+    try:
+        with open(path, "wb") as f:
+            f.write(vb)
+        print(t("vb_saved", path=path))
+    except OSError as e:
+        print(t("vb_save_failed", path=path, err=e))
+
+
+def vendor_version_block(rows):
+    """The version block the vendor wrote: its second write pass in the transcript."""
+    blocks, cur = [], None
+    for r in rows:
+        b = bytes.fromhex(r["hex"]) if r["dir"] == "write" else b""
+        if b[:2] == b"\x1e\x01":
+            cur = []
+            blocks.append(cur)
+        elif b[:1] == b"\x1f":
+            cur.append(b[4:4 + b[1]])
+    return b"".join(blocks[1])
+
+
+def main(argv=None):
+    args = parse_args(sys.argv[1:] if argv is None else argv)
+    img = read_file(args.image)
+    key = tex_key.load(args.key)
     sp, reset = bu.check_image(img)
     _, enc = bu.device_image(img, key)
-    print(f"{args[0]}: {len(img)} bytes, SP {sp:#x}, reset {reset:#x}, sha256 {bu.sha(img)[:12]}, sum {word_sum(enc):08x}")
-    saved = os.path.join(os.path.dirname(os.path.abspath(args[1])), "tex_version_block.bin")
+    print(f"{args.image}: {len(img)} bytes, SP {sp:#x}, reset {reset:#x}, sha256 {bu.sha(img)[:12]}, sum {word_sum(enc):08x}")
+    saved = os.path.join(os.path.dirname(os.path.abspath(args.key)), "tex_version_block.bin")
 
-    if "--dry-run" in args:
-        rows = [json.loads(r) for r in open(args[args.index("--dry-run") + 1])]
-        blocks, cur = [], None
-        for r in rows:
-            b = bytes.fromhex(r["hex"]) if r["dir"] == "write" else b""
-            if b[:2] == b"\x1e\x01":
-                cur = []
-                blocks.append(cur)
-            elif b[:1] == b"\x1f":
-                cur.append(b[4:4 + b[1]])
-        vb = b"".join(blocks[1])  # the vendor's second write pass is the version block
-        return dry_run(plan(enc, vb), args[args.index("--dry-run") + 1])
+    if args.dry_run:
+        rows = read_transcript(args.dry_run)
+        return dry_run(plan(enc, vendor_version_block(rows)), rows)
 
-    wait = float(args[args.index("--wait") + 1]) if "--wait" in args else 15
+    wait = args.wait
     if probe.APP in probe.modes() and probe.vendor_path(probe.APP):
-        print("keyboard is in the app; sending 11 00")
+        print(t("in_app"))
         probe.send(probe.APP, [0x11, 0x00], False)
         if probe.wait_for(probe.IAP, 20) is None:
-            sys.exit("the IAP did not appear in 20 s")
+            sys.exit(t("iap_timeout", s=20))
     if probe.IAP not in probe.modes():
-        sys.exit(f"no USB keyboard in the IAP or the app: {probe.describe(probe.modes())}")
+        sys.exit(t("no_keyboard", modes=probe.describe(probe.modes())))
 
     iap = Iap()
     try:
@@ -174,30 +227,27 @@ def main():
             sys.exit(f"unexpected IAP info {info[:32].hex(' ')}")
         vb = read_version_block(iap)
         if valid_version_block(vb):
-            if not os.path.exists(saved) or open(saved, "rb").read() != vb:
-                with open(saved, "wb") as f:
-                    f.write(vb)
-                print(f"version block saved to {saved}")
-        elif os.path.exists(saved) and valid_version_block(open(saved, "rb").read()):
-            vb = open(saved, "rb").read()
-            print(f"the keyboard's version block is blank; using {saved}")
+            if not os.path.exists(saved) or read_file(saved) != vb:
+                save_version_block(saved, vb)
+        elif os.path.exists(saved) and valid_version_block(read_file(saved)):
+            vb = read_file(saved)
+            print(t("vb_blank_saved", path=saved))
         else:
-            sys.exit("the keyboard's version block is blank and no saved copy exists; flash once with the "
-                     "vendor updater")
-        print("erasing and writing")
+            sys.exit(t("vb_blank_none"))
+        print(t("erasing"))
         steps = plan(enc, vb)
         run(iap, steps[:-1], len(enc))
         back = read_version_block(iap)
         if back != vb:
             raise IOError(f"version block reads back differently:\n  wrote {vb.hex()}\n  read  {back.hex()}")
-        print("version block written and read back; starting the firmware (11 01)")
+        print(t("starting"))
         run(iap, steps[-1:], len(enc))
     except IOError as e:
-        sys.exit(f"stopped: {e}. The keyboard stays in the IAP; run this again or run TEX's updater.")
+        sys.exit(t("stopped", detail=e))
     finally:
         iap.close()
 
-    print(f"watching USB for {wait:.0f} s")
+    print(t("watching", s=f"{wait:.0f}"))
     start, seen = time.monotonic(), None
     while time.monotonic() - start < wait:
         now = probe.modes()
@@ -205,10 +255,10 @@ def main():
             print(f"  {time.monotonic() - start:5.1f} s  {probe.describe(now)}")
             seen = now
         if probe.APP in now and probe.vendor_path(probe.APP):
-            print("the app is up (04D9:0407)")
+            print(t("app_up"))
             return 0
         time.sleep(0.2)
-    print("the app did not come up as 04D9:0407 in that time (expected for canary builds, which return to the IAP)")
+    print(t("app_not_up"))
     return 0
 
 
