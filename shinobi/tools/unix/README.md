@@ -42,7 +42,7 @@ Turn the computer's Bluetooth off first, as in the main README, and take the fir
    to you, remove the rule after flashing.
 3. Run, from `tools/`:
 
-       ~/.venvs/tex/bin/python -I tex_flash.py tex_shinobi_v1.0.bin AP_0407_4.04.exe
+       ~/.venvs/tex/bin/python -I tex_flash.py tex_shinobi_v1.1.bin AP_0407_4.04.exe
 
    `-I` is Python's isolated mode (the flasher adds its own folder to the module path).
 4. If it says it cannot open the keyboard, the rule is not applied: replug the keyboard, and check that you are

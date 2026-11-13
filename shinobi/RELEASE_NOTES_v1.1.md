@@ -11,7 +11,7 @@ never touched: you can flash the stock firmware back at any time with TEX's own 
 
 | File | What it is |
 |---|---|
-| `tex_shinobi_v1.1_updater.exe` | Easiest. TEX's AP_0407 V1.04.04 updater with this firmware inside in place of the stock image; nothing else in it is changed. Shared with TEX's permission. Run `tex_shinobi_v1.1_updater.exe -force` from a Command Prompt. |
+| `tex_shinobi_v1.1_updater.exe` | Easiest. TEX's AP_0407 V1.04.04 updater with this firmware inside in place of the stock image; nothing else in it is changed. Shared with TEX's permission. Run `tex_shinobi_v1.1_updater.exe -force` from a Command Prompt run as administrator (Windows asks for administrator rights for TEX's updater). |
 | `tex_shinobi_v1.1.bin` | The firmware image, for `shinobi/tools/tex_flash.py` (needs Python 3, `hidapi`, and TEX's `AP_0407_4.04.exe` as the key source), and the image the keymap editor patches. |
 | `SHA256SUMS.txt` | SHA-256 of both files. |
 

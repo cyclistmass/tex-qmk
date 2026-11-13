@@ -139,7 +139,7 @@ battery changes, USB plugging and unplugging, and power cuts.
 | Battery percentage looks low | With NiMH rechargeables it reads low; see [Known issues](#known-issues). |
 | Flashing can't find the keyboard | Turn the PC's Bluetooth off. Or hold Esc while plugging in the USB cable: the keyboard starts in the bootloader, ready to flash. |
 | Settings (TrackPoint level, sleep time) aren't kept | With a firmware built with `TEX_SELFTEST`, run `python -I tools/tex_selftest.py` with the keyboard on USB: it tests the flash page that holds them and prints PASS or FAIL. The released v1.1 doesn't include the test, and the script says so. |
-| Want the stock firmware back | Run TEX's `AP_0407_4.04.exe`, with `-force` if it says there is nothing to update. |
+| Want the stock firmware back | Run TEX's `AP_0407_4.04.exe` from a Command Prompt run as administrator, with `-force` if it says there is nothing to update. |
 
 ## Known issues
 
