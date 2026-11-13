@@ -2,18 +2,22 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 """Write the keymap editor's data file, shinobi/editor/shinobi_data.js, from the sources it depends on.
 
-usage: python -I gen_editor_data.py <qmk_firmware dir> <release image.bin> <release tag> <QMK build date>
+usage: python -I gen_editor_data.py [--out FILE] <qmk_firmware dir> (<release tag> <release image.bin> <QMK build date>)...
+
+One entry per release the editor accepts, oldest first. A release's sources are read at its git tag; a release
+that has no tag yet (being prepared) is read from the working tree. FILE defaults to shinobi/editor/shinobi_data.js.
 
 Reads, without interpreting key meanings (editor/editor_core.js owns that):
   * <qmk_firmware>/quantum/keycodes.h and quantum_keycodes.h at the pinned commit: keycode names and values, the
-    modifier masks and the MO()/TG() bases;
-  * qmk/shinobi.h: the board's own keycodes, numbered from QK_KB_0 in enum order;
-  * qmk/keyboard.json: the LAYOUT's matrix positions, in argument order;
-  * qmk/keymaps/default/keymap.c: the layer names and the default keymap as tokens, and the rest of the file as the
-    template the editor exports keymap.c from;
-  * the release image: its sha256 and size. The keymaps' place in it is fixed by ld/HT32F52352_TEX_SHINOBI.ld
-    (section .tex_keymaps at 0x3800, image base 0x3200); the editor checks those bytes against the default keymap
-    before it patches anything.
+    modifier masks and the MO()/TG() bases. Every release must pin the same QMK commit;
+  * per release, qmk/shinobi.h: the board's own keycodes, numbered from QK_KB_0 in enum order;
+  * qmk/keyboard.json: the LAYOUT's matrix positions, in argument order (the same in every release);
+  * per release, qmk/keymaps/default/keymap.c: the layer names and the default keymap as tokens, and the rest of the
+    file as the template the editor exports keymap.c from;
+  * per release, ld/HT32F52352_TEX_SHINOBI.ld: the sequence macro table's address and size (flash0m), if it has one;
+  * the release image: its sha256 and size. The keymaps' place in it is fixed by the linker script (section
+    .tex_keymaps at 0x3800, image base 0x3200); the editor checks those bytes against the default keymap, and the
+    macro table against zeros, before it patches anything.
 The physical key positions below are drawn from the key identities (ThinkPad-style rows); keyboard.json's x/y
 are matrix order. They place keys on screen only.
 """
@@ -21,6 +25,7 @@ import hashlib
 import json
 import os
 import re
+import subprocess
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -167,59 +172,100 @@ def parse_keymap_c(text, nkeys):
     return layers, default, template
 
 
+def release_reader(tag):
+    """Reads a release's files under shinobi/: at its git tag, or from the working tree before it is tagged."""
+    repo = os.path.dirname(SHINOBI)
+    r = subprocess.run(["git", "-C", repo, "rev-parse", "-q", "--verify", f"refs/tags/{tag}^{{commit}}"],
+                       capture_output=True, text=True)
+    if r.returncode not in (0, 1):  # 1: no such tag; anything else: git itself failed
+        fail(f"git rev-parse {tag}: {r.stderr.strip()}")
+    if r.returncode == 0:
+        commit = r.stdout.strip()
+
+        def read(rel):
+            out = subprocess.run(["git", "-C", repo, "show", f"{commit}:shinobi/{rel}"], capture_output=True)
+            if out.returncode:
+                fail(f"{tag}: no shinobi/{rel} at the tag")
+            return out.stdout.decode("utf-8").replace("\r\n", "\n")
+        return read, f"tag {tag}"
+    return (lambda rel: open(os.path.join(SHINOBI, *rel.split("/")), encoding="utf-8").read()), "working tree"
+
+
+def parse_macro_table(ld):
+    """The sequence macro table (flash0m in the linker script), as an image offset and size; None before v1.1."""
+    m = re.search(r"^\s*flash0m\s*:\s*org\s*=\s*(0x[0-9A-Fa-f]+),\s*len\s*=\s*(\d+)\s", ld, re.M)
+    return {"offset": int(m.group(1), 16) - APP_BASE, "size": int(m.group(2))} if m else None
+
+
 def main():
-    if len(sys.argv) != 5:
+    args = sys.argv[1:]
+    out = os.path.join(SHINOBI, "editor", "shinobi_data.js")
+    if args[:1] == ["--out"]:
+        out, args = args[1], args[2:]
+    if len(args) < 4 or (len(args) - 1) % 3:
         fail(__doc__.strip().splitlines()[2])
-    qmk_dir, release_bin, tag, build_date = sys.argv[1:]
-    read = lambda p: open(p, encoding="utf-8").read()
-    values = parse_keycodes_h(read(os.path.join(qmk_dir, "quantum", "keycodes.h")))
-    funcs = parse_functions(read(os.path.join(qmk_dir, "quantum", "quantum_keycodes.h")), values)
-    custom = parse_custom(read(os.path.join(SHINOBI, "qmk", "shinobi.h")), values)
-    clash = sorted(set(custom) & set(values))
-    if clash:
-        fail(f"shinobi.h keycodes shadow QMK names: {clash}")
-    kb = json.load(open(os.path.join(SHINOBI, "qmk", "keyboard.json"), encoding="utf-8"))
-    matrix = [k["matrix"] for k in kb["layouts"]["LAYOUT"]["layout"]]
-    layers, default, template = parse_keymap_c(read(os.path.join(SHINOBI, "qmk", "keymaps", "default", "keymap.c")),
-                                               len(matrix))
-    keys = []
-    for i, (r, c) in enumerate(matrix):
-        tok = default["_BASE"][i]
-        if tok not in PHYS:
-            fail(f"no physical position for base key {tok}")
-        x, y, w = PHYS[tok]
-        keys.append({"matrix": [r, c], "x": x, "y": y, "w": w})
-    if len(PHYS) != len(matrix):
-        fail(f"{len(PHYS)} physical positions for {len(matrix)} keys")
-    img = open(release_bin, "rb").read()
-    commit = read(os.path.join(SHINOBI, "qmk_firmware.commit")).strip()
-    data = {
-        "generated_by": "shinobi/tools/gen_editor_data.py",
-        "qmk_commit": commit,
-        "release": {
+    qmk_dir, rel_args = args[0], args[1:]
+    qread = lambda p: open(p, encoding="utf-8").read()
+    values = parse_keycodes_h(qread(os.path.join(qmk_dir, "quantum", "keycodes.h")))
+    funcs = parse_functions(qread(os.path.join(qmk_dir, "quantum", "quantum_keycodes.h")), values)
+    shared, releases = None, []
+    for i in range(0, len(rel_args), 3):
+        tag, release_bin, build_date = rel_args[i:i + 3]
+        read, source = release_reader(tag)
+        commit = read("qmk_firmware.commit").strip()
+        custom = parse_custom(read("qmk/shinobi.h"), values)
+        clash = sorted(set(custom) & set(values))
+        if clash:
+            fail(f"{tag}: shinobi.h keycodes shadow QMK names: {clash}")
+        kb = json.loads(read("qmk/keyboard.json"))
+        matrix = [k["matrix"] for k in kb["layouts"]["LAYOUT"]["layout"]]
+        layers, default, template = parse_keymap_c(read("qmk/keymaps/default/keymap.c"), len(matrix))
+        keys = []
+        for j, (r, c) in enumerate(matrix):
+            tok = default["_BASE"][j]
+            if tok not in PHYS:
+                fail(f"{tag}: no physical position for base key {tok}")
+            x, y, w = PHYS[tok]
+            keys.append({"matrix": [r, c], "x": x, "y": y, "w": w})
+        if len(PHYS) != len(matrix):
+            fail(f"{tag}: {len(PHYS)} physical positions for {len(matrix)} keys")
+        this = {"qmk_commit": commit, "keys": keys, "layers": [{"id": l, "name": LAYER_NAMES.get(l, l)} for l in layers]}
+        if shared is None:
+            shared = this
+        elif this != shared:
+            fail(f"{tag}: the QMK commit, layout or layers differ from {releases[0]['tag']}; the editor shares them")
+        img = open(release_bin, "rb").read()
+        releases.append({
             "tag": tag,
             "file": os.path.basename(release_bin),
             "size": len(img),
             "sha256": hashlib.sha256(img).hexdigest(),
             "build_date": build_date,
             "keymaps_offset": KEYMAPS_ADDR - APP_BASE,
-        },
+            "macros": parse_macro_table(read("qmk/ld/HT32F52352_TEX_SHINOBI.ld")),
+            "mouse_keys": "MS_UPLEFT" in custom,
+            "custom_keycodes": custom,
+            "default_layers": default,
+            "keymap_c_template": template,
+        })
+        print(f"{tag} ({source}): {len(keys)} keys, {len(layers)} layers, {len(custom)} board keycodes, "
+              f"macros {releases[-1]['macros']}, mouse keys {releases[-1]['mouse_keys']}")
+    data = {
+        "generated_by": "shinobi/tools/gen_editor_data.py",
+        "qmk_commit": shared["qmk_commit"],
         "matrix": {"rows": MATRIX_ROWS, "cols": MATRIX_COLS},
-        "layers": [{"id": l, "name": LAYER_NAMES.get(l, l)} for l in layers],
-        "keys": keys,
-        "default_layers": default,
+        "layers": shared["layers"],
+        "keys": shared["keys"],
         "keycodes": values,
-        "custom_keycodes": custom,
         "functions": funcs,
-        "keymap_c_template": template,
+        "releases": releases,
     }
-    out = os.path.join(SHINOBI, "editor", "shinobi_data.js")
     with open(out, "w", encoding="utf-8", newline="\n") as f:
         f.write("// Generated by shinobi/tools/gen_editor_data.py; do not edit.\n")
         f.write("globalThis.SHINOBI_DATA = ")
         json.dump(data, f, indent=None, separators=(",", ":"))
         f.write(";\n")
-    print(f"{out}: {len(keys)} keys, {len(layers)} layers, {len(values)} QMK keycodes, {len(custom)} board keycodes")
+    print(f"{out}: {len(releases)} releases, {len(values)} QMK keycodes")
 
 
 if __name__ == "__main__":

@@ -6,17 +6,17 @@
 # usage: byte_identity.sh <release tex_shinobi_vX.bin> <out dir> <qmk_firmware dir>
 #   On Windows (Git Bash) the build runs in WSL (TEX_WSL_DISTRO, default Ubuntu-24.04) and <qmk_firmware dir> is a
 #   path inside it; on Linux it runs here. The QMK CLI and ARM toolchain must be set up (build_firmware.sh).
-# Steps: node checks the editor core and writes default_keymap.c, custom_keymap.c and custom_patched.bin; both
+# Steps: node identifies the release by its sha256, checks the editor core and writes default_keymap.c, custom_keymap.c and custom_patched.bin; both
 # keymaps are compiled with the release's build date; the default must equal the release, the custom one the patch.
 set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"
 release="$1"; out="$2"; qmk_dir="$3"
-date_str="$(node -e 'require(process.argv[1]); process.stdout.write(globalThis.SHINOBI_DATA.release.build_date)' "$here/../shinobi_data.js")"
 mkdir -p "$out"
 timing() { echo "TIMING label=$1 start=$2 end=$(date +%s) seconds=$(( $(date +%s) - $2 )) result=$3"; }
 
 t=$(date +%s)
 node "$here/make_keymaps.cjs" "$release" "$out"
+date_str="$(cat "$out/build_date")"
 timing core_checks "$t" ok
 
 to_build_path() { # a path the build side can open
