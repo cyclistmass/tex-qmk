@@ -70,7 +70,7 @@ static uint8_t       sleep_min       = SLEEP_MINUTES;
 static bool sleep_test_over;
 #    define SLEEP_IDLE_MS (sleep_test_over ? sleep_min * 60000UL : TEX_SLEEP_IDLE_S * 1000UL)
 #    define SLEEP_TEST_STR(s) #s
-#    define SLEEP_TEST_TEXT(s) SLEEP_TEST_STR(s) " s"
+#    define SLEEP_TEST_TEXT(s) SLEEP_TEST_STR(s) "s"
 #else
 #    define SLEEP_IDLE_MS (sleep_min * 60000UL)
 #endif
@@ -339,12 +339,12 @@ void macro_play(uint8_t n) {
 }
 #endif
 
-// Types lower-case letters, digits, space, '.', '-', ':', '%' and newline: enough
+// Types lower-case letters, digits, 'Z', space, '.', '-', ':', '%' and newline: enough
 // for the report below. send_string and its ASCII tables cost about 900 bytes the
 // IAP's image limit doesn't have.
 // Bit 7 of a code is Shift.
-static const char    type_punct[]      = " \n.-:%";
-static const uint8_t type_punct_code[] = {KC_SPC, KC_ENT, KC_DOT, KC_MINS, 0x80 | KC_SCLN, 0x80 | KC_5};
+static const char    type_punct[]      = "Z \n.-:%";
+static const uint8_t type_punct_code[] = {0x80 | KC_Z, KC_SPC, KC_ENT, KC_DOT, KC_MINS, 0x80 | KC_SCLN, 0x80 | KC_5};
 
 void type_text(const char *s) {
     for (; *s; s++) {
@@ -388,7 +388,7 @@ static void type_sleep_time(void) {
 #endif
     if (sleep_min) {
         type_number(sleep_min);
-        type_text(" min");
+        type_text("m");
     } else {
         type_text("never");
     }
@@ -401,7 +401,7 @@ void power_set_sleep(uint8_t choice, bool announce) {
     sleep_test_over = true;
 #endif
     if (!announce) return;
-    type_text("sleep ");
+    type_text("Zzz ");
     type_sleep_time();
 }
 
@@ -412,7 +412,7 @@ void battery_report(void) {
     type_number(battery_percent());
     type_text("% adc ");
     type_number(battery_raw());
-    type_text(on_battery() ? " on bat sleep " : " on usb sleep ");
+    type_text(on_battery() ? " on bat Zzz " : " on usb Zzz ");
     type_sleep_time();
     type_text(" tp ");
     type_number(tp_level + 1);
@@ -423,9 +423,9 @@ void battery_report(void) {
     for (uint8_t n = 1; dip; n++, dip >>= 1) {
         if (dip & 1) type_number(n);
     }
-    type_text(" wake ");
-    type_number(ble_wake_ms);
-    type_text(" ms idle ");
+    type_text(" idl ");
     type_number(idle_gap_s);
-    type_text(" s\n");
+    type_text("s wk ");
+    type_number(ble_wake_ms);
+    type_text("ms\n");
 }

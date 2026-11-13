@@ -15,7 +15,7 @@ never touched: you can flash the stock firmware back at any time with TEX's own 
 | `tex_shinobi_v1.1.bin` | The firmware image, for `shinobi/tools/tex_flash.py` (needs Python 3, `hidapi`, and TEX's `AP_0407_4.04.exe` as the key source), and the image the keymap editor patches. |
 | `SHA256SUMS.txt` | SHA-256 of both files. |
 
-`tex_shinobi_v1.1.bin` is 28,012 bytes, SHA-256 `fc980e5ba6f6f4bd87458a3463c603db2ede211c9f23135ea1eb17213799dcaf`.
+`tex_shinobi_v1.1.bin` is 28,000 bytes, SHA-256 `cafc03b7c3ea0609afb3afd2447ef59afbbb25c77942c3b2a1e3d370fa9e598e`.
 The keymap editor knows the release by this hash, so the release must carry exactly this image.
 
 Turn the PC's Bluetooth off before flashing. Full instructions: [shinobi/README.md](https://github.com/cyclistmass/tex-qmk/blob/main/shinobi/README.md). Keys, Fn combinations and
@@ -32,11 +32,13 @@ known issues: the [owner's manual](https://github.com/cyclistmass/tex-qmk/blob/m
   U I O / J K L / M , preset.
 * **DIP switch 4:** hold Fn and push the TrackPoint to scroll; a tap of Fn alone is a middle click.
 * **DIP switch 5:** reverses vertical scrolling.
-* **Fn+B** also types `dip` (the switches that are on), `wake` (how long Bluetooth took to come back after the last
-  sleep, in ms) and `idle` (the last stretch with no key or TrackPoint input, in seconds):
+* **Fn+B** also types `dip` (the switches that are on), `idl` (the last stretch with no key or TrackPoint input)
+  and `wk` (how long Bluetooth took to come back after the last sleep). The sleep time now reads `Zzz 15m`, also
+  when Fn+F1...F9 types it back. The [manual](https://github.com/cyclistmass/tex-qmk/blob/main/shinobi/MANUAL.md#what-the-keyboard-types)
+  translates every field:
 
-      v1.1 default 2026-11-12-22:45:00
-      bat 100% adc 3383 on usb sleep 15 min tp 3 dip 24 wake 1420 ms idle 37 s
+      v1.1 default 2026-11-12-23:00:00
+      bat 85% adc 2900 on bat Zzz 15m tp 3 dip 24 idl 37s wk 1420ms
 
 ## Fixed
 
@@ -56,7 +58,7 @@ known issues: the [owner's manual](https://github.com/cyclistmass/tex-qmk/blob/m
 * ISO and JIS layouts are in the keymap but untested. Reports welcome.
 * Flashing v1.1 over the stock firmware hasn't been tested yet with either method; both were tested over earlier
   QMK builds.
-* Stock's Up+LAlt+Fn factory flash self-test is written but not in this build: it needs 312 bytes and 64 are free.
+* Stock's Up+LAlt+Fn factory flash self-test is written but not in this build: it needs 312 bytes and 76 are free.
 * DIP switch 6 (TEX's file system mode) isn't ported. Switches 7 and 8: stock doesn't read them, and it isn't known
   whether they are wired; Fn+B's `dip` shows what the keyboard sees.
 * Sequence macros type a US layout with no delays. Fn+B reports the keymap as `default` in an editor-made image.
@@ -66,8 +68,8 @@ known issues: the [owner's manual](https://github.com/cyclistmass/tex-qmk/blob/m
 **Not yet on the keyboard.** Pending before release: flashing v1.1 (over stock and over v1.0), DIP switches 1-5,
 the Fn+B readouts, macros and mouse keys over USB and Bluetooth, and an editor-made image.
 
-Checked off the keyboard (2026-11-12): the image is 28,012 of the 28,076 bytes TEX's bootloader takes, with the
+Checked off the keyboard (2026-11-12): the image is 28,000 of the 28,076 bytes TEX's bootloader takes, with the
 settings record in place; two pinned rebuilds give the same SHA-256; the editor's byte-identity test passes for
 v1.0 and v1.1 (a patched release equals a compiled build of the exported `keymap.c`, with changed keys, shortcuts,
 mouse keys and three macros). Built with QMK `f5db962` and arm-none-eabi-gcc 13.2.1, with the build date pinned to
-`2026-11-12-22:45:00`.
+`2026-11-12-23:00:00`.

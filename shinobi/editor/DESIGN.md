@@ -132,8 +132,9 @@ dropping ChibiOS's 64-bit tick conversion, which is the identity at the 1 kHz ti
 among them). A later pass saved 156 more (sleep time kept in minutes, a lookup table in `type_text`, the battery
 curve as two arrays, reading CFCR once) and moved code into the gaps: `settings_put` fills the 56 bytes after the
 keymaps (`.tex_text0b`) and the battery curve sits after the .data image in flash0 (`.tex_rodata0`). Fn+B then
-gained `dip` (56 bytes), `wake` (92) and `idle` (104). The image is 28,012 bytes, leaving 64, all of it after the
-code in flash2 except 4 in flash0. The editor accepts both releases and picks one by the image's sha256; macros
+gained `dip` (56 bytes), `wake` (92) and `idle` (104), and its text got shorter (`Zzz 15m`, `idl 37s`,
+`wk 1420ms`; 12 bytes saved, a capital Z through the same lookup table). The image is 28,000 bytes, leaving 80,
+all of it after the code in flash2 except 4 in flash0. The editor accepts both releases and picks one by the image's sha256; macros
 and mouse keys appear for v1.1 only. Stock's Up+LAlt+Fn factory flash self-test costs 312 bytes, so it is in
 `shinobi.c` behind `TEX_SELFTEST` and off.
 
