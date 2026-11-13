@@ -130,7 +130,8 @@ v1.1 (built, not yet run on the keyboard): the macro player in `power.c` and a 9
 (`flash0m`, the end of flash0's free space), mouse movement keys, and DIP switches 4 and 5. The room came from
 dropping ChibiOS's 64-bit tick conversion, which is the identity at the 1 kHz tick (756 bytes, `__udivmoddi4`
 among them). The image is 27,916 bytes, leaving 240. The editor accepts both releases and picks one by the
-image's sha256; macros and mouse keys appear for v1.1 only.
+image's sha256; macros and mouse keys appear for v1.1 only. Stock's Up+LAlt+Fn factory flash self-test costs
+336 bytes, 96 more than are free, so it is in `shinobi.c` behind `TEX_SELFTEST` and off.
 
 Earlier (v1.0):
 

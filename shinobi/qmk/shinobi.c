@@ -106,14 +106,61 @@ static void fmc_run(uint32_t command) {
     }
 }
 
-static void settings_save(void) {
-    uint32_t word = SETTINGS_KEY | sleep_choice << 8 | tp_level;
-    if (word == settings_word) return;
+static void settings_put(uint32_t word) {
     fmc_run(FMC_OCMR_CMD_PAGE_ERASE);
     FMC->WRDR = word;
     fmc_run(FMC_OCMR_CMD_WORD_PROGRAM);
+}
+
+static void settings_save(void) {
+    uint32_t word = SETTINGS_KEY | sleep_choice << 8 | tp_level;
+    if (word == settings_word) return;
+    settings_put(word);
     settings_word = word;
 }
+
+#ifdef TEX_SELFTEST
+// Off by default: with it the image is 28,252 bytes, 176 over the 28,076 the bootloader takes (2026-11-12, v1.1).
+// Stock's factory flash test (FUN_4810): write a test value where the settings live, read it back, put the settings
+// back. The low byte 0xA5 is no TrackPoint level, so if power drops mid-test the next boot takes the defaults.
+#    define SETTINGS_TEST (SETTINGS_KEY | 0xA5A5U)
+static bool settings_selftest(void) {
+    settings_put(SETTINGS_TEST);
+    // Branch cache and pre-fetch buffer off, so the read comes from the flash array (UM v1.60, CFCR bits 12 and 4).
+    FMC->CFCR &= ~(FMC_CFCR_CE | 1U << 4);
+    bool ok = *(volatile uint32_t *)SETTINGS_ADDR == SETTINGS_TEST;
+    FMC->CFCR |= FMC_CFCR_CE | 1U << 4;
+    settings_put(settings_word);
+    return ok;
+}
+
+// Holding exactly Up, left Alt and Fn for 6 s runs the test (stock FUN_5458: keys 0x52, 0xE2, 0xD8, hold counter
+// over 6000). Then the Caps Lock LED goes off, blinks twice in 500 ms steps, and stays off for a pass or on for a
+// failure until the three are held for 6 s again (stock LED task around 0x5818). Up and Alt are matrix positions
+// (row 1 column 12, row 0 column 2), Fn is the Fn layer being on; the DIP switches in column 14 don't count as keys.
+static int8_t   st_held;  // keys down
+static uint8_t  st_state; // 0 off, 1 passed, 2 failed; bit 7: fired during this hold
+static uint16_t st_hold;
+static uint32_t st_time;
+
+static void selftest_task(void) {
+    if (st_held != 3 || !IS_LAYER_ON(3) || !matrix_is_on(1, 12) || !matrix_is_on(0, 2)) {
+        st_hold = timer_read();
+        st_state &= 0x7F;
+    } else if (!(st_state & 0x80) && timer_elapsed(st_hold) > 6000) {
+        if (st_state) {
+            st_state = 0x80;
+            led_update_ports(host_keyboard_led_state());
+        } else {
+            st_state = settings_selftest() ? 0x81 : 0x82;
+            st_time  = timer_read32();
+        }
+    }
+    if (!(st_state & 0x7F)) return;
+    uint32_t step = timer_elapsed32(st_time) / 500; // 0 off, 1 on, 2 off, 3 on, 4 off, then the result
+    palWriteLine(C10, (step < 5 ? step & 1 : (st_state & 0x7F) == 2) ? PAL_LOW : PAL_HIGH);
+}
+#endif
 
 // Before ps2_mouse_init() sends the sensitivity.
 void keyboard_pre_init_kb(void) {
@@ -193,6 +240,9 @@ static void mousekey_task(void) {
 #endif
 
 bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
+#ifdef TEX_SELFTEST
+    if (record->event.key.col != PROFILE_SWITCH_COL) st_held += record->event.pressed ? 1 : -1;
+#endif
     if (!process_record_user(keycode, record)) {
         return false;
     }
@@ -513,6 +563,9 @@ void housekeeping_task_kb(void) {
     tp_setup_task();
     tp_watch_task();
     power_task();
+#ifdef TEX_SELFTEST
+    selftest_task(); // last, so its LED wins over the Caps Lock, pairing and low-battery ones
+#endif
 #ifdef TEX_TEST_TIMEOUT_S
     // Test build (keymap "test90"): hand back to the IAP after a fixed uptime,
     // so a build that types wrong or can't be reached still returns to 1407.

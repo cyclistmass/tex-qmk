@@ -123,7 +123,9 @@ battery changes, USB plugging and unplugging, and power cuts.
   editor changes the keymap in the image, so a change takes a flash.
 * **ISO and JIS boards are untested.** The extra keys are in the keymap.
 * **No Bluetooth firmware updates.** Updates go over USB through TEX's bootloader.
-* **Not ported:** stock's Up+LAlt+Fn hold combo, and DIP switch 6 (file system mode).
+* **Not ported:** DIP switch 6 (file system mode), and stock's Up+LAlt+Fn hold combo. That combo is a factory
+  flash self-test, not a user feature: after 6 s it writes and reads back a test value and shows pass or fail on
+  the Caps Lock LED. It is written but left out of the build, because it needs 96 bytes more than are free.
 * **DIP switches 1-5 are untested on the keyboard.** Their handling follows the stock firmware's code.
 * **Flashing from stock** has not been tested yet with either install method; both were tested over earlier QMK
   builds.
