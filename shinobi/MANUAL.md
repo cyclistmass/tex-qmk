@@ -1,6 +1,6 @@
 # TEX Shinobi BLE5 with QMK: owner's manual
 
-For the QMK firmware v1.0 from this repository. To install it, see [README.md](README.md#installing).
+For the QMK firmware v1.0 and v1.1 from this repository. To install it, see [README.md](README.md#installing).
 
 ## At a glance
 
@@ -21,7 +21,7 @@ The layout is the stock Shinobi layout, read from TEX's own firmware tables.
 ### The DIP switches
 
 The DIP switch block on the bottom of the keyboard is read as on stock firmware (without a TEX profile file),
-for switches 1 to 3 only. Turn on at most one of them:
+for switches 1 to 5. Turn on at most one of switches 1 to 3:
 
 | Switch on | Does |
 |---|---|
@@ -30,10 +30,11 @@ for switches 1 to 3 only. Turn on at most one of them:
 | 3 | both 1 and 2 |
 | none, or more than one of 1-3 | stock layout |
 
-This firmware ignores switches 4 and up:
+Switches 4 and 5 work from v1.1 (v1.0 ignores them):
 
-* **4 (Fn + TrackPoint scrolls):** on QMK the middle button always scrolls, whatever switch 4 is set to.
-* **5 (reverse scrolling):** not ported.
+* **4 on:** hold Fn and push the TrackPoint to scroll; tapping Fn on its own is a middle click. Fn together with
+  another key doesn't click. The middle button scrolls with the switch on or off.
+* **5 on:** vertical scrolling is reversed.
 * **6 (file system mode for TEX's configurator):** not available, because the configurator doesn't work with
   this firmware.
 
@@ -116,14 +117,14 @@ battery changes, USB plugging and unplugging, and power cuts.
 * **USB plug and unplug restart the keyboard.** The processor sees a power-on reset each time. Settings are kept.
 * **TEX's configurator and macro tool don't work.** Remap keys and add shortcuts with the
   [keymap editor](https://cyclistmass.github.io/tex-qmk/shinobi/editor/) instead, then flash the image it gives
-  you. Sequence macros aren't supported yet. ([How the editor works](editor/README.md).)
-* **No VIA/Vial live remapping.** TEX's bootloader takes images up to 28,076 bytes; v1.0 is 28,072. The keymap
+  you. From v1.1 it also makes sequence macros (a key types a short phrase or a run of keys, 96 bytes in total)
+  and mouse movement keys. ([How the editor works](editor/README.md).)
+* **No VIA/Vial live remapping.** TEX's bootloader takes images up to 28,076 bytes; v1.0 is 28,072 and v1.1 27,916. The keymap
   editor changes the keymap in the image, so a change takes a flash.
 * **ISO and JIS boards are untested.** The extra keys are in the keymap.
 * **No Bluetooth firmware updates.** Updates go over USB through TEX's bootloader.
-* **Not ported:** stock's Up+LAlt+Fn hold combo, and DIP switches 4-6 (Fn scrolling, reverse scrolling, file
-  system mode).
-* **DIP switches 1-3 are untested on the keyboard.** Their handling follows the stock firmware's code.
+* **Not ported:** stock's Up+LAlt+Fn hold combo, and DIP switch 6 (file system mode).
+* **DIP switches 1-5 are untested on the keyboard.** Their handling follows the stock firmware's code.
 * **Flashing from stock** has not been tested yet with either install method; both were tested over earlier QMK
   builds.
 

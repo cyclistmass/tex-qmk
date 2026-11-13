@@ -31,10 +31,11 @@ Tags: [T] stated by TEX (page or manual), [C] read from the configurator's code,
 | App keys: Mail, Calculator, My Computer, Back, Forward | [T] | **Covered** (extrakey) |
 | F13-F24 | [T] | **Covered** |
 | Mouse left, right and middle click | [T] | **Covered** (`tp_buttons`) |
-| Mouse buttons 4 and 5, and pointer movement from keys (8 directions) | [T] | **Not possible:** mousekey is compiled out for size |
+| Mouse buttons 4 and 5 | [T] | **Not possible:** mousekey is compiled out for size |
+| Pointer movement from keys (8 directions) | [T] | **Adapted (v1.1):** a small handler in `shinobi.c` (16 ms steps, accelerating) instead of QMK's mousekey |
 | TrackPoint speed 1-9 | [T] | **Covered** (`TP_SEN1-9`) |
 | TrackPoint speed −/+ | [T] | **Not in v1.0.** It needs a few bytes of code |
-| Macros: 12 (M1-M12), up to 15 steps each, each step a chord of up to 5 keys, fixed timing | [T] 12 macros; [C] 15 steps, 5-key limit, timing value 128, not editable | **Adapted (v1.1):** 16 macros sharing about 100 bytes, 1 byte per key, modifiers held for the next key. The 12 × 15 maximum does not fit |
+| Macros: 12 (M1-M12), up to 15 steps each, each step a chord of up to 5 keys, fixed timing | [T] 12 macros; [C] 15 steps, 5-key limit, timing value 128, not editable | **Adapted (v1.1):** 16 macros sharing 96 bytes, 1 byte per key, modifiers held for the next key. The 12 × 15 maximum does not fit |
 | Mouse and TrackPoint keycodes inside macros | [C] | **Not possible** in the budget |
 | Firmware-level macros: 24 slots, per-event delays, mouse movement, repeat once / N times / until stopped, 4 KB | [O] (`51 18`, `44 xx`, `FUN_8698`); no tool for them was found | **Not possible** in the budget, beyond one optional fixed delay code |
 | Reset to default | [T] | **Covered:** "Reset" in the editor, or flash the release image |
@@ -124,6 +125,14 @@ measurement.
 Left out, because they don't fit: editable delays, recording, repeat modes, mouse steps, and per-profile macro sets.
 
 ## Status (2026-11-12)
+
+v1.1 (built, not yet run on the keyboard): the macro player in `power.c` and a 96-byte table at 0x37A0
+(`flash0m`, the end of flash0's free space), mouse movement keys, and DIP switches 4 and 5. The room came from
+dropping ChibiOS's 64-bit tick conversion, which is the identity at the 1 kHz tick (756 bytes, `__udivmoddi4`
+among them). The image is 27,916 bytes, leaving 240. The editor accepts both releases and picks one by the
+image's sha256; macros and mouse keys appear for v1.1 only.
+
+Earlier (v1.0):
 
 Built: the editor page, the keycode data generated from the pinned QMK, patching and C export, and the
 byte-identity test (`test/byte_identity.sh`), which passes. Instead of a separate `gen_keymap.py`, the page's own
