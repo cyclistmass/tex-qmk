@@ -69,22 +69,101 @@
     };
     const MOUSE_TITLE = "Moves the pointer while held, speeding up the longer it is held";
 
-    // Sequence macros are typed text. Plain characters use a US layout; {Name} is one key by its label or QMK name
-    // (Enter, Tab, F5, Del, ...), {Ctrl+Shift+Esc} holds modifiers for that key, {Ctrl} alone holds Ctrl for the next
-    // key, {0x2A} is a raw HID usage, and {{ is a literal {.
-    const US = {};
-    "abcdefghijklmnopqrstuvwxyz".split("").forEach((c, i) => { US[c] = [0, 0x04 + i]; US[c.toUpperCase()] = [1, 0x04 + i]; });
-    "1234567890".split("").forEach((c, i) => { US[c] = [0, 0x1e + i]; US["!@#$%^&*()"[i]] = [1, 0x1e + i]; });
-    [[" ", null, 0x2c], ["-", "_", 0x2d], ["=", "+", 0x2e], ["[", "{", 0x2f], ["]", "}", 0x30], ["\\", "|", 0x31],
-        [";", ":", 0x33], ["'", "\"", 0x34], ["`", "~", 0x35], [",", "<", 0x36], [".", ">", 0x37], ["/", "?", 0x38]]
-        .forEach(([a, b, u]) => { US[a] = [0, u]; if (b) US[b] = [1, u]; });
-    const US_BACK = [{}, {}]; // [shift][usage] -> character
-    for (const [ch, [s, u]] of Object.entries(US)) US_BACK[s][u] = ch;
+    // Sequence macros are typed text. Plain characters are typed for the computer's keyboard layout (below); {Name} is
+    // one key by its label or QMK name (Enter, Tab, F5, Del, ...), {Ctrl+Shift+Esc} holds modifiers for that key,
+    // {Ctrl} alone holds Ctrl for the next key, {0x2A} is a raw HID usage, and {{ is a literal {.
     const MACRO_MODS = ["Ctrl", "Shift", "Alt", "Win", "RCtrl", "RShift", "RAlt", "RWin"]; // HID 0xE0-0xE7
 
-    function makeCore(data, tag) {
+    // Host keyboard layouts, as Windows lays them out. The keyboard sends key positions (HID usages); the computer's
+    // layout decides what they type, so a key's label and a macro's text both depend on it. Per layout: the letter on
+    // each US letter position A-Z ("." when that key is not a letter), then per key, by its US name, what it types
+    // plain, with Shift, with AltGr and with Shift+AltGr, separated by spaces. "*" marks a dead key: alone it takes
+    // the key then Space, and it accents the next letter (COMPOSE). AltGr is sent as right Alt.
+    const HOST_LAYOUTS = [
+        { id: "us", name: "US", letters: "abcdefghijklmnopqrstuvwxyz", keys: {
+            GRV: "` ~", 1: "1 !", 2: "2 @", 3: "3 #", 4: "4 $", 5: "5 %", 6: "6 ^", 7: "7 &", 8: "8 *", 9: "9 (", 0: "0 )",
+            MINS: "- _", EQL: "= +", LBRC: "[ {", RBRC: "] }", BSLS: "\\ |", SCLN: "; :", QUOT: "' \"", COMM: ", <",
+            DOT: ". >", SLSH: "/ ?" } },
+        { id: "uk", name: "UK", letters: "abcdefghijklmnopqrstuvwxyz", keys: {
+            GRV: "` ¬ ¦", 1: "1 !", 2: "2 \"", 3: "3 £", 4: "4 $ €", 5: "5 %", 6: "6 ^", 7: "7 &", 8: "8 *", 9: "9 (",
+            0: "0 )", MINS: "- _", EQL: "= +", LBRC: "[ {", RBRC: "] }", BSLS: "# ~", NUHS: "# ~", SCLN: "; :",
+            QUOT: "' @", NUBS: "\\ |", COMM: ", <", DOT: ". >", SLSH: "/ ?",
+            A: "a A á Á", E: "e E é É", I: "i I í Í", O: "o O ó Ó", U: "u U ú Ú" } },
+        { id: "de", name: "German", letters: "abcdefghijklmnopqrstuvwxzy", keys: {
+            GRV: "*^ °", 1: "1 !", 2: "2 \" ²", 3: "3 § ³", 4: "4 $", 5: "5 %", 6: "6 &", 7: "7 / {", 8: "8 ( [",
+            9: "9 ) ]", 0: "0 = }", MINS: "ß ? \\", EQL: "*´ *`", LBRC: "ü Ü", RBRC: "+ * ~", BSLS: "# '", NUHS: "# '",
+            SCLN: "ö Ö", QUOT: "ä Ä", NUBS: "< > |", COMM: ", ;", DOT: ". :", SLSH: "- _",
+            Q: "q Q @", E: "e E €", M: "m M µ" } },
+        { id: "fr", name: "French", letters: "qbcdefghijkl.nopartuvzxyw", keys: {
+            GRV: "²", 1: "& 1", 2: "é 2 *~", 3: "\" 3 #", 4: "' 4 {", 5: "( 5 [", 6: "- 6 |", 7: "è 7 *`", 8: "_ 8 \\",
+            9: "ç 9 ^", 0: "à 0 @", MINS: ") ° ]", EQL: "= + }", LBRC: "*^ *¨", RBRC: "$ £ ¤", BSLS: "* µ", NUHS: "* µ",
+            SCLN: "m M", QUOT: "ù %", NUBS: "< >", M: ", ?", COMM: "; .", DOT: ": /", SLSH: "! §", E: "e E €" } },
+        { id: "es", name: "Spanish", letters: "abcdefghijklmnopqrstuvwxyz", keys: {
+            GRV: "º ª \\", 1: "1 ! |", 2: "2 \" @", 3: "3 · #", 4: "4 $ *~", 5: "5 % €", 6: "6 & ¬", 7: "7 /", 8: "8 (",
+            9: "9 )", 0: "0 =", MINS: "' ?", EQL: "¡ ¿", LBRC: "*` *^ [", RBRC: "+ * ]", BSLS: "ç Ç }", NUHS: "ç Ç }",
+            SCLN: "ñ Ñ", QUOT: "*´ *¨ {", NUBS: "< >", COMM: ", ;", DOT: ". :", SLSH: "- _", E: "e E €" } },
+        { id: "nordic", name: "Nordic (Swedish, Finnish)", letters: "abcdefghijklmnopqrstuvwxyz", keys: {
+            GRV: "§ ½", 1: "1 !", 2: "2 \" @", 3: "3 # £", 4: "4 ¤ $", 5: "5 % €", 6: "6 &", 7: "7 / {", 8: "8 ( [",
+            9: "9 ) ]", 0: "0 = }", MINS: "+ ? \\", EQL: "*´ *`", LBRC: "å Å", RBRC: "*¨ *^ *~", BSLS: "' *", NUHS: "' *",
+            SCLN: "ö Ö", QUOT: "ä Ä", NUBS: "< > |", COMM: ", ;", DOT: ". :", SLSH: "- _", E: "e E €", M: "m M µ" } },
+        // Direct input (IME off). The key left of 1 switches the IME, so it types nothing here.
+        { id: "jis", name: "Japanese (JIS)", letters: "abcdefghijklmnopqrstuvwxyz", keys: {
+            1: "1 !", 2: "2 \"", 3: "3 #", 4: "4 $", 5: "5 %", 6: "6 &", 7: "7 '", 8: "8 (", 9: "9 )", 0: "0", MINS: "- =",
+            EQL: "^ ~", INT3: "¥ |", LBRC: "@ `", RBRC: "[ {", BSLS: "] }", NUHS: "] }", SCLN: "; +", QUOT: ": *",
+            COMM: ", <", DOT: ". >", SLSH: "/ ?", INT1: "\\ _" } },
+    ];
+    const HID_SYMBOLS = { GRV: 0x35, MINS: 0x2d, EQL: 0x2e, LBRC: 0x2f, RBRC: 0x30, BSLS: 0x31, NUHS: 0x32, SCLN: 0x33,
+        QUOT: 0x34, COMM: 0x36, DOT: 0x37, SLSH: 0x38, NUBS: 0x64, INT1: 0x87, INT3: 0x89 };
+    // What a dead key followed by a letter gives (Windows composes these on every layout above that has the dead key).
+    const COMPOSE = { "´": ["aeiouAEIOU", "áéíóúÁÉÍÓÚ"], "`": ["aeiouAEIOU", "àèìòùÀÈÌÒÙ"], "^": ["aeiouAEIOU", "âêîôûÂÊÎÔÛ"],
+        "¨": ["aeiouAEIOU", "äëïöüÄËÏÖÜ"], "~": ["anoANO", "ãñõÃÑÕ"] };
+    const SHIFT = 1, ALTGR = 2;
+
+    // keys: usage -> [plain, Shift, AltGr, Shift+AltGr], "" where nothing, dead keys with their "*".
+    // strokes: character -> the keys that type it, [[mods, usage], ...]; back: those strokes as text -> character.
+    function buildLayout(spec) {
+        const keys = new Map();
+        [...spec.letters].forEach((c, i) => { if (c !== ".") keys.set(0x04 + i, [c, c.toUpperCase(), "", ""]); });
+        for (const [name, s] of Object.entries(spec.keys)) {
+            const u = /^[0-9]$/.test(name) ? 0x1e + ((+name + 9) % 10) : /^[A-Z]$/.test(name) ? 0x04 + name.charCodeAt(0) - 65 : HID_SYMBOLS[name];
+            if (u === undefined) throw new Error(`layout ${spec.id}: unknown key ${name}`);
+            const levels = s.split(" ");
+            keys.set(u, [0, 1, 2, 3].map((l) => levels[l] || ""));
+        }
+        const strokes = new Map([[" ", [[0, 0x2c]]]]);
+        const dead = new Map();
+        for (let level = 0; level < 4; level++) {
+            for (const [u, chars] of keys) {
+                const c = chars[level];
+                if (!c) continue;
+                if (c.length > 1 && c[0] === "*") { if (!dead.has(c.slice(1))) dead.set(c.slice(1), [level, u]); }
+                else if (!strokes.has(c)) strokes.set(c, [[level, u]]);
+            }
+        }
+        for (const [d, k] of dead) if (!strokes.has(d)) strokes.set(d, [k, [0, 0x2c]]);
+        for (const [d, k] of dead) {
+            const [from, to] = COMPOSE[d] || ["", ""];
+            [...from].forEach((b, i) => {
+                const base = strokes.get(b);
+                if (!strokes.has(to[i]) && base && base.length === 1) strokes.set(to[i], [k, base[0]]);
+            });
+        }
+        const back = new Map();
+        for (const [c, ks] of strokes) {
+            const k = ks.map(([m, u]) => m + ":" + u).join(" ");
+            if (!back.has(k)) back.set(k, c);
+        }
+        return { id: spec.id, name: spec.name, keys, strokes, back };
+    }
+    const LAYOUTS = new Map(HOST_LAYOUTS.map((s) => [s.id, buildLayout(s)]));
+    const layoutList = HOST_LAYOUTS.map(({ id, name }) => ({ id, name }));
+
+    // tag: the release (default the newest); hostLayout: the computer's keyboard layout id (default "us").
+    function makeCore(data, tag, hostLayout) {
         const rel = tag ? data.releases.find((r) => r.tag === tag) : data.releases[data.releases.length - 1];
         if (!rel) throw new Error(`unknown release ${tag}`);
+        const L = LAYOUTS.get(hostLayout || "us");
+        if (!L) throw new Error(`unknown keyboard layout ${hostLayout}`);
         const kc = data.keycodes;
         const custom = rel.custom_keycodes;
         const funcs = data.functions;
@@ -146,7 +225,19 @@
             return i >= 0 && i < 32 ? i : -1;
         }
 
+        // What a key types on the host layout, as a keycap shows it: a letter in capitals, a key whose Shift gives a
+        // digit (French) as "1 &", else what it types plain; null for a key the layout doesn't type with.
+        function layoutLabel(u) {
+            const k = L.keys.get(u);
+            if (!k) return null;
+            const [p, s] = k.map((c) => (c.length > 1 && c[0] === "*" ? c.slice(1) : c));
+            if (p && p !== s && s === p.toUpperCase()) return s;
+            if (/^[0-9]$/.test(s) && !/^[0-9]$/.test(p)) return s + " " + p;
+            return p || null;
+        }
+
         function label(v) {
+            if (v >= 4 && v <= 0xff) { const l = layoutLabel(v); if (l) return l; }
             const t = tokenFor(v);
             if (LABELS[t]) return LABELS[t];
             let m;
@@ -175,6 +266,12 @@
             if (TITLES[t]) return TITLES[t];
             if (macroIndex(v) >= 0) return `Types sequence macro ${macroIndex(v)} (step 3)`;
             if (isMouseKey(v)) return MOUSE_TITLE;
+            const k = v >= 4 && v <= 0xff && L.keys.get(v);
+            if (k) {
+                const what = ["", "Shift ", "AltGr ", "Shift+AltGr "].map((m, i) => k[i] && m + k[i].replace(/^\*(.)$/, "$1 (dead key)"))
+                    .filter(Boolean).join(", ");
+                return `${t}: types ${what} on a ${L.name} layout`;
+            }
             return t;
         }
 
@@ -219,54 +316,87 @@
             const k = n.slice(3).toLowerCase();
             if (!keyNames.has(k)) keyNames.set(k, v);
         }
+        // A key inside {...}: a hex usage; one character the layout types with a single unmodified key (so {Ctrl+Z}
+        // is Ctrl and the key that types z, wherever the layout puts it); else a key name.
+        function partUsage(p) {
+            if (/^0x[0-9a-fA-F]{1,2}$/.test(p)) return parseInt(p, 16);
+            if ([...p].length === 1) {
+                const k = L.strokes.get(/^[A-Z]$/.test(p) ? p.toLowerCase() : p);
+                if (k && k.length === 1 && k[0][0] === 0) return k[0][1];
+            }
+            return keyNames.get(p.toLowerCase());
+        }
         function keyName(u) { // a name for usage u that parses back to u
             if (u >= 0xe0) return MACRO_MODS[u - 0xe0];
+            const k = L.keys.get(u);
             const t = names.get(u);
-            for (const c of [t && LABELS[t], t && t.replace(/^KC_/, "")]) {
-                if (c && /^[A-Za-z0-9↑↓←→]+$/.test(c) && keyNames.get(c.toLowerCase()) === u) return c;
+            for (const c of [k && /^[a-z]$/.test(k[0]) && k[0].toUpperCase(), t && LABELS[t], t && t.replace(/^KC_/, "")]) {
+                if (c && /^[A-Za-z0-9↑↓←→]+$/.test(c) && partUsage(c) === u) return c;
             }
             return "0x" + u.toString(16).toUpperCase().padStart(2, "0");
+        }
+        function strokeBytes(ks) {
+            const out = [];
+            for (const [m, u] of ks) {
+                if (m & SHIFT) out.push(0xe1);
+                if (m & ALTGR) out.push(0xe6);
+                out.push(u);
+            }
+            return out;
+        }
+        function typeChar(ch) {
+            const k = L.strokes.get(ch);
+            if (!k) throw new Error(`can't type ${JSON.stringify(ch)} on a ${L.name} keyboard layout; use {Name} for other keys`);
+            return strokeBytes(k);
         }
 
         function parseMacro(text) {
             const out = [];
             const s = String(text);
             for (let i = 0; i < s.length;) {
-                const ch = s[i];
-                if (ch === "{" && s[i + 1] === "{") { out.push(0xe1, 0x2f); i += 2; continue; }
-                if (ch === "{") {
+                if (s[i] === "{" && s[i + 1] === "{") { out.push(...typeChar("{")); i += 2; continue; }
+                if (s[i] === "{") {
                     const end = s.indexOf("}", i);
                     if (end < 0) throw new Error(`"{" without "}" at position ${i + 1} (type {{ for a literal {)`);
                     const parts = s.slice(i + 1, end).split("+").map((p) => p.trim());
                     for (const p of parts) {
-                        let u;
-                        if (/^0x[0-9a-fA-F]{1,2}$/.test(p)) u = parseInt(p, 16);
-                        else u = keyNames.get(p.toLowerCase());
+                        const u = partUsage(p);
                         if (u === undefined || u < 4 || u > 0xe7) throw new Error(`unknown key {${p}}`);
                         out.push(u);
                     }
                     i = end + 1;
                     continue;
                 }
-                const k = US[ch];
-                if (!k) throw new Error(`can't type ${JSON.stringify(ch)} (US layout); use {Name} for other keys`);
-                if (k[0]) out.push(0xe1);
-                out.push(k[1]);
-                i++;
+                const ch = String.fromCodePoint(s.codePointAt(i));
+                out.push(...typeChar(ch));
+                i += ch.length;
             }
             return out;
         }
 
+        // Back to text: runs of keys the layout types as one character become that character (dead key and letter
+        // first), anything else {Mods+Key}. Modifiers count only in the order parseMacro writes them.
         function formatMacro(bytes) {
-            let text = "";
+            const keys = [];
             let mods = [];
             for (const u of bytes) {
                 if (u >= 0xe0) { mods.push(u); continue; }
-                const shift = mods.length === 1 && mods[0] === 0xe1 ? 1 : mods.length ? -1 : 0;
-                const ch = shift >= 0 ? US_BACK[shift][u] : undefined;
-                if (ch !== undefined) text += ch === "{" ? "{{" : ch;
-                else text += "{" + mods.map(keyName).concat(keyName(u)).join("+") + "}";
+                keys.push([mods, u]);
                 mods = [];
+            }
+            const asText = ([ms, u]) => {
+                const m = (ms[0] === 0xe1 ? SHIFT : 0) | (ms[ms.length - 1] === 0xe6 ? ALTGR : 0);
+                const want = strokeBytes([[m, u]]), got = ms.concat(u);
+                return want.length === got.length && want.every((x, i) => x === got[i]) ? m + ":" + u : null;
+            };
+            let text = "";
+            for (let i = 0; i < keys.length;) {
+                const a = asText(keys[i]), b = i + 1 < keys.length ? asText(keys[i + 1]) : null;
+                let ch;
+                if (a && b && (ch = L.back.get(a + " " + b)) !== undefined) i += 2;
+                else if (a && (ch = L.back.get(a)) !== undefined) i += 1;
+                else { text += "{" + keys[i][0].map(keyName).concat(keyName(keys[i][1])).join("+") + "}"; i++; continue; }
+                text += ch === "{" ? "{{" : ch;
             }
             for (const m of mods) text += "{" + keyName(m) + "}";
             return text;
@@ -374,6 +504,7 @@
                 for (let i = 0; i < hex.length; i += 12) rowsOut.push("    " + hex.slice(i, i + 12).join(", ") + ",");
                 const listing = (macros || []).map((t, i) => (t ? `//   MC_${i}: ${t.replace(/[\r\n]/g, " ")}\n` : "")).join("");
                 text += `\n// Sequence macros, played by MC_0-MC_${MACRO_SLOTS - 1}: HID usages, 0xE0-0xE7 held until the next key, 0 ends one.\n` +
+                    `// Their text is typed for a ${L.name} keyboard layout on the computer.\n` +
                     `// The linker places them in the macro table (ld/HT32F52352_TEX_SHINOBI.ld) and zero-fills the rest.\n` +
                     listing +
                     `const uint8_t tex_macro_data[] __attribute__((section(".tex_macros"), used)) = {\n${rowsOut.join("\n")}\n};\n`;
@@ -382,7 +513,7 @@
         }
 
         function toJSON(layers, macros) {
-            const out = { keyboard: "tex/shinobi", format: 1, release: rel.tag, layers: {} };
+            const out = { keyboard: "tex/shinobi", format: 1, release: rel.tag, host_layout: L.id, layers: {} };
             for (const id of layerIds) out.layers[id] = layers[id].map(tokenFor);
             const list = (macros || []).slice();
             while (list.length && !list[list.length - 1]) list.pop();
@@ -393,6 +524,10 @@
         function fromJSON(text) {
             const j = JSON.parse(text);
             if (j.keyboard !== "tex/shinobi" || j.format !== 1) throw new Error("not a TEX Shinobi keymap file");
+            // The macros' text means keys only for the layout it was written for; files from before the setting are US.
+            const hl = j.host_layout === undefined ? "us" : j.host_layout;
+            if (!LAYOUTS.has(hl)) throw new Error(`unknown keyboard layout ${JSON.stringify(hl)}`);
+            if (hl !== L.id) return makeCore(data, rel.tag, hl).fromJSON(text);
             const layers = {};
             for (const id of layerIds) {
                 const toks = j.layers && j.layers[id];
@@ -404,12 +539,12 @@
             encodeMacros(macros); // throws on bad syntax, too many bytes, or a release without macros
             const bad = unsupported(layers);
             if (bad.length) throw new Error(bad.join("; "));
-            return { layers, macros: Array.from({ length: MACRO_SLOTS }, (_, i) => macros[i] || "") };
+            return { layers, macros: Array.from({ length: MACRO_SLOTS }, (_, i) => macros[i] || ""), hostLayout: L.id };
         }
 
         const catalog = groups.map(([group, list]) => ({ group, items: list.split(" ").map((n) => ({ token: n, value: resolve(n) })) }));
         return {
-            data, release: rel, layerIds, catalog, macroSlots: rel.macros ? MACRO_SLOTS : 0, resolve, tokenFor, label, title,
+            data, release: rel, hostLayout: { id: L.id, name: L.name }, layerIds, catalog, macroSlots: rel.macros ? MACRO_SLOTS : 0, resolve, tokenFor, label, title,
             modsOf, withMods, defaultLayers, macroIndex, isMouseKey, unsupported, parseMacro, formatMacro, encodeMacros,
             encode, checkImage, patch, keymapC, toJSON, fromJSON, sha256,
         };
@@ -427,7 +562,7 @@
         return r ? r.tag : null;
     }
 
-    const api = { makeCore, identify, sha256 };
+    const api = { makeCore, identify, sha256, layouts: layoutList };
     root.ShinobiCore = api;
     if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);

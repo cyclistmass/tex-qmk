@@ -11,7 +11,8 @@ themselves. Why it works this way is in [DESIGN.md](DESIGN.md).
    straight from disk or served with `python -I -m http.server 8765 --bind 127.0.0.1`.
 2. Download the release image from the release page and load it with **Choose the .bin file**. The page knows each
    release by its SHA-256, checks the default keymap (and the empty macro table), and refuses any other image.
-3. Pick a layer (Base, Mac, Fn-Ctrl swap, Fn), click a key, and pick what it should do. Tick Ctrl, Shift, Alt or Win
+3. Choose the computer's keyboard layout, so the keys show what they type there. Pick a layer (Base, Mac, Fn-Ctrl
+   swap, Fn), click a key, and pick what it should do. Tick Ctrl, Shift, Alt or Win
    for a shortcut such as Ctrl+C.
 4. v1.1 only: write sequence macros in **Macros** and assign Macro 0-15 to keys; put mouse movement keys on
    keys in step 3 or with the Fn + U I O / J K L / M , preset in **Mouse keys**.
@@ -26,8 +27,12 @@ Known limits:
 
 * Fn+B still reports the keymap name as `default` in a patched image, because the name is compiled into the code.
 * The drawn layout is approximate and has not been checked against the board.
-* Sequence macros need v1.1. They type a US layout, with no delays, and all of them share 96 bytes: each key
-  takes 1 byte, a shifted character or a shortcut 2, and each macro up to the last one used 1 more.
+* Sequence macros need v1.1. They are typed for the computer's keyboard layout chosen in step 2 (US, UK, German,
+  French, Spanish, Nordic or Japanese JIS, as Windows lays them out; macOS's differ), with no delays, and all of
+  them share 96 bytes: each key takes 1 byte, a key with Shift or AltGr (right Alt) or a shortcut 2, Shift+AltGr 3,
+  an accent from a dead key one more, and each macro up to the last one used 1 more. keymap.json records the
+  layout. The layouts were written from Windows' and have not been typed on a real computer with each one.
+* Fn+B and the keyboard's other typed answers always type as on a US layout.
 
 ## Files
 

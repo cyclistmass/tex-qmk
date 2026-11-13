@@ -18,6 +18,8 @@ shinobi="$(cd "$here/../.." && pwd)"
 repo="$(cd "$shinobi/.." && pwd)"
 qmk_dir="$1"; work="$2"
 timing() { echo "TIMING label=$1 start=$2 end=$(date +%s) seconds=$(( $(date +%s) - $2 )) result=$3"; }
+# Host keyboard layouts need no release: macro text per layout, labels and keymap.json (prints its own TIMING line).
+node "$here/host_layouts.cjs"
 rm -rf "$work"; mkdir -p "$work/release"
 # One line per release: tag file sha256 build_date
 mapfile -t releases < <(node -e 'require(process.argv[1]); for (const r of globalThis.SHINOBI_DATA.releases) console.log([r.tag, r.file, r.sha256, r.build_date].join(" "))' "$shinobi/editor/shinobi_data.js")

@@ -55,7 +55,9 @@ The DIP switches are separate from the Fn keys: Fn+F1...F9 set the sleep time wh
 | Fn+arrows | media keys: Stop, Play, Previous, Next |
 
 The keyboard "types back" by sending keystrokes, so have a text editor or other text field in focus when you
-press Fn+1...9, Fn+F1...F9 or Fn+B. The answers are short; the tables below translate them.
+press Fn+1...9, Fn+F1...F9 or Fn+B. The answers are short; the tables below translate them. They are typed as on
+a US keyboard layout: with another layout on the computer some characters come out as that layout's, for example
+`y` and `z` swapped on German, or punctuation in place of digits on French.
 
 ### What the keyboard types
 
@@ -151,7 +153,8 @@ battery changes, USB plugging and unplugging, and power cuts.
 * **TEX's configurator and macro tool don't work.** Remap keys and add shortcuts with the
   [keymap editor](https://cyclistmass.github.io/tex-qmk/shinobi/editor/) instead, then flash the image it gives
   you. From v1.1 it also makes sequence macros (a key types a short phrase or a run of keys, 96 bytes in total)
-  and mouse movement keys. ([How the editor works](editor/README.md).)
+  and mouse movement keys. Macros are typed for the keyboard layout you choose for the computer (US, UK, German,
+  French, Spanish, Nordic or Japanese); Fn+B's answers stay US. ([How the editor works](editor/README.md).)
 * **No VIA/Vial live remapping.** TEX's bootloader takes images up to 28,076 bytes; v1.0 is 28,072 and v1.1 27,704. The keymap
   editor changes the keymap in the image, so a change takes a flash.
 * **ISO and JIS boards are untested.** The extra keys are in the keymap.

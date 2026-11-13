@@ -77,6 +77,7 @@ pre { background: var(--bg); padding: 10px; border-radius: 7px; overflow-x: auto
 .meter div { height: 100%; background: var(--sel); }
 .meter.full div { background: var(--bad); }
 ul.tight { margin: 4px 0 10px; padding-left: 20px; }
+select { font: inherit; border: 1px solid var(--key-edge); background: var(--key); color: var(--text); border-radius: 7px; padding: 5px 8px; }
 </style>
 </head>
 <body>
@@ -96,6 +97,8 @@ ul.tight { margin: 4px 0 10px; padding-left: 20px; }
 
 <section id="edit">
   <h2>2. Keymap</h2>
+  <p class="row"><label for="hostlayout">The computer's keyboard layout:</label> <select id="hostlayout"></select></p>
+  <p class="muted">The keyboard sends key positions and the computer's layout turns them into characters, so the keys below show what they type on that layout (as Windows lays it out), and macros (step 4) are typed for it. Fn+B and the other typed answers always type as on a US layout.</p>
   <div class="tabs" id="tabs" role="tablist"></div>
   <p class="muted" id="layerhelp"></p>
   <div class="kbwrap"><div class="kb" id="kb"></div></div>
@@ -127,7 +130,7 @@ ul.tight { margin: 4px 0 10px; padding-left: 20px; }
   <h2>4. Macros</h2>
   <div id="macrooff" class="muted hidden"></div>
   <div id="macroon">
-    <p>A macro key types a short sequence: assign <b>Macro 0</b>-<b>Macro 15</b> to keys in step 3, and write what each one types here. Plain text uses a US layout. <code>{Enter}</code>, <code>{Tab}</code>, <code>{F5}</code>, <code>{Del}</code> name a key; <code>{Ctrl+C}</code> or <code>{Win+R}</code> hold modifiers for it; <code>{{</code> types a <code>{</code>. Keys are typed one after another with no delays. All macros share one small table:</p>
+    <p>A macro key types a short sequence: assign <b>Macro 0</b>-<b>Macro 15</b> to keys in step 3, and write what each one types here. Plain text is typed for the <b id="macrolayout"></b> layout chosen in step 2, and a character it can't type is marked. <code>{Enter}</code>, <code>{Tab}</code>, <code>{F5}</code>, <code>{Del}</code> name a key; <code>{Ctrl+C}</code> or <code>{Win+R}</code> hold modifiers for it; <code>{{</code> types a <code>{</code>. Keys are typed one after another with no delays. All macros share one small table:</p>
     <div class="row"><div class="meter" id="meter" style="flex:1"><div></div></div><span id="metertext" class="muted"></span></div>
     <div class="macros" id="macros" style="margin-top:10px"></div>
   </div>
@@ -175,7 +178,10 @@ ul.tight { margin: 4px 0 10px; padding-left: 20px; }
   "use strict";
   const DATA = SHINOBI_DATA;
   const newest = DATA.releases[DATA.releases.length - 1];
-  let core = ShinobiCore.makeCore(DATA);
+  // The computer's keyboard layout, remembered in this browser only.
+  let hostLayout = "us";
+  try { const s = localStorage.getItem("shinobi.hostLayout"); if (ShinobiCore.layouts.some((l) => l.id === s)) hostLayout = s; } catch (e) { /* no storage */ }
+  let core = ShinobiCore.makeCore(DATA, undefined, hostLayout);
   const data = core.data;
   let rel = core.release;
   let outName;
@@ -199,8 +205,10 @@ ul.tight { margin: 4px 0 10px; padding-left: 20px; }
   $("relnew").textContent = DATA.releases.find((r) => r.macros).tag.replace(/^shinobi-/, "");
   // Switch to the release an image turned out to be; the keymap and macros carry over.
   function useRelease(tag) {
-    core = ShinobiCore.makeCore(DATA, tag);
+    core = ShinobiCore.makeCore(DATA, tag, hostLayout);
     rel = core.release;
+    $("hostlayout").value = hostLayout;
+    $("macrolayout").textContent = core.hostLayout.name;
     defaults = core.defaultLayers();
     outName = rel.file.replace(/\.bin$/, "_custom.bin");
     $("flashcmd").textContent = `python -I tex_flash.py ${outName} AP_0407_4.04.exe`;
@@ -209,6 +217,13 @@ ul.tight { margin: 4px 0 10px; padding-left: 20px; }
     $("macrooff").classList.toggle("hidden", !!rel.macros); $("macroon").classList.toggle("hidden", !rel.macros);
     $("mouseoff").classList.toggle("hidden", rel.mouse_keys); $("mouseon").classList.toggle("hidden", !rel.mouse_keys);
   }
+  for (const l of ShinobiCore.layouts) $("hostlayout").appendChild(Object.assign(document.createElement("option"), { value: l.id, textContent: l.name }));
+  function setHostLayout(id) {
+    hostLayout = id;
+    try { localStorage.setItem("shinobi.hostLayout", id); } catch (e) { /* no storage */ }
+    useRelease(rel.tag);
+  }
+  $("hostlayout").addEventListener("change", () => { setHostLayout($("hostlayout").value); render(); renderPicker(); renderMacros(); });
   useRelease(rel.tag);
 
   // Tabs
@@ -470,7 +485,9 @@ ul.tight { margin: 4px 0 10px; padding-left: 20px; }
     try {
       const j = core.fromJSON(await f.text());
       layers = j.layers; macros = j.macros;
-      outStatus("ok", `Loaded ${f.name}.`);
+      const switched = j.hostLayout !== hostLayout;
+      if (switched) setHostLayout(j.hostLayout);
+      outStatus("ok", `Loaded ${f.name}.` + (switched ? ` Its macros were written for a ${core.hostLayout.name} keyboard layout, so step 2 now uses that.` : ""));
     } catch (err) { outStatus("bad", `${f.name}: ${err.message}`); }
     render(); renderPicker(); renderMacros();
   });
