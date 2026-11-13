@@ -37,6 +37,9 @@ Switches 4 and 5 work from v1.1 (v1.0 ignores them):
 * **5 on:** vertical scrolling is reversed.
 * **6 (file system mode for TEX's configurator):** not available, because the configurator doesn't work with
   this firmware.
+* **7 and 8:** stock doesn't use them. Switch n is read from matrix column 14, row n-1; stock reads switch 6 there
+  but never rows 6 and 7, so it is not known whether 7 and 8 are wired to them. Fn+B's `dip` shows what the
+  keyboard reads (from v1.1): if 7 or 8 never shows up when on, it isn't wired there.
 
 The DIP switches are separate from the Fn keys: Fn+F1...F9 set the sleep time whatever the switches say.
 
@@ -58,12 +61,22 @@ press Fn+1...9, Fn+F1...F9 or Fn+B.
 
 Fn+B types two lines, for example:
 
-    v1.0 default 2026-11-04-12:22:53
-    bat 100% adc 3383 on usb sleep 15 min tp 3
+    v1.1 default 2026-11-12-22:45:00
+    bat 100% adc 3383 on usb sleep 15 min tp 3 dip 24 wake 1420 ms idle 37 s
 
 * First line: firmware version, keymap and build time.
 * Second line: battery level, the raw battery reading (`adc`), power source (`on usb` or `on bat`), sleep time
-  and TrackPoint level.
+  and TrackPoint level. From v1.1 also:
+  * `dip`: the numbers of the DIP switches that are on (`dip 24` is switches 2 and 4), or `dip 0` for none.
+  * `wake`: after the last wake from sleep, how long the Bluetooth link took to come back, in milliseconds; 0 if
+    it hasn't slept since it was powered on. It counts from the end of the keyboard's own wake-up to the module
+    reporting the link connected.
+  * `idle`: the last stretch of at least a second with no key and no TrackPoint movement, in seconds. Leave the
+    keyboard alone, then press Fn+B: it shows how long you left it. A number that stays small means something,
+    such as a drifting TrackPoint, keeps it busy (and from sleeping). The clock stops in sleep, so a stretch that
+    included sleep counts only its awake part.
+
+v1.0 types the same two lines without `dip`, `wake` and `idle`.
 
 ## Bluetooth
 
@@ -119,13 +132,13 @@ battery changes, USB plugging and unplugging, and power cuts.
   [keymap editor](https://cyclistmass.github.io/tex-qmk/shinobi/editor/) instead, then flash the image it gives
   you. From v1.1 it also makes sequence macros (a key types a short phrase or a run of keys, 96 bytes in total)
   and mouse movement keys. ([How the editor works](editor/README.md).)
-* **No VIA/Vial live remapping.** TEX's bootloader takes images up to 28,076 bytes; v1.0 is 28,072 and v1.1 27,916. The keymap
+* **No VIA/Vial live remapping.** TEX's bootloader takes images up to 28,076 bytes; v1.0 is 28,072 and v1.1 28,012. The keymap
   editor changes the keymap in the image, so a change takes a flash.
 * **ISO and JIS boards are untested.** The extra keys are in the keymap.
 * **No Bluetooth firmware updates.** Updates go over USB through TEX's bootloader.
 * **Not ported:** DIP switch 6 (file system mode), and stock's Up+LAlt+Fn hold combo. That combo is a factory
   flash self-test, not a user feature: after 6 s it writes and reads back a test value and shows pass or fail on
-  the Caps Lock LED. It is written but left out of the build, because it needs 96 bytes more than are free.
+  the Caps Lock LED. It is written but left out of the build, because it needs 312 bytes and 64 are free.
 * **DIP switches 1-5 are untested on the keyboard.** Their handling follows the stock firmware's code.
 * **Flashing from stock** has not been tested yet with either install method; both were tested over earlier QMK
   builds.

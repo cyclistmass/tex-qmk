@@ -242,7 +242,7 @@ Keymaps that only exist for bring-up, each a `rules.mk` flag on top of `default`
   uptime, for a first flash with a guaranteed way back.
 * `diag` (`TEX_DIAG`): `test600` plus read-only `13 xx` state queries on the vendor interface (matrix, ports,
   raw PS/2), read by `tools/tex_iap_probe.py`.
-* `sleep30` (`TEX_SLEEP_IDLE_MS`): sleeps after 30 s on battery, until a sleep time is chosen with Fn+F1..F9.
+* `sleep30` (`TEX_SLEEP_IDLE_S`): sleeps after 30 s on battery, until a sleep time is chosen with Fn+F1..F9.
 
 ## Open questions
 

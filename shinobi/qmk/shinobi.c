@@ -106,7 +106,8 @@ static void fmc_run(uint32_t command) {
     }
 }
 
-static void settings_put(uint32_t word) {
+// In the 56 bytes after the keymaps (ld .tex_text0b): code beyond flash2's room.
+__attribute__((section(".tex_text0b"), noinline)) static void settings_put(uint32_t word) {
     fmc_run(FMC_OCMR_CMD_PAGE_ERASE);
     FMC->WRDR = word;
     fmc_run(FMC_OCMR_CMD_WORD_PROGRAM);
@@ -120,16 +121,18 @@ static void settings_save(void) {
 }
 
 #ifdef TEX_SELFTEST
-// Off by default: with it the image is 28,252 bytes, 176 over the 28,076 the bootloader takes (2026-11-12, v1.1).
+// Off by default: it costs 312 bytes, and with the Fn+B dip, wake and idle readouts the image is 28,324 bytes, 248
+// over the 28,076 the bootloader takes (2026-11-12, v1.1; 64 bytes are free without it).
 // Stock's factory flash test (FUN_4810): write a test value where the settings live, read it back, put the settings
 // back. The low byte 0xA5 is no TrackPoint level, so if power drops mid-test the next boot takes the defaults.
 #    define SETTINGS_TEST (SETTINGS_KEY | 0xA5A5U)
 static bool settings_selftest(void) {
     settings_put(SETTINGS_TEST);
     // Branch cache and pre-fetch buffer off, so the read comes from the flash array (UM v1.60, CFCR bits 12 and 4).
-    FMC->CFCR &= ~(FMC_CFCR_CE | 1U << 4);
-    bool ok = *(volatile uint32_t *)SETTINGS_ADDR == SETTINGS_TEST;
-    FMC->CFCR |= FMC_CFCR_CE | 1U << 4;
+    uint32_t cfcr = FMC->CFCR;
+    FMC->CFCR     = cfcr & ~(FMC_CFCR_CE | 1U << 4);
+    bool ok       = *(volatile uint32_t *)SETTINGS_ADDR == SETTINGS_TEST;
+    FMC->CFCR     = cfcr;
     settings_put(settings_word);
     return ok;
 }
@@ -240,6 +243,7 @@ static void mousekey_task(void) {
 #endif
 
 bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
+    power_input();
 #ifdef TEX_SELFTEST
     if (record->event.key.col != PROFILE_SWITCH_COL) st_held += record->event.pressed ? 1 : -1;
 #endif
@@ -528,11 +532,12 @@ void ps2_mouse_moved_user(report_mouse_t *mouse_report) {
 
 uint8_t tex_dip;
 
-// DIP switches 1-5 close matrix column 14, rows 0-4 (stock FUN_4c74 keeps the same bits; FUN_8598 decodes 1-3,
-// FUN_5614 tests 4, the scroll code FUN_5cc8 tests 5).
+// DIP switch n closes matrix column 14, row n-1 (stock FUN_4c74 keeps the same bits; FUN_8598 decodes 1-3,
+// FUN_5614 tests 4, the scroll code FUN_5cc8 tests 5, FUN_541c tests 6 as bit 5). All eight rows are read so
+// Fn+B can show them; nothing in stock reads rows 6 and 7, so switches 7 and 8 may not be wired there.
 static uint8_t dip_read(void) {
     uint8_t dip = 0;
-    for (uint8_t row = 0; row < 5; row++) {
+    for (uint8_t row = 0; row < MATRIX_ROWS; row++) {
         if (matrix_is_on(row, PROFILE_SWITCH_COL)) dip |= 1 << row;
     }
     return dip;

@@ -11,12 +11,8 @@
 #define WAKEUP_PIN B12
 
 // Stock sleeps after 15 min without input on battery (1 800 000 ticks of 0.5 ms,
-// config 0x20000638+8). Test keymap "sleep30" shortens it.
-#ifdef TEX_SLEEP_IDLE_MS
-#    define SLEEP_IDLE_MS TEX_SLEEP_IDLE_MS
-#else
-#    define SLEEP_IDLE_MS (15UL * 60 * 1000)
-#endif
+// config 0x20000638+8). Test keymap "sleep30" shortens it to TEX_SLEEP_IDLE_S seconds until Fn+F1..F9 picks a time.
+#define SLEEP_MINUTES 15
 
 // BAT_PWR reaches A0 through R7 with R11/C8 to ground. The ADC is set up as
 // stock FUN_340c does: CK_AHB/64, channel 0 alone, 16-cycle sampling,
@@ -40,13 +36,10 @@
 // types the raw reading so the scale can be checked against a meter.
 #define BAT_LOW 0x834
 #define BAT_LOW_CLEAR (BAT_LOW + 40)
-static const struct {
-    uint16_t raw;
-    uint8_t  percent;
-} bat_curve[] = {
-    // raw = 0x834 * V_cell / 1.10 V; alkaline discharge shape
-    {2864, 100}, {2673, 85}, {2482, 60}, {2386, 45}, {2291, 30}, {2195, 18}, {2100, 8}, {1909, 0},
-};
+// Two arrays, not one of structs: a {uint16_t, uint8_t} pads to 4 bytes. They sit in flash0's spare bytes
+// (ld .tex_rodata0). raw = 0x834 * V_cell / 1.10 V; alkaline discharge shape
+__attribute__((section(".tex_rodata0"))) static const uint16_t bat_curve_raw[]     = {2864, 2673, 2482, 2386, 2291, 2195, 2100, 1909};
+__attribute__((section(".tex_rodata0"))) static const uint8_t  bat_curve_percent[] = {100, 85, 60, 45, 30, 18, 8, 0};
 
 // Low battery on the LED (stock FUN_569c, 0.5 ms ticks): 3 blinks of 25 ms,
 // then a 3 s pause.
@@ -70,7 +63,17 @@ static const struct {
 
 // Fn+F1..F9 pick the sleep time in minutes (0 = never); shinobi.c saves it.
 static const uint8_t sleep_minutes[] = {1, 2, 5, 10, 15, 30, 60, 120, 0};
-static uint32_t      sleep_idle_ms   = SLEEP_IDLE_MS;
+static uint8_t       sleep_min       = SLEEP_MINUTES;
+#ifdef TEX_SLEEP_IDLE_S
+// A zeroed flag (in .bss), not an initialised word: flash0 has no room for more .data. Fn+B types the time as one
+// string, which keeps this test build within the bootloader's limit.
+static bool sleep_test_over;
+#    define SLEEP_IDLE_MS (sleep_test_over ? sleep_min * 60000UL : TEX_SLEEP_IDLE_S * 1000UL)
+#    define SLEEP_TEST_STR(s) #s
+#    define SLEEP_TEST_TEXT(s) SLEEP_TEST_STR(s) " s"
+#else
+#    define SLEEP_IDLE_MS (sleep_min * 60000UL)
+#endif
 static bool          slept;
 
 // A wake with no input after it goes back to sleep this soon (USB power
@@ -116,12 +119,12 @@ uint16_t battery_raw(void) {
 
 uint8_t battery_percent(void) {
     uint16_t raw = battery_raw();
-    if (raw >= bat_curve[0].raw) return 100;
-    for (uint8_t i = 1; i < ARRAY_SIZE(bat_curve); i++) {
-        if (raw >= bat_curve[i].raw) {
-            uint16_t span = bat_curve[i - 1].raw - bat_curve[i].raw;
-            uint8_t  gain = bat_curve[i - 1].percent - bat_curve[i].percent;
-            return bat_curve[i].percent + (uint32_t)(raw - bat_curve[i].raw) * gain / span;
+    if (raw >= bat_curve_raw[0]) return 100;
+    for (uint8_t i = 1; i < ARRAY_SIZE(bat_curve_raw); i++) {
+        if (raw >= bat_curve_raw[i]) {
+            uint16_t span = bat_curve_raw[i - 1] - bat_curve_raw[i];
+            uint8_t  gain = bat_curve_percent[i - 1] - bat_curve_percent[i];
+            return bat_curve_percent[i] + (uint32_t)(raw - bat_curve_raw[i]) * gain / span;
         }
     }
     return 0;
@@ -164,8 +167,20 @@ static void low_battery_led_task(void) {
     }
 }
 
+// Fn+B's idle figure: the last quiet stretch of 1 s or more with neither a key nor a TrackPoint packet. The
+// clock stops in deep sleep, so a stretch that slept counts only its awake part.
+static uint32_t input_at;
+static uint16_t idle_gap_s;
+
+void power_input(void) {
+    uint32_t gap = timer_elapsed32(input_at);
+    if (gap >= 1000) idle_gap_s = gap < 65535000UL ? gap / 1000 : 65535;
+    input_at = timer_read32();
+}
+
 void power_pointer_activity(void) {
     pointer_activity = timer_read32();
+    power_input();
 }
 
 // Deep-sleep 1 until a key or B12 wakes the board (stock FUN_7760/FUN_7734,
@@ -275,7 +290,8 @@ void power_init(void) {
 void power_task(void) {
     bat_task();
     low_battery_led_task();
-    bool idle = sleep_idle_ms && on_battery() && last_input_activity_elapsed() >= sleep_idle_ms && timer_elapsed32(pointer_activity) >= sleep_idle_ms &&
+    uint32_t sleep_idle_ms = SLEEP_IDLE_MS;
+    bool     idle          = sleep_idle_ms && on_battery() && last_input_activity_elapsed() >= sleep_idle_ms && timer_elapsed32(pointer_activity) >= sleep_idle_ms &&
                 timer_elapsed32(awake_since) >= (slept ? WAKE_GRACE_MS : sleep_idle_ms);
     if (idle) power_sleep();
 }
@@ -326,36 +342,29 @@ void macro_play(uint8_t n) {
 // Types lower-case letters, digits, space, '.', '-', ':', '%' and newline: enough
 // for the report below. send_string and its ASCII tables cost about 900 bytes the
 // IAP's image limit doesn't have.
+// Bit 7 of a code is Shift.
+static const char    type_punct[]      = " \n.-:%";
+static const uint8_t type_punct_code[] = {KC_SPC, KC_ENT, KC_DOT, KC_MINS, 0x80 | KC_SCLN, 0x80 | KC_5};
+
 void type_text(const char *s) {
     for (; *s; s++) {
-        char    c     = *s;
-        uint8_t code  = KC_NO;
-        bool    shift = false;
+        char    c    = *s;
+        uint8_t code = KC_NO;
         if (c >= 'a' && c <= 'z') {
             code = KC_A + c - 'a';
         } else if (c >= '1' && c <= '9') {
             code = KC_1 + c - '1';
         } else if (c == '0') {
             code = KC_0;
-        } else if (c == ' ') {
-            code = KC_SPC;
-        } else if (c == '\n') {
-            code = KC_ENT;
-        } else if (c == '.') {
-            code = KC_DOT;
-        } else if (c == '-') {
-            code = KC_MINS;
-        } else if (c == ':') {
-            code  = KC_SCLN;
-            shift = true;
-        } else if (c == '%') {
-            code  = KC_5;
-            shift = true;
+        } else {
+            for (uint8_t i = 0; i < sizeof(type_punct_code); i++) {
+                if (c == type_punct[i]) code = type_punct_code[i];
+            }
         }
-        if (shift) type_event(KC_LSFT, true);
-        type_event(code, true);
-        type_event(code, false);
-        if (shift) type_event(KC_LSFT, false);
+        if (code & 0x80) type_event(KC_LSFT, true);
+        type_event(code & 0x7F, true);
+        type_event(code & 0x7F, false);
+        if (code & 0x80) type_event(KC_LSFT, false);
     }
 }
 
@@ -371,11 +380,14 @@ void type_number(uint16_t n) {
 }
 
 static void type_sleep_time(void) {
-    if (sleep_idle_ms % 60000) { // test keymap sleep30
-        type_number(sleep_idle_ms / 1000);
-        type_text(" s");
-    } else if (sleep_idle_ms) {
-        type_number(sleep_idle_ms / 60000);
+#ifdef TEX_SLEEP_IDLE_S
+    if (!sleep_test_over) {
+        type_text(SLEEP_TEST_TEXT(TEX_SLEEP_IDLE_S));
+        return;
+    }
+#endif
+    if (sleep_min) {
+        type_number(sleep_min);
         type_text(" min");
     } else {
         type_text("never");
@@ -384,7 +396,10 @@ static void type_sleep_time(void) {
 
 // Fn+F1..F9 type it back, as nothing else shows it; a saved choice at boot doesn't.
 void power_set_sleep(uint8_t choice, bool announce) {
-    sleep_idle_ms = sleep_minutes[choice] * 60000UL;
+    sleep_min = sleep_minutes[choice];
+#ifdef TEX_SLEEP_IDLE_S
+    sleep_test_over = true;
+#endif
     if (!announce) return;
     type_text("sleep ");
     type_sleep_time();
@@ -401,5 +416,16 @@ void battery_report(void) {
     type_sleep_time();
     type_text(" tp ");
     type_number(tp_level + 1);
-    type_text("\n");
+    // The DIP switches that are on, by number ("dip 24"), or 0.
+    type_text(" dip ");
+    uint8_t dip = tex_dip;
+    if (!dip) type_text("0");
+    for (uint8_t n = 1; dip; n++, dip >>= 1) {
+        if (dip & 1) type_number(n);
+    }
+    type_text(" wake ");
+    type_number(ble_wake_ms);
+    type_text(" ms idle ");
+    type_number(idle_gap_s);
+    type_text(" s\n");
 }

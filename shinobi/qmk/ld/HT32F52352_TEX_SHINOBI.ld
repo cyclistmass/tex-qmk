@@ -68,6 +68,11 @@ SECTIONS {
         *(.rodata.keymaps)
     } > flash0b
 
+    /* Code that fills the gap between the keymaps and the record (section attribute in shinobi.c). */
+    .tex_text0b : {
+        *(.tex_text0b)
+    } > flash0b
+
     /* Sequence macros (power.c macro_play) at a fixed address, so the keymap editor can patch them. A keymap
        may fill them from C (tex_macro_data in section .tex_macros, as the editor exports it); the rest is zero.
        power.c reads them through these linker symbols, so the compiler never sees their contents. */
@@ -84,3 +89,11 @@ SECTIONS {
 }
 
 INCLUDE rules.ld
+
+/* After rules.ld, so these follow the vectors and the .data image in flash0: constants beyond flash2's room
+   (section attribute in power.c). */
+SECTIONS {
+    .tex_rodata0 : {
+        *(.tex_rodata0)
+    } > flash0
+}

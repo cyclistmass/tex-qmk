@@ -47,11 +47,14 @@ void ble_flush_keys(uint8_t settle_ms);
 void ble_set_battery(uint8_t percent);
 void ble_sleep(void);
 void ble_wake(void);
+// ms from the last wake (ble_wake) to the module's first status with the link connected; 0 before any sleep
+extern uint16_t ble_wake_ms;
 
 // power.c
 void     power_init(void);
 void     power_task(void);
 void     power_pointer_activity(void);
+void     power_input(void); // a key or a TrackPoint packet, for Fn+B's idle figure
 void     power_set_sleep(uint8_t choice, bool announce);
 uint16_t battery_raw(void);
 uint8_t  battery_percent(void);
@@ -74,7 +77,7 @@ extern uint32_t ps2_last_packet;
 
 // Called when DIP switches 1-3 change: 0 = none or several on, 1-3 = the one that is on.
 void profile_switch_user(uint8_t profile);
-// DIP switches 1-5 as read from matrix column 14, bit n = switch n+1 on (shinobi.c).
+// DIP switches as read from matrix column 14 rows 0-7, bit n = switch n+1 on (shinobi.c).
 extern uint8_t tex_dip;
 #define TEX_DIP4_FN_SCROLL (1 << 3) // Fn + stick scrolls, an Fn tap is a middle click
 #define TEX_DIP5_REVERSE   (1 << 4) // vertical scrolling reversed
