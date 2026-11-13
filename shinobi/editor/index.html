@@ -96,7 +96,7 @@ footer { margin-top: 18px; font-size: .85rem; }
   <p data-i18n-html="ui.fwP_html"></p>
   <div class="row">
     <label class="filebtn"><span data-i18n="ui.choose"></span><input type="file" id="binfile" accept=".bin,application/octet-stream"></label>
-    <button id="binlocal" data-i18n="ui.local"></button>
+    <button id="binlocal" data-i18n="ui.local" hidden></button>
   </div>
   <div id="fwstatus" class="status info"></div>
 </section>
@@ -505,6 +505,15 @@ footer { margin-top: 18px; font-size: .85rem; }
     fwStatus("bad", () => tr("ui.fwNone", { tried: tried.join("; ") }));
     render();
   });
+  // The button is for a local copy of the editor with a release image beside it (the hosted page has none), so it
+  // shows only when one of the release files answers here.
+  (async () => {
+    for (const r of DATA.releases) {
+      try {
+        if ((await fetch(r.file, { method: "HEAD", cache: "no-store" })).ok) { $("binlocal").hidden = false; return; }
+      } catch (e) { /* file:// or offline: keep it hidden */ }
+    }
+  })();
 
   // Output
   function save(name, bytes, type) {
