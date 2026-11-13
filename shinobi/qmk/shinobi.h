@@ -61,7 +61,7 @@ uint8_t  battery_percent(void);
 void     battery_report(void);
 // power.c: types text and numbers through the active output, for readbacks
 void     type_text(const char *s);
-void     type_number(uint16_t n);
+void     type_number(uint16_t n, const char *after);
 // power.c: plays sequence macro n (MC_n) from the editor's table
 void     macro_play(uint8_t n);
 

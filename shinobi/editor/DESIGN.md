@@ -132,11 +132,13 @@ dropping ChibiOS's 64-bit tick conversion, which is the identity at the 1 kHz ti
 among them). A later pass saved 156 more (sleep time kept in minutes, a lookup table in `type_text`, the battery
 curve as two arrays, reading CFCR once) and moved code into the gaps: `settings_put` fills the 56 bytes after the
 keymaps (`.tex_text0b`) and the battery curve sits after the .data image in flash0 (`.tex_rodata0`). Fn+B then
-gained `dip` (56 bytes), `wake` (92) and `idle` (104), and its text got shorter (`Zzz 15m`, `idl 37s`,
-`wk 1420ms`; 12 bytes saved, a capital Z through the same lookup table). The image is 28,000 bytes, leaving 80,
-all of it after the code in flash2 except 4 in flash0. The editor accepts both releases and picks one by the image's sha256; macros
-and mouse keys appear for v1.1 only. Stock's Up+LAlt+Fn factory flash self-test costs 312 bytes, so it is in
-`shinobi.c` behind `TEX_SELFTEST` and off.
+gained `dip` (56 bytes), `wake` (92) and `idle` (104), and its text got terse
+(`bat85% adc2900 aa zzz15m tp3 dip24 idl15m34s wk1420ms`): shorter words and no spaces inside fields saved 24
+bytes, a number and its trailing text in one call 4 more, and minutes in `idl` cost 36. The image is 28,020 bytes,
+leaving 60, all of it after the code in flash2 except 4 in flash0. The editor accepts both releases and picks one
+by the image's sha256; macros and mouse keys appear for v1.1 only. Stock's factory flash self-test is a raw HID
+command (`14 00`, `tools/tex_selftest.py`) behind `TEX_SELFTEST` and off: 84 bytes, 28 more than are free (the
+Up+LAlt+Fn hold and Caps Lock display stock uses cost 312).
 
 Earlier (v1.0):
 

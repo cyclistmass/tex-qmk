@@ -113,6 +113,10 @@ ChibiOS-Contrib RSTCU base address for this chip. The output, `.build/tex_shinob
 into a copy of TEX's updater. The [GitHub Actions workflow](../.github/workflows/build.yml) runs the same script on
 every push. Release images are built from a tagged commit and listed with their SHA-256 on the release page.
 
+`tools/tex_selftest.py` runs the stock factory flash self-test over USB (raw HID `14 00`) and prints PASS or FAIL.
+The firmware side is only in builds with `TEX_SELFTEST`: add `#define TEX_SELFTEST` to `qmk/config.h` before
+building. It costs 84 bytes, more than v1.1 has free, so release images don't answer it.
+
 The other keymaps (`canary`, `canary_slow`, `test90`, `test600`, `diag`, `sleep30`) are developer test
 builds from the port. They return to the bootloader on a timer, sleep after 30 s or expose diagnostics. Don't flash them for daily use.
 

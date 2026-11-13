@@ -49,8 +49,8 @@ The DIP switches are separate from the Fn keys: Fn+F1...F9 set the sleep time wh
 |---|---|
 | Fn+Mute / Fn+Vol- / Fn+Vol+ | Bluetooth host 1 / 2 / 3. Hold 3 s to pair a new host to that slot |
 | Fn+Esc | back to USB |
-| Fn+1 ... Fn+9 | TrackPoint sensitivity 1-9; types back `tp N` |
-| Fn+F1 ... Fn+F9 | sleep on battery after 1, 2, 5, 10, 15, 30, 60, 120 min or never; types back `Zzz 15m` and so on |
+| Fn+1 ... Fn+9 | TrackPoint sensitivity 1-9; types back `tp3` and so on |
+| Fn+F1 ... Fn+F9 | sleep on battery after 1, 2, 5, 10, 15, 30, 60, 120 min or never; types back `zzz15m` and so on |
 | Fn+B | types the firmware version, then a status line |
 | Fn+arrows | media keys: Stop, Play, Previous, Next |
 
@@ -59,40 +59,43 @@ press Fn+1...9, Fn+F1...F9 or Fn+B. The answers are short; the tables below tran
 
 ### What the keyboard types
 
-**Fn+1 ... Fn+9** types `tp 1` ... `tp 9`: the TrackPoint sensitivity now set, 1 slowest, 9 fastest, 3 by default.
+**Fn+1 ... Fn+9** types `tp1` ... `tp9`: the TrackPoint sensitivity now set, 1 slowest, 9 fastest, 3 by default.
 
-**Fn+F1 ... Fn+F9** types `Zzz` and the sleep time now set (`m` is minutes):
+**Fn+F1 ... Fn+F9** types `zzz` and the sleep time now set (`m` is minutes):
 
 | Keys | Types | Sleeps on battery after |
 |---|---|---|
-| Fn+F1 | `Zzz 1m` | 1 minute without input |
-| Fn+F2 | `Zzz 2m` | 2 minutes |
-| Fn+F3 | `Zzz 5m` | 5 minutes |
-| Fn+F4 | `Zzz 10m` | 10 minutes |
-| Fn+F5 | `Zzz 15m` | 15 minutes (the default) |
-| Fn+F6 | `Zzz 30m` | 30 minutes |
-| Fn+F7 | `Zzz 60m` | an hour |
-| Fn+F8 | `Zzz 120m` | two hours |
-| Fn+F9 | `Zzz never` | never |
+| Fn+F1 | `zzz1m` | 1 minute without input |
+| Fn+F2 | `zzz2m` | 2 minutes |
+| Fn+F3 | `zzz5m` | 5 minutes |
+| Fn+F4 | `zzz10m` | 10 minutes |
+| Fn+F5 | `zzz15m` | 15 minutes (the default) |
+| Fn+F6 | `zzz30m` | 30 minutes |
+| Fn+F7 | `zzz60m` | an hour |
+| Fn+F8 | `zzz120m` | two hours |
+| Fn+F9 | `zzz never` | never |
 
 **Fn+B** types two lines, for example:
 
-    v1.1 default 2026-11-12-23:00:00
-    bat 85% adc 2900 on bat Zzz 15m tp 3 dip 24 idl 37s wk 1420ms
+    v1.1 default 2026-11-12-23:15:00
+    bat85% adc2900 aa zzz15m tp3 dip24 idl15m34s wk1420ms
+
+One space separates the fields; within a field the label and value run together.
 
 | Typed | Means | Useful for |
 |---|---|---|
-| `v1.1 default 2026-11-12-23:00:00` | Firmware version, keymap name and build time. An image made with the keymap editor also says `default`. | Knowing which firmware is on the keyboard. Quote it in bug reports. |
-| `bat 85%` | Battery level, worked out from `adc` for two alkaline AA cells. | Knowing when to change the cells. NiMH rechargeables read low (see [Known issues](#known-issues)). |
-| `adc 2900` | The raw battery reading the level comes from. | Calibrating the battery scale: a voltmeter reading across the cells, sent with this number, fixes it. |
-| `on bat` / `on usb` | Running on the cells, or on USB power. | On USB power the keyboard never sleeps. |
-| `Zzz 15m` | Sleep time on battery, as set with Fn+F1...F9 (`Zzz never` if it never sleeps). | Checking the setting, which survives battery changes and power cuts. |
-| `tp 3` | TrackPoint sensitivity, as set with Fn+1...9. | Checking the setting, which is saved the same way. |
-| `dip 24` | The DIP switches that are on: here switches 2 and 4. `dip 0` means none. | Checking a switch is read after you flip it. If 7 or 8 never shows up when on, it isn't wired (see [The DIP switches](#the-dip-switches)). |
-| `idl 37s` | The last stretch of at least a second with no key and no TrackPoint movement, in seconds. Sleep doesn't count: a stretch that included sleep counts only its awake part. | Leave the keyboard alone for a while, then press Fn+B: it should show about how long you left it. If `idl` stays small and the keyboard never sleeps on battery, something keeps it busy, most likely a drifting TrackPoint. |
-| `wk 1420ms` | After the last wake from sleep, the milliseconds from the keyboard waking up to the Bluetooth link being back. `wk 0ms` if it hasn't slept since it was powered on. | Telling where wake time goes. A large `wk` is Bluetooth reconnecting; if waking feels slow but `wk` is small, the delay is elsewhere (the keyboard's own wake-up, or the computer). |
+| `v1.1 default 2026-11-12-23:15:00` | Firmware version, keymap name and build time. An image made with the keymap editor also says `default`. | Knowing which firmware is on the keyboard. Quote it in bug reports. |
+| `bat85%` | Battery level, worked out from `adc` for two alkaline AA cells. | Knowing when to change the cells. NiMH rechargeables read low (see [Known issues](#known-issues)). |
+| `adc2900` | The raw battery reading the level comes from. | Calibrating the battery scale: a voltmeter reading across the cells, sent with this number, fixes it. |
+| `aa` / `usb` | Running on the AA cells, or on USB power. | On USB power the keyboard never sleeps. |
+| `zzz15m` | Sleep time on battery, as set with Fn+F1...F9 (`zzz never` if it never sleeps). | Checking the setting, which survives battery changes and power cuts. |
+| `tp3` | TrackPoint sensitivity, as set with Fn+1...9. | Checking the setting, which is saved the same way. |
+| `dip24` | The DIP switches that are on: here switches 2 and 4. `dip0` means none. | Checking a switch is read after you flip it. If 7 or 8 never shows up when on, it isn't wired (see [The DIP switches](#the-dip-switches)). |
+| `idl15m34s` | The last stretch of at least a second with no key and no TrackPoint movement: 15 minutes 34 seconds here, `idl37s` under a minute. Sleep doesn't count: a stretch that included sleep counts only its awake part. | Leave the keyboard alone for a while, then press Fn+B: it should show about how long you left it. If `idl` stays small and the keyboard never sleeps on battery, something keeps it busy, most likely a drifting TrackPoint. |
+| `wk1420ms` | After the last wake from sleep, the milliseconds from the keyboard waking up to the Bluetooth link being back. `wk0ms` if it hasn't slept since it was powered on. | Telling where wake time goes. A large `wk` is Bluetooth reconnecting; if waking feels slow but `wk` is small, the delay is elsewhere (the keyboard's own wake-up, or the computer). |
 
-v1.0 types `sleep 15 min` where v1.1 types `Zzz 15m` (also for Fn+F1...F9), and has no `dip`, `idl` or `wk`.
+v1.0 types `bat 85% adc 2900 on bat sleep 15 min tp 3`, and `sleep 15 min` and `tp 3` for Fn+F1...F9 and
+Fn+1...9, with no `dip`, `idl` or `wk`.
 
 ## Bluetooth
 
@@ -136,6 +139,7 @@ battery changes, USB plugging and unplugging, and power cuts.
 | Keys are swapped (Fn/Ctrl, Alt/Win) | Check DIP switches 1-3 on the bottom; turn them all off for the stock layout. |
 | Battery percentage looks low | With NiMH rechargeables it reads low; see [Known issues](#known-issues). |
 | Flashing can't find the keyboard | Turn the PC's Bluetooth off. Or hold Esc while plugging in the USB cable: the keyboard starts in the bootloader, ready to flash. |
+| Settings (TrackPoint level, sleep time) aren't kept | With a firmware built with `TEX_SELFTEST`, run `python -I tools/tex_selftest.py` with the keyboard on USB: it tests the flash page that holds them and prints PASS or FAIL. The released v1.1 doesn't include the test (no room) and the script says so. |
 | Want the stock firmware back | Run TEX's `AP_0407_4.04.exe`, with `-force` if it says there is nothing to update. |
 
 ## Known issues
@@ -148,13 +152,14 @@ battery changes, USB plugging and unplugging, and power cuts.
   [keymap editor](https://cyclistmass.github.io/tex-qmk/shinobi/editor/) instead, then flash the image it gives
   you. From v1.1 it also makes sequence macros (a key types a short phrase or a run of keys, 96 bytes in total)
   and mouse movement keys. ([How the editor works](editor/README.md).)
-* **No VIA/Vial live remapping.** TEX's bootloader takes images up to 28,076 bytes; v1.0 is 28,072 and v1.1 28,000. The keymap
+* **No VIA/Vial live remapping.** TEX's bootloader takes images up to 28,076 bytes; v1.0 is 28,072 and v1.1 28,020. The keymap
   editor changes the keymap in the image, so a change takes a flash.
 * **ISO and JIS boards are untested.** The extra keys are in the keymap.
 * **No Bluetooth firmware updates.** Updates go over USB through TEX's bootloader.
 * **Not ported:** DIP switch 6 (file system mode), and stock's Up+LAlt+Fn hold combo. That combo is a factory
-  flash self-test, not a user feature: after 6 s it writes and reads back a test value and shows pass or fail on
-  the Caps Lock LED. It is written but left out of the build, because it needs 312 bytes and 76 are free.
+  flash self-test, not a user feature: it writes and reads back a test value where the settings live. This
+  firmware has it as a USB command instead, run by `tools/tex_selftest.py`, but only in builds with
+  `TEX_SELFTEST`: it needs 84 bytes and v1.1 has 56 free.
 * **DIP switches 1-5 are untested on the keyboard.** Their handling follows the stock firmware's code.
 * **Flashing from stock** has not been tested yet with either install method; both were tested over earlier QMK
   builds.

@@ -65,12 +65,11 @@ __attribute__((section(".tex_rodata0"))) static const uint8_t  bat_curve_percent
 static const uint8_t sleep_minutes[] = {1, 2, 5, 10, 15, 30, 60, 120, 0};
 static uint8_t       sleep_min       = SLEEP_MINUTES;
 #ifdef TEX_SLEEP_IDLE_S
-// A zeroed flag (in .bss), not an initialised word: flash0 has no room for more .data. Fn+B types the time as one
-// string, which keeps this test build within the bootloader's limit.
+// A zeroed flag (in .bss), not an initialised word: flash0 has no room for more .data. Until Fn+F1..F9
+// picks a time, Fn+B types the 15 min default; its first line names the build (sleep30). Typing the test time cost
+// 20 bytes this build no longer has.
 static bool sleep_test_over;
 #    define SLEEP_IDLE_MS (sleep_test_over ? sleep_min * 60000UL : TEX_SLEEP_IDLE_S * 1000UL)
-#    define SLEEP_TEST_STR(s) #s
-#    define SLEEP_TEST_TEXT(s) SLEEP_TEST_STR(s) "s"
 #else
 #    define SLEEP_IDLE_MS (sleep_min * 60000UL)
 #endif
@@ -339,12 +338,12 @@ void macro_play(uint8_t n) {
 }
 #endif
 
-// Types lower-case letters, digits, 'Z', space, '.', '-', ':', '%' and newline: enough
+// Types lower-case letters, digits, space, '.', '-', ':', '%' and newline: enough
 // for the report below. send_string and its ASCII tables cost about 900 bytes the
 // IAP's image limit doesn't have.
 // Bit 7 of a code is Shift.
-static const char    type_punct[]      = "Z \n.-:%";
-static const uint8_t type_punct_code[] = {0x80 | KC_Z, KC_SPC, KC_ENT, KC_DOT, KC_MINS, 0x80 | KC_SCLN, 0x80 | KC_5};
+static const char    type_punct[]      = " \n.-:%";
+static const uint8_t type_punct_code[] = {KC_SPC, KC_ENT, KC_DOT, KC_MINS, 0x80 | KC_SCLN, 0x80 | KC_5};
 
 void type_text(const char *s) {
     for (; *s; s++) {
@@ -368,7 +367,7 @@ void type_text(const char *s) {
     }
 }
 
-void type_number(uint16_t n) {
+void type_number(uint16_t n, const char *after) {
     char    buf[6];
     uint8_t i = sizeof(buf) - 1;
     buf[i]    = '\0';
@@ -377,20 +376,14 @@ void type_number(uint16_t n) {
         n /= 10;
     } while (n);
     type_text(buf + i);
+    type_text(after);
 }
 
 static void type_sleep_time(void) {
-#ifdef TEX_SLEEP_IDLE_S
-    if (!sleep_test_over) {
-        type_text(SLEEP_TEST_TEXT(TEX_SLEEP_IDLE_S));
-        return;
-    }
-#endif
     if (sleep_min) {
-        type_number(sleep_min);
-        type_text("m");
+        type_number(sleep_min, "m");
     } else {
-        type_text("never");
+        type_text(" never");
     }
 }
 
@@ -401,31 +394,28 @@ void power_set_sleep(uint8_t choice, bool announce) {
     sleep_test_over = true;
 #endif
     if (!announce) return;
-    type_text("Zzz ");
+    type_text("zzz");
     type_sleep_time();
 }
 
 // Fn+B: types which build is running, the battery reading, for checking the
 // scale above, the sleep time and the TrackPoint level.
 void battery_report(void) {
-    type_text("v" TEX_FW_VERSION " " QMK_KEYMAP " " QMK_BUILDDATE "\nbat ");
-    type_number(battery_percent());
-    type_text("% adc ");
-    type_number(battery_raw());
-    type_text(on_battery() ? " on bat Zzz " : " on usb Zzz ");
+    type_text("v" TEX_FW_VERSION " " QMK_KEYMAP " " QMK_BUILDDATE "\nbat");
+    type_number(battery_percent(), "% adc");
+    type_number(battery_raw(), on_battery() ? " aa zzz" : " usb zzz");
     type_sleep_time();
-    type_text(" tp ");
-    type_number(tp_level + 1);
+    type_text(" tp");
+    type_number(tp_level + 1, " dip");
     // The DIP switches that are on, by number ("dip 24"), or 0.
-    type_text(" dip ");
     uint8_t dip = tex_dip;
     if (!dip) type_text("0");
     for (uint8_t n = 1; dip; n++, dip >>= 1) {
-        if (dip & 1) type_number(n);
+        if (dip & 1) type_number(n, "");
     }
-    type_text(" idl ");
-    type_number(idle_gap_s);
-    type_text("s wk ");
-    type_number(ble_wake_ms);
-    type_text("ms\n");
+    type_text(" idl");
+    uint16_t idle = idle_gap_s;
+    if (idle >= 60) type_number(idle / 60, "m");
+    type_number(idle % 60, "s wk");
+    type_number(ble_wake_ms, "ms\n");
 }

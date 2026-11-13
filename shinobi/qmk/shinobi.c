@@ -121,10 +121,11 @@ static void settings_save(void) {
 }
 
 #ifdef TEX_SELFTEST
-// Off by default: it costs 312 bytes, and with the Fn+B dip, wake and idle readouts the image is 28,324 bytes, 248
-// over the 28,076 the bootloader takes (2026-11-12, v1.1; 64 bytes are free without it).
-// Stock's factory flash test (FUN_4810): write a test value where the settings live, read it back, put the settings
-// back. The low byte 0xA5 is no TrackPoint level, so if power drops mid-test the next boot takes the defaults.
+// Stock's factory flash test (FUN_4810), run over USB by tools/tex_selftest.py (raw HID command 14 00): write a
+// test value where the settings live, read it back, put the settings back. The low byte 0xA5 is no TrackPoint
+// level, so if power drops mid-test the next boot takes the defaults. Stock starts it by holding Up+LAlt+Fn for 6 s
+// and shows the result on Caps Lock (312 bytes here); this version is the read-back alone, 84 bytes. Off by default:
+// with Fn+B's idl15m34s the v1.1 image has 56 bytes free (2026-11-12), so it would be 28 over the IAP's 28,076.
 #    define SETTINGS_TEST (SETTINGS_KEY | 0xA5A5U)
 static bool settings_selftest(void) {
     settings_put(SETTINGS_TEST);
@@ -135,33 +136,6 @@ static bool settings_selftest(void) {
     FMC->CFCR     = cfcr;
     settings_put(settings_word);
     return ok;
-}
-
-// Holding exactly Up, left Alt and Fn for 6 s runs the test (stock FUN_5458: keys 0x52, 0xE2, 0xD8, hold counter
-// over 6000). Then the Caps Lock LED goes off, blinks twice in 500 ms steps, and stays off for a pass or on for a
-// failure until the three are held for 6 s again (stock LED task around 0x5818). Up and Alt are matrix positions
-// (row 1 column 12, row 0 column 2), Fn is the Fn layer being on; the DIP switches in column 14 don't count as keys.
-static int8_t   st_held;  // keys down
-static uint8_t  st_state; // 0 off, 1 passed, 2 failed; bit 7: fired during this hold
-static uint16_t st_hold;
-static uint32_t st_time;
-
-static void selftest_task(void) {
-    if (st_held != 3 || !IS_LAYER_ON(3) || !matrix_is_on(1, 12) || !matrix_is_on(0, 2)) {
-        st_hold = timer_read();
-        st_state &= 0x7F;
-    } else if (!(st_state & 0x80) && timer_elapsed(st_hold) > 6000) {
-        if (st_state) {
-            st_state = 0x80;
-            led_update_ports(host_keyboard_led_state());
-        } else {
-            st_state = settings_selftest() ? 0x81 : 0x82;
-            st_time  = timer_read32();
-        }
-    }
-    if (!(st_state & 0x7F)) return;
-    uint32_t step = timer_elapsed32(st_time) / 500; // 0 off, 1 on, 2 off, 3 on, 4 off, then the result
-    palWriteLine(C10, (step < 5 ? step & 1 : (st_state & 0x7F) == 2) ? PAL_LOW : PAL_HIGH);
 }
 #endif
 
@@ -244,9 +218,6 @@ static void mousekey_task(void) {
 
 bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
     power_input();
-#ifdef TEX_SELFTEST
-    if (record->event.key.col != PROFILE_SWITCH_COL) st_held += record->event.pressed ? 1 : -1;
-#endif
     if (!process_record_user(keycode, record)) {
         return false;
     }
@@ -277,8 +248,8 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
             tp_level = keycode - TP_SEN1;
             tp_send_sensitivity();
             settings_save();
-            type_text("tp ");
-            type_number(tp_level + 1);
+            type_text("tp");
+            type_number(tp_level + 1, "");
         }
         return false;
     }
@@ -568,9 +539,6 @@ void housekeeping_task_kb(void) {
     tp_setup_task();
     tp_watch_task();
     power_task();
-#ifdef TEX_SELFTEST
-    selftest_task(); // last, so its LED wins over the Caps Lock, pairing and low-battery ones
-#endif
 #ifdef TEX_TEST_TIMEOUT_S
     // Test build (keymap "test90"): hand back to the IAP after a fixed uptime,
     // so a build that types wrong or can't be reached still returns to 1407.
@@ -629,6 +597,14 @@ void raw_hid_receive(uint8_t *data, uint8_t length) {
                 iap_reset(data[1] == 0 ? IAP_MAGIC_VALUE : IAP_MAGIC_RUN_APP);
             }
             break;
+#ifdef TEX_SELFTEST
+        case 0x14: // 00: the flash self-test above; reply byte 4 is 1 for a pass, 0 for a failure
+            if (data[1] == 0x00) {
+                reply[4] = settings_selftest();
+                len      = 1;
+            }
+            break;
+#endif
 #ifdef TEX_DIAG
         case 0x13: // test build (keymap "diag"): main-loop passes, uptime, debounced matrix, raw port inputs
             if (data[1] == 0x00) {
