@@ -32,6 +32,11 @@ enum shinobi_keycodes {
     SLEEP7,
     SLEEP8,
     SLEEP9,
+    // Mouse movement on the diagonals (shinobi.c); straight moves use QMK's MS_UP/MS_DOWN/MS_LEFT/MS_RGHT.
+    MS_UPLEFT,
+    MS_UPRIGHT,
+    MS_DOWNLEFT,
+    MS_DOWNRIGHT,
 };
 
 // ble.c
@@ -54,6 +59,8 @@ void     battery_report(void);
 // power.c: types text and numbers through the active output, for readbacks
 void     type_text(const char *s);
 void     type_number(uint16_t n);
+// power.c: plays sequence macro n (MC_n) from the editor's table
+void     macro_play(uint8_t n);
 
 // shinobi.c: TrackPoint power
 void tp_power_off(void);
@@ -65,5 +72,9 @@ void ps2_host_resume(void);
 extern bool     ps2_stream_paused;
 extern uint32_t ps2_last_packet;
 
-// Called when the profile switch moves: 0 = none/invalid, 1-3 = position.
+// Called when DIP switches 1-3 change: 0 = none or several on, 1-3 = the one that is on.
 void profile_switch_user(uint8_t profile);
+// DIP switches 1-5 as read from matrix column 14, bit n = switch n+1 on (shinobi.c).
+extern uint8_t tex_dip;
+#define TEX_DIP4_FN_SCROLL (1 << 3) // Fn + stick scrolls, an Fn tap is a middle click
+#define TEX_DIP5_REVERSE   (1 << 4) // vertical scrolling reversed

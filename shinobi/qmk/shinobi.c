@@ -131,6 +131,67 @@ void keyboard_post_init_kb(void) {
     keyboard_post_init_user();
 }
 
+extern int tp_buttons; // action.c: the matrix mouse buttons, merged into the PS/2 report
+
+#ifndef TEX_NO_DIP4
+// DIP switch 4 (stock FUN_5614): Fn holds the middle button, so Fn + stick scrolls and a quick Fn tap clicks
+// (ps2_mouse.c's scroll button). Any key pressed while Fn is down cancels the click: the button is then held on
+// past PS2_MOUSE_SCROLL_BTN_SEND, so Fn+F1 doesn't click.
+static uint8_t  fn_scroll; // 0 off, 1 Fn down, 2 Fn down and another key pressed, 3 released, waiting
+static uint16_t fn_scroll_time;
+
+static void fn_scroll_record(uint16_t keycode, bool pressed) {
+    if (IS_QK_MOMENTARY(keycode)) {
+        if (pressed && (tex_dip & TEX_DIP4_FN_SCROLL)) {
+            tp_buttons |= 1 << PS2_MOUSE_BTN_MIDDLE;
+            fn_scroll      = 1;
+            fn_scroll_time = timer_read();
+        } else if (!pressed && fn_scroll == 1) {
+            tp_buttons &= ~(1 << PS2_MOUSE_BTN_MIDDLE); // a tap clicks, a hold that scrolled doesn't
+            fn_scroll = 0;
+        } else if (!pressed && fn_scroll == 2) {
+            fn_scroll = 3; // housekeeping lets go of the button once the click window has passed
+        }
+    } else if (pressed && fn_scroll == 1) {
+        fn_scroll = 2;
+    }
+}
+#endif
+
+#ifndef TEX_NO_MOUSEKEYS
+// Mouse movement keys: up, down, left, right as bits 0-3; the diagonals set two. Movement goes out with the
+// matrix mouse buttons every 16 ms and speeds up from 1 to 11 counts while held.
+static uint8_t  mk_dirs, mk_ticks;
+static uint16_t mk_time;
+static const uint8_t mk_diagonal[] = {1 | 4, 1 | 8, 2 | 4, 2 | 8};
+
+static void mousekey_record(uint16_t keycode, bool pressed) {
+    uint8_t bits = keycode <= MS_RGHT ? 1 << (keycode - MS_UP) : mk_diagonal[keycode - MS_UPLEFT];
+    if (pressed) {
+        mk_dirs |= bits;
+    } else {
+        mk_dirs &= ~bits;
+    }
+}
+
+static void mousekey_task(void) {
+    if (!mk_dirs) {
+        mk_ticks = 0;
+        return;
+    }
+    if (timer_elapsed(mk_time) < 16) return;
+    mk_time = timer_read();
+    if (mk_ticks < 40) mk_ticks++;
+    int8_t         step = 1 + mk_ticks / 4;
+    report_mouse_t r    = {.buttons = tp_buttons};
+    if (mk_dirs & 1) r.y -= step;
+    if (mk_dirs & 2) r.y += step;
+    if (mk_dirs & 4) r.x -= step;
+    if (mk_dirs & 8) r.x += step;
+    host_mouse_send(&r);
+}
+#endif
+
 bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
     if (!process_record_user(keycode, record)) {
         return false;
@@ -138,6 +199,21 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
     if (!ble_process_record(keycode, record)) {
         return false;
     }
+#ifndef TEX_NO_DIP4
+    fn_scroll_record(keycode, record->event.pressed);
+#endif
+#ifndef TEX_NO_MACROS
+    if (keycode >= QK_MACRO_0 && keycode <= QK_MACRO_31) {
+        if (record->event.pressed) macro_play(keycode - QK_MACRO_0);
+        return false;
+    }
+#endif
+#ifndef TEX_NO_MOUSEKEYS
+    if ((keycode >= MS_UP && keycode <= MS_RGHT) || (keycode >= MS_UPLEFT && keycode <= MS_DOWNRIGHT)) {
+        mousekey_record(keycode, record->event.pressed);
+        return false;
+    }
+#endif
     if (keycode == BAT_REPORT) {
         if (record->event.pressed) battery_report();
         return false;
@@ -400,28 +476,39 @@ void ps2_mouse_moved_user(report_mouse_t *mouse_report) {
 #endif
 }
 
-static uint8_t profile_read(void) {
-    // Stock decode (FUN_8598): exactly one closed position selects 1-3, anything else is 0.
-    uint8_t profile = 0;
-    uint8_t closed  = 0;
-    for (uint8_t row = 0; row < 3; row++) {
-        if (matrix_is_on(row, PROFILE_SWITCH_COL)) {
-            profile = row + 1;
-            closed++;
-        }
+uint8_t tex_dip;
+
+// DIP switches 1-5 close matrix column 14, rows 0-4 (stock FUN_4c74 keeps the same bits; FUN_8598 decodes 1-3,
+// FUN_5614 tests 4, the scroll code FUN_5cc8 tests 5).
+static uint8_t dip_read(void) {
+    uint8_t dip = 0;
+    for (uint8_t row = 0; row < 5; row++) {
+        if (matrix_is_on(row, PROFILE_SWITCH_COL)) dip |= 1 << row;
     }
-    return closed == 1 ? profile : 0;
+    return dip;
 }
 
 __attribute__((weak)) void profile_switch_user(uint8_t profile) {}
 
 void housekeeping_task_kb(void) {
     static uint8_t profile = UINT8_MAX;
-    uint8_t        now     = profile_read();
+    tex_dip                = dip_read();
+    // Exactly one of switches 1-3 on selects profile 1-3; none or several is 0 (stock FUN_8598).
+    uint8_t three = tex_dip & 7;
+    uint8_t now   = three & (three - 1) ? 0 : three == 4 ? 3 : three;
     if (now != profile) {
         profile = now;
         profile_switch_user(profile);
     }
+#ifndef TEX_NO_DIP4
+    if (fn_scroll == 3 && timer_elapsed(fn_scroll_time) > PS2_MOUSE_SCROLL_BTN_SEND) {
+        tp_buttons &= ~(1 << PS2_MOUSE_BTN_MIDDLE);
+        fn_scroll = 0;
+    }
+#endif
+#ifndef TEX_NO_MOUSEKEYS
+    mousekey_task();
+#endif
     ble_housekeeping();
     tp_setup_task();
     tp_watch_task();

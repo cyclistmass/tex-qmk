@@ -18,12 +18,14 @@
  * with it patched in passed). Its fields are not decoded; the first word
  * matches the IAP's `12 00` reply. The IAP takes images up to 28,076 bytes
  * (rules.mk), so the 2.3 KB gap below the record is used: the vectors, the
- * unwind table and the .data image in flash0, the keymaps in flash0b. Code and
+ * unwind table and the .data image in flash0, the sequence macros in flash0m, the
+ * keymaps in flash0b. Code and
  * the other constants follow the record in flash2.
  */
 __vectors_align__ = 256;
 MEMORY {
-    flash0   : org = 0x00003200, len = 0x3800 - 0x3200 /* vectors, unwind table, data image */
+    flash0   : org = 0x00003200, len = 0x37A0 - 0x3200 /* vectors, unwind table, data image */
+    flash0m  : org = 0x000037A0, len = 96              /* sequence macros */
     flash0b  : org = 0x00003800, len = 0x3BF8 - 0x3800 /* keymaps */
     flash1   : org = 0x00003BF8, len = 12              /* stock app record */
     flash2   : org = 0x00003C04, len = 64k - 0x3C04    /* code, constants */
@@ -65,6 +67,16 @@ SECTIONS {
     .tex_keymaps : ALIGN(4) {
         *(.rodata.keymaps)
     } > flash0b
+
+    /* Sequence macros (power.c macro_play) at a fixed address, so the keymap editor can patch them. A keymap
+       may fill them from C (tex_macro_data in section .tex_macros, as the editor exports it); the rest is zero.
+       power.c reads them through these linker symbols, so the compiler never sees their contents. */
+    .tex_macros : {
+        tex_macros = .;
+        KEEP(*(.tex_macros))
+        . = tex_macros + 96;
+        tex_macros_end = .;
+    } > flash0m
 
     .tex_app_record : {
         LONG(0x04045100) LONG(0x34000001) LONG(0x00020004)

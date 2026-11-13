@@ -9,7 +9,7 @@
 // Both axes came out reversed (Mauro, 2026-11-03): the stick reads as turned 180 degrees.
 #define PS2_MOUSE_ROTATE 180
 
-// 3-position profile switch: matrix column 14 (C13), rows 0-2 (stock FUN_8598).
+// DIP switches 1-5: matrix column 14 (C13), rows 0-4 (stock FUN_4c74, FUN_8598).
 #define PROFILE_SWITCH_COL 14
 
 // Stock vendor interface (report descriptor at 0x9B94): usage page 0xFF00,
@@ -31,9 +31,16 @@
 // Fn+1 scrolls slowest and Fn+9 fastest.
 #ifndef __ASSEMBLER__
 extern unsigned char tp_level;
+extern unsigned char tex_dip;
 #endif
-#define PS2_MOUSE_SCROLL_DIVISOR_V (14 - tp_level)
+// DIP switch 5 reverses vertical scrolling (stock FUN_5cc8): a negative divisor flips the notches and keeps
+// ps2_mouse.c's remainder arithmetic exact.
+#ifndef TEX_NO_DIP5
+#    define PS2_MOUSE_SCROLL_DIVISOR_V (tex_dip & (1 << 4) ? tp_level - 14 : 14 - tp_level)
+#else
+#    define PS2_MOUSE_SCROLL_DIVISOR_V (14 - tp_level)
+#endif
 #define PS2_MOUSE_SCROLL_DIVISOR_H (14 - tp_level)
 
 // This port's version, typed by Fn+B with the keymap and build date.
-#define TEX_FW_VERSION "1.0"
+#define TEX_FW_VERSION "1.1"

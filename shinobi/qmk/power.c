@@ -292,6 +292,37 @@ static void type_event(uint8_t code, bool pressed) {
     ble_flush_keys(TYPE_SETTLE_MS);
 }
 
+#ifndef TEX_NO_MACROS
+// Sequence macros: MC_n types the nth zero-terminated run of HID usages in tex_macros, a table the linker script
+// reserves and the keymap editor fills (its address is in the editor's data). 0xE0-0xE7 are modifiers: each
+// stays held until the next other key has been tapped, so E1 0B 08 types "He".
+extern const uint8_t tex_macros[], tex_macros_end[];
+
+void macro_play(uint8_t n) {
+    const uint8_t *p = tex_macros;
+    for (; n && p < tex_macros_end; p++) {
+        if (!*p) n--;
+    }
+    uint8_t held = 0;
+    for (;; p++) {
+        uint8_t c = p < tex_macros_end ? *p : 0;
+        if (c >= KC_LEFT_CTRL) {
+            type_event(c, true);
+            held |= 1 << (c & 7);
+            continue;
+        }
+        if (c) {
+            type_event(c, true);
+            type_event(c, false);
+        }
+        for (uint8_t m = KC_LEFT_CTRL; held; m++, held >>= 1) {
+            if (held & 1) type_event(m, false);
+        }
+        if (!c) return;
+    }
+}
+#endif
+
 // Types lower-case letters, digits, space, '.', '-', ':', '%' and newline: enough
 // for the report below. send_string and its ASCII tables cost about 900 bytes the
 // IAP's image limit doesn't have.
