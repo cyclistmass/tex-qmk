@@ -33,11 +33,16 @@ Known limits:
   an accent from a dead key one more, and each macro up to the last one used 1 more. keymap.json records the
   layout. The layouts were written from Windows' and have not been typed on a real computer with each one.
 * Fn+B and the keyboard's other typed answers always type as on a US layout.
+* The page is in English, Traditional Chinese, Japanese, German, French and Spanish: it opens in the browser's
+  language when it has it, else English, and the menu at the top changes it. The translations are machine-made and
+  not yet reviewed, and the page says so. Macro key names such as `{Enter}` stay English in every language.
 
 ## Files
 
 * `index.html`: the page.
 * `editor_core.js`: keycodes, encoding, the image check, patching and export. The page and the tests both use it.
+* `i18n.js`: the page's strings, one table per language; `test/i18n.cjs` checks every table has every string with
+  the same placeholders.
 * `shinobi_data.js`: generated facts (layout, keycode values, and per release the default keymap, board keycodes,
   macro table, SHA-256 and build date). Regenerate it from the pinned QMK tree and every release image, oldest
   first:

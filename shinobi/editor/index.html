@@ -55,7 +55,7 @@ button.primary { background: var(--sel); border-color: var(--sel); color: #fff; 
 .key.changed { background: var(--accent-soft); border-color: var(--accent); }
 .key.sel { outline: 3px solid var(--sel); outline-offset: 1px; z-index: 2; }
 .legend { color: var(--muted); font-size: .85rem; margin-top: 8px; }
-.legend span { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -1px; margin: 0 4px 0 10px; border: 1px solid var(--key-edge); }
+.legend .sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -1px; margin: 0 4px 0 10px; border: 1px solid var(--key-edge); }
 .picker { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
 .cur { font-size: .95rem; }
 .cur code { background: var(--bg); padding: 1px 5px; border-radius: 4px; }
@@ -78,110 +78,124 @@ pre { background: var(--bg); padding: 10px; border-radius: 7px; overflow-x: auto
 .meter.full div { background: var(--bad); }
 ul.tight { margin: 4px 0 10px; padding-left: 20px; }
 select { font: inherit; border: 1px solid var(--key-edge); background: var(--key); color: var(--text); border-radius: 7px; padding: 5px 8px; }
+.top { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: baseline; justify-content: space-between; }
+.lang { color: var(--muted); font-size: .9rem; }
+footer { margin-top: 18px; font-size: .85rem; }
 </style>
 </head>
 <body>
 <main>
-<h1>TEX Shinobi keymap editor</h1>
-<p class="sub">For the open-source QMK firmware. Remap keys on every layer, then download a firmware image to flash. Everything happens in this page; nothing is uploaded.</p>
+<div class="top">
+  <h1 data-i18n="ui.h1">TEX Shinobi keymap editor</h1>
+  <label class="lang"><span data-i18n="ui.language">Language:</span> <select id="lang"></select></label>
+</div>
+<p class="sub" data-i18n="ui.sub"></p>
 
 <section id="fw">
-  <h2>1. Firmware image</h2>
-  <p>The editor writes your keymap into a released image, and only into its keymap and macro bytes. It accepts <span id="rellist"></span>; macros and mouse keys need <span id="relnew"></span> or later. Download the image from the <a href="https://github.com/cyclistmass/tex-qmk/releases" target="_blank" rel="noopener">releases page</a>, then load it here.</p>
+  <h2 data-i18n="ui.fwH"></h2>
+  <p data-i18n-html="ui.fwP_html"></p>
   <div class="row">
-    <label class="filebtn">Choose the .bin file…<input type="file" id="binfile" accept=".bin,application/octet-stream"></label>
-    <button id="binlocal">Use the copy next to this page</button>
+    <label class="filebtn"><span data-i18n="ui.choose"></span><input type="file" id="binfile" accept=".bin,application/octet-stream"></label>
+    <button id="binlocal" data-i18n="ui.local"></button>
   </div>
   <div id="fwstatus" class="status info"></div>
 </section>
 
 <section id="edit">
-  <h2>2. Keymap</h2>
-  <p class="row"><label for="hostlayout">The computer's keyboard layout:</label> <select id="hostlayout"></select></p>
-  <p class="muted">The keyboard sends key positions and the computer's layout turns them into characters, so the keys below show what they type on that layout (as Windows lays it out), and macros (step 4) are typed for it. Fn+B and the other typed answers always type as on a US layout.</p>
+  <h2 data-i18n="ui.editH"></h2>
+  <p class="row"><label for="hostlayout" data-i18n="ui.layoutLabel"></label> <select id="hostlayout"></select></p>
+  <p class="muted" data-i18n="ui.layoutHelp"></p>
   <div class="tabs" id="tabs" role="tablist"></div>
   <p class="muted" id="layerhelp"></p>
   <div class="kbwrap"><div class="kb" id="kb"></div></div>
-  <div class="legend"><span style="background:var(--accent-soft);border-color:var(--accent)"></span>changed from the default<span style="background:var(--key)"></span>▽ / grey: transparent, the layer below decides</div>
+  <div class="legend"><span class="sw" style="background:var(--accent-soft);border-color:var(--accent)"></span><span data-i18n="ui.legendChanged"></span><span class="sw" style="background:var(--key)"></span><span data-i18n="ui.legendTrans"></span></div>
 </section>
 
 <section id="pick">
-  <h2>3. Assign</h2>
+  <h2 data-i18n="ui.pickH"></h2>
   <div class="picker">
-    <div class="cur" id="cur">Click a key on the keyboard above.</div>
+    <div class="cur" id="cur"></div>
     <div class="row hidden" id="keyactions">
-      <button id="keydefault">Back to default</button>
-      <button id="layerreset">Reset this layer</button>
+      <button id="keydefault" data-i18n="ui.keyDefault"></button>
+      <button id="layerreset" data-i18n="ui.layerReset"></button>
     </div>
     <div class="mods hidden" id="mods">
-      Shortcut: hold
+      <span data-i18n="ui.modsBefore"></span>
       <label><input type="checkbox" data-mod="0"> Ctrl</label>
       <label><input type="checkbox" data-mod="1"> Shift</label>
       <label><input type="checkbox" data-mod="2"> Alt</label>
       <label><input type="checkbox" data-mod="3"> Win</label>
-      with the key
+      <span data-i18n="ui.modsAfter"></span>
     </div>
-    <input type="search" id="search" autocomplete="off" placeholder="Search keys (e.g. f13, mute, calc)" class="hidden">
+    <input type="search" id="search" autocomplete="off" data-i18n-placeholder="ui.search" class="hidden">
     <div class="groups hidden" id="groups"></div>
   </div>
 </section>
 
 <section id="macropanel">
-  <h2>4. Macros</h2>
+  <h2 data-i18n="ui.macroH"></h2>
   <div id="macrooff" class="muted hidden"></div>
   <div id="macroon">
-    <p>A macro key types a short sequence: assign <b>Macro 0</b>-<b>Macro 15</b> to keys in step 3, and write what each one types here. Plain text is typed for the <b id="macrolayout"></b> layout chosen in step 2, and a character it can't type is marked. <code>{Enter}</code>, <code>{Tab}</code>, <code>{F5}</code>, <code>{Del}</code> name a key; <code>{Ctrl+C}</code> or <code>{Win+R}</code> hold modifiers for it; <code>{{</code> types a <code>{</code>. Keys are typed one after another with no delays. All macros share one small table:</p>
+    <p data-i18n-html="ui.macroP_html"></p>
     <div class="row"><div class="meter" id="meter" style="flex:1"><div></div></div><span id="metertext" class="muted"></span></div>
     <div class="macros" id="macros" style="margin-top:10px"></div>
   </div>
 </section>
 
 <section id="mousepanel">
-  <h2>5. Mouse keys</h2>
+  <h2 data-i18n="ui.mouseH"></h2>
   <div id="mouseoff" class="muted hidden"></div>
   <div id="mouseon">
-    <p>The <b>Mouse movement</b> keys in step 3 move the pointer while held, in eight directions, speeding up the longer they are held. They work alongside the TrackPoint and its buttons.</p>
+    <p data-i18n-html="ui.mouseP_html"></p>
     <div class="row">
-      <button id="mousepreset">Put them on Fn + U I O / J K L / M ,</button>
+      <button id="mousepreset" data-i18n="ui.mousePreset"></button>
       <span class="muted" id="mouseinfo"></span>
     </div>
-    <p class="muted" style="margin-top:10px">Also new in v1.1, set with the DIP switches on the bottom (no editing needed):</p>
+    <p class="muted" style="margin-top:10px" data-i18n="ui.alsoNew"></p>
     <ul class="tight muted">
-      <li>DIP 4 on: hold Fn and move the TrackPoint to scroll; a tap of Fn alone is a middle click.</li>
-      <li>DIP 5 on: reverses vertical scrolling.</li>
+      <li data-i18n="ui.dip4"></li>
+      <li data-i18n="ui.dip5"></li>
     </ul>
   </div>
 </section>
 
 <section id="out">
-  <h2>6. Save and build</h2>
+  <h2 data-i18n="ui.outH"></h2>
   <p id="changes" class="muted"></p>
   <div class="row">
-    <button id="dlbin" class="primary" disabled>Download firmware (.bin)</button>
-    <button id="dljson">Save keymap.json</button>
-    <label class="filebtn">Load keymap.json…<input type="file" id="jsonfile" accept=".json,application/json"></label>
-    <button id="dlc">Download keymap.c</button>
-    <button id="resetall">Reset everything</button>
+    <button id="dlbin" class="primary" disabled data-i18n="ui.dlbin"></button>
+    <button id="dljson" data-i18n="ui.dljson"></button>
+    <label class="filebtn"><span data-i18n="ui.loadjson"></span><input type="file" id="jsonfile" accept=".json,application/json"></label>
+    <button id="dlc" data-i18n="ui.dlc"></button>
+    <button id="resetall" data-i18n="ui.resetall"></button>
   </div>
   <div id="outstatus" class="status info hidden"></div>
-  <p class="muted" style="margin-top:12px">Flash the downloaded image like a release, with the keyboard on USB and the PC's Bluetooth off:</p>
+  <p class="muted" style="margin-top:12px" data-i18n="ui.flashP"></p>
   <pre id="flashcmd"></pre>
-  <p class="muted">or wrap it into TEX's updater: <code>python -I build_updater.py AP_0407_4.04.exe &lt;image&gt; out\</code> and run the result with <code>-force</code>. Both tools are in <code>shinobi/tools</code>. Hold Esc while plugging in to reach the bootloader if anything goes wrong.</p>
-  <p class="muted">keymap.c is for building it yourself: put it in <code>shinobi/qmk/keymaps/&lt;name&gt;/</code> and run <code>shinobi/tools/build_firmware.sh</code>. The downloaded image is byte-for-byte what that build gives when the keymap is named <code>default</code> and built with the release's date (<code>shinobi/editor/test/byte_identity.sh</code>).</p>
+  <p class="muted" data-i18n-html="ui.updaterP_html"></p>
+  <p class="muted" data-i18n-html="ui.keymapcP_html"></p>
 </section>
+<footer id="machine" class="muted hidden"></footer>
 </main>
 
 <script src="shinobi_data.js"></script>
+<script src="i18n.js"></script>
 <script src="editor_core.js"></script>
 <script>
 (function () {
   "use strict";
   const DATA = SHINOBI_DATA;
+  const I18N = ShinobiI18n;
   const newest = DATA.releases[DATA.releases.length - 1];
-  // The computer's keyboard layout, remembered in this browser only.
-  let hostLayout = "us";
-  try { const s = localStorage.getItem("shinobi.hostLayout"); if (ShinobiCore.layouts.some((l) => l.id === s)) hostLayout = s; } catch (e) { /* no storage */ }
-  let core = ShinobiCore.makeCore(DATA, undefined, hostLayout);
+  const $ = (id) => document.getElementById(id);
+  // Per-viewer choices, remembered in this browser only: the page's language (else the browser's) and the
+  // computer's keyboard layout.
+  function stored(name, ok) { try { const s = localStorage.getItem(name); return ok(s) ? s : null; } catch (e) { return null; } }
+  function store(name, v) { try { localStorage.setItem(name, v); } catch (e) { /* no storage */ } }
+  let lang = stored("shinobi.lang", (s) => I18N.languages.some((l) => l.id === s)) || I18N.pick(navigator.languages || [navigator.language]);
+  let tr = I18N.translator(lang);
+  let hostLayout = stored("shinobi.hostLayout", (s) => ShinobiCore.layouts.includes(s)) || "us";
+  let core = ShinobiCore.makeCore(DATA, undefined, { hostLayout, lang });
   const data = core.data;
   let rel = core.release;
   let outName;
@@ -191,50 +205,81 @@ select { font: inherit; border: 1px solid var(--key-edge); background: var(--key
   let current = core.layerIds[0];
   let selected = -1;
   let image = null; // a verified release image
-  const $ = (id) => document.getElementById(id);
-  const HELP = {
-    _BASE: "What each key does normally.",
-    _MAC: "Turned on by DIP switch 2 or 3. ▽ keys fall through to Base.",
-    _FNCTL: "Turned on by DIP switch 1 or 3. ▽ keys fall through to Base (or Mac).",
-    _FN: "While Fn is held. ▽ keys fall through to the layers below.",
-  };
+  let imageFrom = "";
+  let fwLast = null, outLast = null; // the status lines, redrawn in a new language
   // Fn + a 3x3 block around K: U I O / J K L / M , (K is down, , is down-right).
   const MOUSE_PRESET = { KC_U: "MS_UPLEFT", KC_I: "MS_UP", KC_O: "MS_UPRIGHT", KC_J: "MS_LEFT", KC_L: "MS_RGHT", KC_M: "MS_DOWNLEFT", KC_K: "MS_DOWN", KC_COMM: "MS_DOWNRIGHT" };
 
-  $("rellist").textContent = DATA.releases.map((r) => r.file).join(" and ");
-  $("relnew").textContent = DATA.releases.find((r) => r.macros).tag.replace(/^shinobi-/, "");
-  // Switch to the release an image turned out to be; the keymap and macros carry over.
+  // A translated template with some placeholders filled by nodes: "{layer} layer, the key that is {base}..."
+  function fillNodes(el, template, nodes) {
+    el.textContent = "";
+    template.split(/(\{\w+\})/).forEach((part) => {
+      const m = /^\{(\w+)\}$/.exec(part);
+      el.appendChild(m && nodes[m[1]] ? nodes[m[1]] : document.createTextNode(part));
+    });
+  }
+
+  // Static text, in the page's language.
+  for (const l of I18N.languages) $("lang").appendChild(Object.assign(document.createElement("option"), { value: l.id, textContent: l.name }));
+  for (const id of ShinobiCore.layouts) $("hostlayout").appendChild(Object.assign(document.createElement("option"), { value: id }));
+  function applyStatic() {
+    document.documentElement.lang = tr.lang;
+    document.title = tr("ui.title");
+    for (const el of document.querySelectorAll("[data-i18n]")) el.textContent = tr(el.dataset.i18n);
+    for (const el of document.querySelectorAll("[data-i18n-html]")) el.innerHTML = tr(el.dataset.i18nHtml); // our own strings
+    for (const el of document.querySelectorAll("[data-i18n-placeholder]")) el.placeholder = tr(el.dataset.i18nPlaceholder);
+    $("lang").value = tr.lang;
+    for (const o of $("hostlayout").options) o.textContent = tr("layout." + o.value);
+    $("rellist").textContent = DATA.releases.map((r) => r.file).join(tr("ui.and"));
+    $("relnew").textContent = DATA.releases.find((r) => r.macros).tag.replace(/^shinobi-/, "");
+    const note = tr("ui.machine");
+    $("machine").textContent = note;
+    $("machine").classList.toggle("hidden", !note);
+  }
+
+  // Switch to the release an image turned out to be, or to another language or layout; the keymap and macros carry over.
   function useRelease(tag) {
-    core = ShinobiCore.makeCore(DATA, tag, hostLayout);
+    core = ShinobiCore.makeCore(DATA, tag, { hostLayout, lang });
     rel = core.release;
-    $("hostlayout").value = hostLayout;
-    $("macrolayout").textContent = core.hostLayout.name;
     defaults = core.defaultLayers();
     outName = rel.file.replace(/\.bin$/, "_custom.bin");
     $("flashcmd").textContent = `python -I tex_flash.py ${outName} AP_0407_4.04.exe`;
-    const off = `Needs the ${newest.tag.replace(/^shinobi-/, "")} firmware; the loaded image is ${rel.tag}.`;
+    $("hostlayout").value = hostLayout;
+    $("macrolayout").textContent = core.hostLayout.name;
+    const off = tr("ui.off", { new: newest.tag.replace(/^shinobi-/, ""), tag: rel.tag });
     $("macrooff").textContent = off; $("mouseoff").textContent = off;
     $("macrooff").classList.toggle("hidden", !!rel.macros); $("macroon").classList.toggle("hidden", !rel.macros);
     $("mouseoff").classList.toggle("hidden", rel.mouse_keys); $("mouseon").classList.toggle("hidden", !rel.mouse_keys);
   }
-  for (const l of ShinobiCore.layouts) $("hostlayout").appendChild(Object.assign(document.createElement("option"), { value: l.id, textContent: l.name }));
   function setHostLayout(id) {
     hostLayout = id;
-    try { localStorage.setItem("shinobi.hostLayout", id); } catch (e) { /* no storage */ }
+    store("shinobi.hostLayout", id);
     useRelease(rel.tag);
   }
   $("hostlayout").addEventListener("change", () => { setHostLayout($("hostlayout").value); render(); renderPicker(); renderMacros(); });
+  $("lang").addEventListener("change", async () => {
+    lang = $("lang").value;
+    store("shinobi.lang", lang);
+    tr = I18N.translator(lang);
+    applyStatic();
+    useRelease(rel.tag);
+    renderTabs(); render(); renderPicker(); renderMacros();
+    if (image) await loadImage(image, imageFrom); else if (fwLast) fwLast();
+    if (outLast) outLast();
+  });
+  applyStatic();
   useRelease(rel.tag);
 
   // Tabs
   for (const l of data.layers) {
     const b = document.createElement("button");
-    b.textContent = l.name;
     b.setAttribute("role", "tab");
     b.dataset.layer = l.id;
     b.addEventListener("click", () => { current = l.id; render(); renderPicker(); });
     $("tabs").appendChild(b);
   }
+  function renderTabs() { for (const b of $("tabs").children) b.textContent = core.layerName(b.dataset.layer); }
+  renderTabs();
 
   // Keyboard
   const W = Math.max(...data.keys.map((k) => k.x + k.w)), H = Math.max(...data.keys.map((k) => k.y + 1));
@@ -270,15 +315,16 @@ select { font: inherit; border: 1px solid var(--key-edge); background: var(--key
 
   function render() {
     for (const b of $("tabs").children) b.setAttribute("aria-selected", String(b.dataset.layer === current));
-    $("layerhelp").textContent = HELP[current] || "";
+    $("layerhelp").textContent = tr.has("help." + current) ? tr("help." + current) : "";
     data.keys.forEach((k, i) => {
       const v = layers[current][i];
       const el = keyEls[i];
       const trans = v === 1;
       el.textContent = trans ? core.label(below(current, i)) : core.label(v);
       const mi = core.macroIndex(v);
-      const what = mi >= 0 ? `Types macro ${mi}: ${macros[mi] || "(empty: write it in step 4)"}` : core.title(v);
-      el.title = (trans ? "▽ transparent → Base " + core.tokenFor(below(current, i)) + ({ _FN: " (or Mac / Fn-Ctrl when a DIP switch turns them on)", _FNCTL: " (or Mac with DIP switch 3)" }[current] || "") : what) + `  [matrix ${k.matrix.join(",")}]`;
+      const what = mi >= 0 ? tr("ui.keyMacro", { n: mi, text: macros[mi] || tr("ui.keyMacroEmpty") }) : core.title(v);
+      const via = { _FN: tr("ui.keyTransFn"), _FNCTL: tr("ui.keyTransFnctl") }[current] || "";
+      el.title = (trans ? tr("ui.keyTrans", { token: core.tokenFor(below(current, i)) }) + via : what) + `  [matrix ${k.matrix.join(",")}]`;
       el.classList.toggle("trans", trans);
       el.classList.toggle("changed", v !== defaults[current][i]);
       el.classList.toggle("sel", i === selected);
@@ -286,12 +332,13 @@ select { font: inherit; border: 1px solid var(--key-edge); background: var(--key
     });
     const n = core.layerIds.reduce((a, id) => a + layers[id].filter((v, i) => v !== defaults[id][i]).length, 0);
     const nm = macros.filter((t) => t).length;
-    const what = [n ? `${n} key${n === 1 ? "" : "s"} changed` : "", nm ? `${nm} macro${nm === 1 ? "" : "s"}` : ""].filter(Boolean).join(", ");
-    $("changes").textContent = what ? `${what}, on ${rel.tag}.` : `No changes from the ${rel.tag} default yet.`;
+    const what = [n ? tr(n === 1 ? "ui.keys1" : "ui.keysN", { n }) : "", nm ? tr(nm === 1 ? "ui.macros1" : "ui.macrosN", { n: nm }) : ""]
+      .filter(Boolean).join(tr("list.sep"));
+    $("changes").textContent = what ? tr("ui.changesOn", { what, tag: rel.tag }) : tr("ui.noChanges", { tag: rel.tag });
     const bad = core.unsupported(layers);
-    if (bad.length) $("changes").textContent += ` ${rel.tag} can't do: ${bad.join("; ")}.`;
+    if (bad.length) $("changes").textContent += tr("ui.cantDo", { tag: rel.tag, list: bad.join("; ") });
     $("dlbin").disabled = !image;
-    $("dlbin").title = image ? "" : "Load the release image in step 1 first";
+    $("dlbin").title = image ? "" : tr("ui.loadFirst");
   }
 
   function select(i) {
@@ -309,20 +356,16 @@ select { font: inherit; border: 1px solid var(--key-edge); background: var(--key
   function renderPicker() {
     const show = selected >= 0;
     for (const id of ["keyactions", "mods", "search", "groups"]) $(id).classList.toggle("hidden", !show);
-    if (!show) return;
+    if (!show) { $("cur").textContent = tr("ui.curNone"); return; }
     const v = layers[current][selected];
-    const name = data.layers.find((l) => l.id === current).name;
-    $("cur").innerHTML = "";
-    const parts = [
-      document.createTextNode(`${name} layer, the key that is `),
-      Object.assign(document.createElement("b"), { textContent: core.label(defaults[core.layerIds[0]][selected]) }),
-      document.createTextNode(" on Base: "),
-      Object.assign(document.createElement("b"), { textContent: core.label(v) }),
-      document.createTextNode(" "),
-      Object.assign(document.createElement("code"), { textContent: core.tokenFor(v) }),
-    ];
-    if (v !== defaults[current][selected]) parts.push(document.createTextNode(` (default: ${core.label(defaults[current][selected])})`));
-    parts.forEach((p) => $("cur").appendChild(p));
+    const b = (text) => Object.assign(document.createElement("b"), { textContent: text });
+    fillNodes($("cur"), tr("ui.cur"), {
+      layer: document.createTextNode(core.layerName(current)),
+      base: b(core.label(defaults[core.layerIds[0]][selected])),
+      now: b(core.label(v)),
+      token: Object.assign(document.createElement("code"), { textContent: core.tokenFor(v) }),
+    });
+    if (v !== defaults[current][selected]) $("cur").appendChild(document.createTextNode(tr("ui.curDefault", { def: core.label(defaults[current][selected]) })));
     const m = core.modsOf(v);
     const basic = v <= 0xff || m;
     for (const cb of document.querySelectorAll("#mods input")) {
@@ -345,17 +388,17 @@ select { font: inherit; border: 1px solid var(--key-edge); background: var(--key
       const row = document.createElement("div");
       row.className = "row";
       for (const it of items) {
-        const b = document.createElement("button");
-        b.textContent = core.label(it.value);
-        b.title = core.title(it.value);
-        b.dataset.token = it.token;
-        if (it.value === base) b.classList.add("on");
-        b.addEventListener("click", () => {
+        const btn = document.createElement("button");
+        btn.textContent = core.label(it.value);
+        btn.title = core.title(it.value);
+        btn.dataset.token = it.token;
+        if (it.value === base) btn.classList.add("on");
+        btn.addEventListener("click", () => {
           const mm = core.modsOf(layers[current][selected]);
           const keepMods = mm && it.value <= 0xff && it.value >= 4 && !(it.value >= 0xe0 && it.value <= 0xe7);
           assign(keepMods ? core.withMods(it.value, mm.mods, mm.right) : it.value);
         });
-        row.appendChild(b);
+        row.appendChild(btn);
       }
       div.appendChild(row);
       $("groups").appendChild(div);
@@ -365,21 +408,25 @@ select { font: inherit; border: 1px solid var(--key-edge); background: var(--key
   // Macros: one input per slot; the meter shows the shared table.
   const macroInputs = [];
   for (let i = 0; i < 16; i++) {
-    const lab = Object.assign(document.createElement("label"), { textContent: "Macro " + i, htmlFor: "macro" + i });
-    const inp = Object.assign(document.createElement("input"), { id: "macro" + i, type: "text", spellcheck: false, autocomplete: "off", placeholder: i ? "" : "e.g. Hello, World!{Enter}" });
+    const lab = Object.assign(document.createElement("label"), { htmlFor: "macro" + i });
+    const inp = Object.assign(document.createElement("input"), { id: "macro" + i, type: "text", spellcheck: false, autocomplete: "off" });
     const msg = Object.assign(document.createElement("div"), { className: "msg hidden" });
     inp.addEventListener("input", () => { macros[i] = inp.value; renderMacros(); render(); });
     $("macros").append(lab, inp, msg);
-    macroInputs.push({ inp, msg });
+    macroInputs.push({ lab, inp, msg });
   }
   function renderMacros() {
+    macroInputs.forEach(({ lab, inp }, i) => {
+      lab.textContent = tr("label.macro", { n: i });
+      inp.placeholder = i ? "" : tr("ui.macroPlaceholder");
+    });
     if (!rel.macros) return;
     let used = 0;
     const last = macros.reduce((a, t, i) => (t ? i : a), -1);
     macroInputs.forEach(({ inp, msg }, i) => {
       if (inp.value !== macros[i]) inp.value = macros[i];
       let err = "";
-      try { const b = core.parseMacro(macros[i]); if (i <= last) used += b.length + 1; } catch (e) { err = e.message; }
+      try { const bytes = core.parseMacro(macros[i]); if (i <= last) used += bytes.length + 1; } catch (e) { err = e.message; }
       inp.classList.toggle("err", !!err);
       msg.textContent = err;
       msg.classList.toggle("hidden", !err);
@@ -387,7 +434,7 @@ select { font: inherit; border: 1px solid var(--key-edge); background: var(--key
     const size = rel.macros.size;
     $("meter").classList.toggle("full", used > size);
     $("meter").firstElementChild.style.width = Math.min(100, (100 * used) / size) + "%";
-    $("metertext").textContent = `${used} of ${size} bytes` + (used > size ? `: ${used - size} too many` : "");
+    $("metertext").textContent = tr("ui.meter", { used, size }) + (used > size ? tr("ui.meterOver", { n: used - size }) : "");
   }
   $("mousepreset").addEventListener("click", () => {
     const base = rel.default_layers._BASE;
@@ -395,10 +442,10 @@ select { font: inherit; border: 1px solid var(--key-edge); background: var(--key
     for (const [key, tok] of Object.entries(MOUSE_PRESET)) {
       const i = base.indexOf(key);
       const was = layers._FN[i];
-      if (was !== 1 && was !== core.resolve(tok)) replaced.push(`${core.label(defaults._BASE[i])} (was ${core.label(was)})`);
+      if (was !== 1 && was !== core.resolve(tok)) replaced.push(tr("ui.mouseWas", { key: core.label(defaults._BASE[i]), old: core.label(was) }));
       layers._FN[i] = core.resolve(tok);
     }
-    $("mouseinfo").textContent = "Done, on the Fn layer." + (replaced.length ? " Replaced: " + replaced.join(", ") + "." : "");
+    $("mouseinfo").textContent = tr("ui.mouseDone") + (replaced.length ? tr("ui.mouseReplaced", { list: replaced.join(tr("list.sep")) }) : "");
     current = "_FN"; render(); renderPicker();
   });
 
@@ -414,24 +461,26 @@ select { font: inherit; border: 1px solid var(--key-edge); background: var(--key
   $("keydefault").addEventListener("click", () => assign(defaults[current][selected]));
   $("layerreset").addEventListener("click", () => { layers[current] = defaults[current].slice(); render(); renderPicker(); });
   $("resetall").addEventListener("click", () => {
-    if (!confirm("Reset every layer to the default keymap and clear the macros?")) return;
+    if (!confirm(tr("ui.confirmReset"))) return;
     layers = core.defaultLayers(); macros = macros.map(() => ""); render(); renderPicker(); renderMacros();
   });
 
-  // Firmware
-  function fwStatus(cls, text) { const s = $("fwstatus"); s.className = "status " + cls; s.textContent = text; }
+  // Firmware. A status line is kept as a function, so a language switch can draw it again.
+  function fwStatus(cls, text) { fwLast = () => { const s = $("fwstatus"); s.className = "status " + cls; s.textContent = text(); }; fwLast(); }
   async function loadImage(bytes, from) {
     image = null;
+    imageFrom = from;
     const tag = await ShinobiCore.identify(DATA, bytes);
     if (tag && tag !== rel.tag) { useRelease(tag); renderPicker(); renderMacros(); }
     const r = await core.checkImage(bytes);
+    const name = typeof from === "function" ? from() : from;
     if (r.ok) {
       image = bytes;
       const bad = core.unsupported(layers);
-      fwStatus(bad.length ? "bad" : "ok", `✓ ${from}: this is ${rel.file} (${rel.tag}), sha256 ${r.sha256.slice(0, 16)}…, with the default keymap in place. ` +
-        (bad.length ? `But your keymap uses what ${rel.tag} can't do: ${bad.join("; ")}. Change those keys or load a newer image.` : "Ready."));
+      fwStatus(bad.length ? "bad" : "ok", () => tr("ui.fwOk", { from: name, file: rel.file, tag: rel.tag, sha: r.sha256.slice(0, 16) }) +
+        (bad.length ? tr("ui.fwButBad", { tag: rel.tag, list: bad.join("; ") }) : tr("ui.fwReady")));
     } else {
-      fwStatus("bad", `✗ ${from} is not a release image the editor knows (${DATA.releases.map((x) => x.file).join(", ")}), so it won't patch it: ${r.problems.join("; ")}.`);
+      fwStatus("bad", () => tr("ui.fwBad", { from: name, files: DATA.releases.map((x) => x.file).join(", "), list: r.problems.join("; ") }));
     }
     render();
   }
@@ -449,11 +498,11 @@ select { font: inherit; border: 1px solid var(--key-edge); background: var(--key
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         bytes = new Uint8Array(await res.arrayBuffer());
       } catch (e) { tried.push(`${r.file}: ${e.message}`); continue; }
-      await loadImage(bytes, r.file + " next to this page");
+      await loadImage(bytes, () => tr("ui.fwNextTo", { file: r.file }));
       return;
     }
     image = null;
-    fwStatus("bad", `✗ No release image next to this page (${tried.join("; ")}). Choose the file instead.`);
+    fwStatus("bad", () => tr("ui.fwNone", { tried: tried.join("; ") }));
     render();
   });
 
@@ -466,17 +515,18 @@ select { font: inherit; border: 1px solid var(--key-edge); background: var(--key
     a.click();
     setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
   }
-  function outStatus(cls, text) { const s = $("outstatus"); s.className = "status " + cls; s.textContent = text; }
+  function outStatus(cls, text) { outLast = () => { const s = $("outstatus"); s.className = "status " + cls; s.textContent = text(); }; outLast(); }
   $("dlbin").addEventListener("click", async () => {
     try {
       const out = await core.patch(image, layers, macros);
       save(outName, out, "application/octet-stream");
-      outStatus("ok", `Saved ${outName}: ${out.length} bytes, sha256 ${await core.sha256(out)}.`);
-    } catch (e) { outStatus("bad", e.message); }
+      const sha = await core.sha256(out);
+      outStatus("ok", () => tr("ui.saved", { name: outName, n: out.length, sha }));
+    } catch (e) { outStatus("bad", () => e.message); }
   });
   $("dljson").addEventListener("click", () => save("keymap.json", core.toJSON(layers, macros), "application/json"));
   $("dlc").addEventListener("click", () => {
-    try { save("keymap.c", core.keymapC(layers, macros), "text/x-csrc"); } catch (e) { outStatus("bad", e.message); }
+    try { save("keymap.c", core.keymapC(layers, macros), "text/x-csrc"); } catch (e) { outStatus("bad", () => e.message); }
   });
   $("jsonfile").addEventListener("change", async (e) => {
     const f = e.target.files[0];
@@ -487,14 +537,15 @@ select { font: inherit; border: 1px solid var(--key-edge); background: var(--key
       layers = j.layers; macros = j.macros;
       const switched = j.hostLayout !== hostLayout;
       if (switched) setHostLayout(j.hostLayout);
-      outStatus("ok", `Loaded ${f.name}.` + (switched ? ` Its macros were written for a ${core.hostLayout.name} keyboard layout, so step 2 now uses that.` : ""));
-    } catch (err) { outStatus("bad", `${f.name}: ${err.message}`); }
+      outStatus("ok", () => tr("ui.loaded", { name: f.name }) + (switched ? tr("ui.loadedLayout", { layout: core.hostLayout.name }) : ""));
+    } catch (err) { outStatus("bad", () => `${f.name}: ${err.message}`); }
     render(); renderPicker(); renderMacros();
   });
 
-  fwStatus("info", `No image loaded yet. You can edit the keymap first; it targets ${rel.file} until you load an image.`);
+  fwStatus("info", () => tr("ui.fwInfo", { file: rel.file }));
   layout();
   render();
+  renderPicker();
   renderMacros();
 })();
 </script>

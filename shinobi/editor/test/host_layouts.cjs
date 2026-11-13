@@ -15,10 +15,11 @@ function check(cond, what) {
 const hex = (b) => b.map((x) => x.toString(16).toUpperCase().padStart(2, "0")).join(" ");
 const D = globalThis.SHINOBI_DATA;
 const tag = D.releases.find((r) => r.macros).tag;
-const cores = Object.fromEntries(layouts.map((l) => [l.id, makeCore(D, tag, l.id)]));
+const cores = Object.fromEntries(layouts.map((id) => [id, makeCore(D, tag, { hostLayout: id })]));
+const layoutName = { us: "US", uk: "UK", de: "German", fr: "French", es: "Spanish", nordic: "Nordic (Swedish, Finnish)", jis: "Japanese (JIS)" };
 
 // Every character a layout can type round-trips: text -> usages -> text -> the same usages.
-for (const { id } of layouts) {
+for (const id of layouts) {
     const c = cores[id];
     const chars = [];
     for (let cp = 0x20; cp < 0x250; cp++) {
@@ -51,7 +52,7 @@ for (const [id, text, want] of cases) {
 for (const [id, text] of [["us", "é"], ["fr", "ß"], ["fr", "É"], ["jis", "é"], ["uk", "ä"], ["de", "ñ"]]) {
     let msg = "";
     try { cores[id].parseMacro(text); } catch (e) { msg = e.message; }
-    const name = layouts.find((l) => l.id === id).name;
+    const name = layoutName[id];
     check(msg.includes("can't type") && msg.includes(name), `${id}: ${JSON.stringify(text)} refused, naming the layout (${msg})`);
 }
 check(cores.de.formatMacro([0x35, 0x2c, 0x2e, 0x08, 0x1c]) === "^éz", `de: 35 2C 2E 08 1C reads back as "^éz" (${cores.de.formatMacro([0x35, 0x2c, 0x2e, 0x08, 0x1c])})`);
