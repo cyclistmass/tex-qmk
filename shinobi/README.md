@@ -38,7 +38,8 @@ a power cut on this keyboard.
 
 ## Installing
 
-You need a Windows PC and the USB cable. **Turn the PC's Bluetooth off before flashing** (Settings > Bluetooth &
+You need the USB cable and a PC: Windows for option 1, and Windows, Linux, FreeBSD or OpenBSD for option 2
+(see [Other operating systems](#other-operating-systems)). **Turn the PC's Bluetooth off before flashing** (Settings > Bluetooth &
 devices), so the PC only talks to the keyboard over USB. Downloads are on the
 [Releases](https://github.com/cyclistmass/tex-qmk/releases) page. Each release lists SHA-256 sums.
 
@@ -72,6 +73,21 @@ It takes about 5 seconds. It switches the keyboard to the bootloader, keeps a co
 the image, checks the bootloader's checksum, and restarts the keyboard. "the app is up (04D9:0407)" means
 success. If any step fails, it stops and the keyboard stays in the bootloader, ready for another try or for TEX's
 updater.
+
+### Other operating systems
+
+`tools/tex_flash.py` is the same file on every OS. Details, the permission rules and what is verified are in
+[tools/unix/README.md](tools/unix/README.md). Run it from the `tools` folder; no sudo is needed when flashing.
+
+| OS | Status | Install hidapi | Permission rule (once, as root) | Run |
+|---|---|---|---|---|
+| Windows | tested | `pip install hidapi` | none | `python tex_flash.py tex_shinobi_v1.0.bin AP_0407_4.04.exe` |
+| Linux | **not yet tested on hardware** | `pip install hidapi` in a venv, or `apt install python3-hid` | copy `tools/unix/70-tex-shinobi.rules` to `/etc/udev/rules.d/`, `udevadm control --reload`, replug | `python3 -I tex_flash.py tex_shinobi_v1.0.bin AP_0407_4.04.exe` |
+| FreeBSD | **untested** | `pkg install hidapi libusb`, then `pip install hidapi` | group `texflash` and `tools/unix/tex-shinobi.devd.conf` | as Linux |
+| OpenBSD | **untested; no working backend known** (hidapi needs libusb, which needs `uhid` out of the kernel) | - | `/dev/uhid*` group, see the guide | flash from another OS |
+
+Messages are in English, Traditional Chinese, Japanese, German, French or Spanish, chosen from the system locale
+or with `--lang` (for example `--lang de`). **The translations are unreviewed.**
 
 ### Bootloader by hand
 

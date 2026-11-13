@@ -26,6 +26,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import build_updater as bu  # noqa: E402
+from tex_i18n import t  # noqa: E402
 
 LEN = 52
 KEY_SHA = "f16ee8f89ba10701814564614693a13be0a69cd27531de6e88cf380f10922a51"
@@ -48,8 +49,8 @@ def derive(enc):
         changed = False
         for j in range(LEN):
             col = [enc[i] for i in body if i % LEN == j]
-            r, t = ref[j % 2], tot[j % 2]
-            best = max(range(256), key=lambda c: sum(math.log((r[x ^ c] + 0.5) / (t + 128)) for x in col))
+            r, total = ref[j % 2], tot[j % 2]
+            best = max(range(256), key=lambda c: sum(math.log((r[x ^ c] + 0.5) / (total + 128)) for x in col))
             if best != k[j]:
                 k[j] = best
                 changed = True
@@ -61,23 +62,27 @@ def derive(enc):
 def from_updater(exe):
     """The key, recovered from the bytes of TEX's stock AP_0407_4.04.exe."""
     if bu.sha(exe) != bu.STOCK_EXE_SHA:
-        raise ValueError("not TEX's stock AP_0407_4.04.exe (V1.04.04)")
+        raise ValueError(t("key_not_stock"))
     off, size = bu.image_slot(exe)
     key = derive(bu.decode(exe[off:off + size]))
     if bu.sha(key) != KEY_SHA:
-        raise ValueError("could not recover the key from the updater")
+        raise ValueError(t("key_not_recovered"))
     return key
 
 
 def load(path):
     """The key from a 52-byte key file or from the stock updater exe. Exits with a message on failure."""
-    data = open(path, "rb").read()
+    try:
+        with open(path, "rb") as f:
+            data = f.read()
+    except OSError as e:
+        sys.exit(t("cannot_read", path=path, err=e))
     try:
         key = data if len(data) == LEN else from_updater(data)
     except ValueError as e:
-        sys.exit(f"{path}: {e}; pass the 52-byte key file or TEX's AP_0407_4.04.exe")
+        sys.exit(t("key_load_failed", path=path, detail=e))
     if hashlib.sha256(key).hexdigest() != KEY_SHA:
-        sys.exit(f"{path}: not the TEX Shinobi key")
+        sys.exit(t("key_wrong", path=path))
     return key
 
 

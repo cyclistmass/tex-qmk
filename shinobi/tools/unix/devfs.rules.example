@@ -1,0 +1,8 @@
+# TEX Shinobi: USB access for the libusb backend of hidapi on FreeBSD (the backend FreeBSD's hidapi uses).
+# UNTESTED. This is broader than tex-shinobi.devd.conf: devfs cannot match by vendor, so it opens every USB
+# device node to the group "texflash". Use it only if the devd rule is not enough. Install as root:
+#   sysrc devfs_system_ruleset="tex"      and put this file's rule set into /etc/devfs.rules, then
+#   service devfs restart
+
+[tex=20]
+add path 'usb/*' mode 0660 group texflash

@@ -1,0 +1,14 @@
+# TEX Shinobi BLE5 (Holtek 04D9): let the logged-in user flash it, without sudo and without setuid.
+# Install once, as root:  sudo cp 70-tex-shinobi.rules /etc/udev/rules.d/ && sudo udevadm control --reload
+# then unplug and replug the keyboard. See README.md in this folder.
+#
+# uaccess gives the user at the active local seat (console, desktop) access while they are logged in; it does
+# not open anything to other users or to ssh sessions. Both USB modes are covered: 0407 is the firmware
+# (QMK or stock), 1407 is TEX's bootloader (IAP), which the keyboard re-enumerates as in the middle of a flash.
+# The name is 70-: uaccess must be tagged before 73-seat-late.rules runs.
+
+# hidraw nodes: what the hidapi Python package uses on Linux by default.
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="04d9", ATTRS{idProduct}=="0407|1407", TAG+="uaccess"
+
+# Whole-device nodes: only for a hidapi built with the libusb backend (pip install with HIDAPI_WITH_LIBUSB=1).
+SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ATTR{idVendor}=="04d9", ATTR{idProduct}=="0407|1407", TAG+="uaccess"
