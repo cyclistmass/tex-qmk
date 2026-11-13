@@ -243,7 +243,7 @@ Keymaps that only exist for bring-up, each a `rules.mk` flag on top of `default`
 * `diag` (`TEX_DIAG`): `test600` plus read-only `13 xx` state queries on the vendor interface (matrix, ports,
   raw PS/2), read by `tools/tex_iap_probe.py`.
 * `sleep30` (`TEX_SLEEP_IDLE_S`): sleeps after 30 s on battery, until a sleep time is chosen with Fn+F1..F9. Fn+B still
-  types the 15 min default until then (no room to type the test time); Fn+B's first line names the build.
+  types the 15 min default until then (no room to type the test time); Fn+B's version field names the build.
 
 ## Open questions
 

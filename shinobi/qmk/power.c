@@ -66,7 +66,7 @@ static const uint8_t sleep_minutes[] = {1, 2, 5, 10, 15, 30, 60, 120, 0};
 static uint8_t       sleep_min       = SLEEP_MINUTES;
 #ifdef TEX_SLEEP_IDLE_S
 // A zeroed flag (in .bss), not an initialised word: flash0 has no room for more .data. Until Fn+F1..F9
-// picks a time, Fn+B types the 15 min default; its first line names the build (sleep30). Typing the test time cost
+// picks a time, Fn+B types the 15 min default; its version field names the build (sleep30). Typing the test time cost
 // 20 bytes this build no longer has.
 static bool sleep_test_over;
 #    define SLEEP_IDLE_MS (sleep_test_over ? sleep_min * 60000UL : TEX_SLEEP_IDLE_S * 1000UL)
@@ -354,12 +354,12 @@ void macro_play(uint8_t n) {
 }
 #endif
 
-// Types lower-case letters, digits, space, '.', '-', ':', '%' and newline: enough
-// for the report below. send_string and its ASCII tables cost about 900 bytes the
+// Types lower-case letters, digits, space, '.', '-', ':' and '%': enough for the
+// report below. Never Enter: an answer typed into a chat must not send it. send_string and its ASCII tables cost about 900 bytes the
 // IAP's image limit doesn't have.
 // Bit 7 of a code is Shift.
-static const char    type_punct[]      = " \n.-:%";
-static const uint8_t type_punct_code[] = {KC_SPC, KC_ENT, KC_DOT, KC_MINS, 0x80 | KC_SCLN, 0x80 | KC_5};
+static const char    type_punct[]      = " .-:%";
+static const uint8_t type_punct_code[] = {KC_SPC, KC_DOT, KC_MINS, 0x80 | KC_SCLN, 0x80 | KC_5};
 
 void type_text(const char *s) {
     uint8_t mods = type_begin();
@@ -416,10 +416,10 @@ void power_set_sleep(uint8_t choice, bool announce) {
     type_sleep_time();
 }
 
-// Fn+B: types which build is running, the battery reading, for checking the
-// scale above, the sleep time and the TrackPoint level.
+// Fn+B: types, on one line, which build is running, the battery reading, for checking
+// the scale above, the sleep time and the TrackPoint level.
 void battery_report(void) {
-    type_text("v" TEX_FW_VERSION " " QMK_KEYMAP " " QMK_BUILDDATE "\nbat");
+    type_text("v" TEX_FW_VERSION " " QMK_KEYMAP " " QMK_BUILDDATE " bat");
     type_number(battery_percent(), "% adc");
     type_number(battery_raw(), on_battery() ? " aa zzz" : " usb zzz");
     type_sleep_time();
@@ -435,5 +435,5 @@ void battery_report(void) {
     uint16_t idle = idle_gap_s;
     if (idle >= 60) type_number(idle / 60, "m");
     type_number(idle % 60, "s wk");
-    type_number(ble_wake_ms, "ms\n");
+    type_number(ble_wake_ms, "ms");
 }

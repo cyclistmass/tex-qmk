@@ -15,7 +15,7 @@ never touched: you can flash the stock firmware back at any time with TEX's own 
 | `tex_shinobi_v1.1.bin` | The firmware image, for `shinobi/tools/tex_flash.py` (needs Python 3, `hidapi`, and TEX's `AP_0407_4.04.exe` as the key source), and the image the keymap editor patches. |
 | `SHA256SUMS.txt` | SHA-256 of both files. |
 
-`tex_shinobi_v1.1.bin` is 27,740 bytes, SHA-256 `e55c20cec4142c768aa0c1a6c49deba45e04233f9673935f0d279df56f45d9a8`.
+`tex_shinobi_v1.1.bin` is 27,728 bytes, SHA-256 `54c75d0148796ca4dca060127c2b0a0244af944a7f9cec4f82f273c802069652`.
 The keymap editor knows the release by this hash, so the release must carry exactly this image.
 
 Turn the PC's Bluetooth off before flashing. Full instructions: [shinobi/README.md](https://github.com/cyclistmass/tex-qmk/blob/main/shinobi/README.md). Keys, Fn combinations and
@@ -36,10 +36,9 @@ known issues: the [owner's manual](https://github.com/cyclistmass/tex-qmk/blob/m
 * **Fn+B** also types `dip` (the switches that are on), `idl` (the last stretch with no key or TrackPoint input)
   and `wk` (how long Bluetooth took to come back after the last sleep). The whole line is terser (`zzz15m` for the sleep
   time, also when Fn+F1...F9 types it back, and `tp3` for Fn+1...9). The [manual](https://github.com/cyclistmass/tex-qmk/blob/main/shinobi/MANUAL.md#what-the-keyboard-types)
-  translates every field:
+  translates every field. It is all one line now, with no Enter (v1.0 typed two lines, each ending in Enter):
 
-      v1.1 default 2026-11-13-08:17:00
-      bat85% adc2900 aa zzz15m tp3 dip24 idl15m34s wk1420ms
+      v1.1 default 2026-11-13-09:56:36 bat85% adc2900 aa zzz15m tp3 dip24 idl15m34s wk1420ms
 
 ## Fixed
 
@@ -78,12 +77,13 @@ known issues: the [owner's manual](https://github.com/cyclistmass/tex-qmk/blob/m
 **Not yet on the keyboard.** Pending before release: flashing v1.1 (over stock and over v1.0), DIP switches 1-5,
 the Fn+B readouts, macros and mouse keys over USB and Bluetooth, and an editor-made image.
 
-Checked off the keyboard (2026-11-13): the image is 27,740 of the 28,076 bytes TEX's bootloader takes, with the
+Checked off the keyboard (2026-11-13): the image is 27,728 of the 28,076 bytes TEX's bootloader takes, with the
 settings record in place; two pinned rebuilds give the same SHA-256; the editor's byte-identity test passes for
 v1.0 and v1.1 (a patched release equals a compiled build of the exported `keymap.c`, with changed keys, shortcuts,
 mouse keys and three macros). Host tests of the input logic pass: mouse keys, DIP 4's Fn scrolling with the
-middle button's own key, and macros and typed text with modifiers held, in random press and release sequences
+middle button's own key, macros and typed text with modifiers held, and no character typing Enter, in random
+press and release sequences
 (`shinobi/test/host/run.sh`, also in CI). The signed division the scroll scaling uses runs correctly as linked
 in the image, on a Thumb interpreter, for edge values and 20,000 random pairs (`shinobi/test/host/div_asm.sh`,
 also in CI). Built with QMK `f5db962` and arm-none-eabi-gcc 13.2.1, with the build date pinned to
-`2026-11-13-08:17:00`.
+`2026-11-13-09:56:36`.

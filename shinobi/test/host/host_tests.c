@@ -207,6 +207,13 @@ static void test_typing(void) {
         type_text("a:% 1");
         expect_keys("type_text", held[h], text, 5);
     }
+    // No typed answer may press Enter (or keypad Enter): one typed into a chat would send it.
+    for (int c = 1; c < 128; c++) {
+        char s[2] = {(char)c, 0};
+        n_reports = 0;
+        type_text(s);
+        for (int i = 0; i < n_reports; i++) CHECK(reports[i].key != KC_ENT && reports[i].key != 0x58, "type_text(%d) pressed Enter", c);
+    }
 }
 
 // --- divsi3.S, instruction by instruction on 32-bit registers, against C's division (rounds toward zero).
