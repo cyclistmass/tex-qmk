@@ -90,7 +90,8 @@ static uint8_t  status_spare[2]; // module '4' bytes 6..7, echoed back as stock 
 static uint8_t  status_block[7]; // [0] link state, [1] slot 0..2; [6] is not the module's
 static bool     status_seen;
 static uint16_t link_down_at; // when keys started waiting for the link
-static uint16_t woke_at;      // ble_wake(), while waiting for the link; 0 once it is up
+static uint32_t woke_at;      // ble_wake()
+static bool     wake_waiting; // from ble_wake() until the link is up
 uint16_t        ble_wake_ms;
 static uint16_t keys_acked_at;
 
@@ -277,9 +278,10 @@ static void handle_status(const uint8_t *in, uint8_t len) {
         status_seen = true;
         flags |= FLAG_STATUS;
     }
-    if (woke_at && status_block[0] == LINK_CONNECTED) {
-        ble_wake_ms = timer_elapsed(woke_at);
-        woke_at     = 0;
+    if (wake_waiting && status_block[0] == LINK_CONNECTED) {
+        uint32_t ms  = timer_elapsed32(woke_at);
+        ble_wake_ms  = ms < 65535 ? ms : 65535;
+        wake_waiting = false;
     }
     if (inflight && in[2] == seq) acked();
     send_next();
@@ -379,7 +381,8 @@ void ble_wake(void) {
     sdStart(&BLE_SD, &ble_serial_config);
     queue_command(CMD_WAKE);
     status_seen = false; // the link may have dropped while asleep
-    woke_at     = timer_read() | 1; // never 0, which means not waiting
+    woke_at      = timer_read32();
+    wake_waiting = true;
 }
 
 // QMK asks this only to pick the output in auto mode, where USB comes first.

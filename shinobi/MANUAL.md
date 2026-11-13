@@ -77,14 +77,14 @@ press Fn+1...9, Fn+F1...F9 or Fn+B. The answers are short; the tables below tran
 
 **Fn+B** types two lines, for example:
 
-    v1.1 default 2026-11-12-23:15:00
+    v1.1 default 2026-11-12-23:45:00
     bat85% adc2900 aa zzz15m tp3 dip24 idl15m34s wk1420ms
 
 One space separates the fields; within a field the label and value run together.
 
 | Typed | Means | Useful for |
 |---|---|---|
-| `v1.1 default 2026-11-12-23:15:00` | Firmware version, keymap name and build time. An image made with the keymap editor also says `default`. | Knowing which firmware is on the keyboard. Quote it in bug reports. |
+| `v1.1 default 2026-11-12-23:45:00` | Firmware version, keymap name and build time. An image made with the keymap editor also says `default`. | Knowing which firmware is on the keyboard. Quote it in bug reports. |
 | `bat85%` | Battery level, worked out from `adc` for two alkaline AA cells. | Knowing when to change the cells. NiMH rechargeables read low (see [Known issues](#known-issues)). |
 | `adc2900` | The raw battery reading the level comes from. | Calibrating the battery scale: a voltmeter reading across the cells, sent with this number, fixes it. |
 | `aa` / `usb` | Running on the AA cells, or on USB power. | On USB power the keyboard never sleeps. |
@@ -139,7 +139,7 @@ battery changes, USB plugging and unplugging, and power cuts.
 | Keys are swapped (Fn/Ctrl, Alt/Win) | Check DIP switches 1-3 on the bottom; turn them all off for the stock layout. |
 | Battery percentage looks low | With NiMH rechargeables it reads low; see [Known issues](#known-issues). |
 | Flashing can't find the keyboard | Turn the PC's Bluetooth off. Or hold Esc while plugging in the USB cable: the keyboard starts in the bootloader, ready to flash. |
-| Settings (TrackPoint level, sleep time) aren't kept | With a firmware built with `TEX_SELFTEST`, run `python -I tools/tex_selftest.py` with the keyboard on USB: it tests the flash page that holds them and prints PASS or FAIL. The released v1.1 doesn't include the test (no room) and the script says so. |
+| Settings (TrackPoint level, sleep time) aren't kept | With a firmware built with `TEX_SELFTEST`, run `python -I tools/tex_selftest.py` with the keyboard on USB: it tests the flash page that holds them and prints PASS or FAIL. The released v1.1 doesn't include the test, and the script says so. |
 | Want the stock firmware back | Run TEX's `AP_0407_4.04.exe`, with `-force` if it says there is nothing to update. |
 
 ## Known issues
@@ -152,14 +152,14 @@ battery changes, USB plugging and unplugging, and power cuts.
   [keymap editor](https://cyclistmass.github.io/tex-qmk/shinobi/editor/) instead, then flash the image it gives
   you. From v1.1 it also makes sequence macros (a key types a short phrase or a run of keys, 96 bytes in total)
   and mouse movement keys. ([How the editor works](editor/README.md).)
-* **No VIA/Vial live remapping.** TEX's bootloader takes images up to 28,076 bytes; v1.0 is 28,072 and v1.1 28,020. The keymap
+* **No VIA/Vial live remapping.** TEX's bootloader takes images up to 28,076 bytes; v1.0 is 28,072 and v1.1 27,704. The keymap
   editor changes the keymap in the image, so a change takes a flash.
 * **ISO and JIS boards are untested.** The extra keys are in the keymap.
 * **No Bluetooth firmware updates.** Updates go over USB through TEX's bootloader.
 * **Not ported:** DIP switch 6 (file system mode), and stock's Up+LAlt+Fn hold combo. That combo is a factory
   flash self-test, not a user feature: it writes and reads back a test value where the settings live. This
   firmware has it as a USB command instead, run by `tools/tex_selftest.py`, but only in builds with
-  `TEX_SELFTEST`: it needs 84 bytes and v1.1 has 56 free.
+  `TEX_SELFTEST` (88 bytes); the released v1.1 leaves it out.
 * **DIP switches 1-5 are untested on the keyboard.** Their handling follows the stock firmware's code.
 * **Flashing from stock** has not been tested yet with either install method; both were tested over earlier QMK
   builds.

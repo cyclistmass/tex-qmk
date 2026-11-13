@@ -114,7 +114,7 @@ into a copy of TEX's updater. The [GitHub Actions workflow](../.github/workflows
 every push. Release images are built from a tagged commit and listed with their SHA-256 on the release page.
 
 `tools/tex_selftest.py` runs the stock factory flash self-test over USB (raw HID `14 00`) and prints PASS or FAIL.
-The firmware side is only in builds with `TEX_SELFTEST`: add `#define TEX_SELFTEST` to `qmk/config.h` before
+building. It costs 88 bytes; release images leave it out and answer with the stock refusal.
 building. It costs 84 bytes, more than v1.1 has free, so release images don't answer it.
 
 The other keymaps (`canary`, `canary_slow`, `test90`, `test600`, `diag`, `sleep30`) are developer test

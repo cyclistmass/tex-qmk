@@ -23,6 +23,8 @@ SRC += ble.c
 
 # Battery level and sleep on battery (power.c).
 SRC += power.c
+# Signed division in 28 bytes for libgcc's 460 (the image limit); see divsi3.S.
+SRC += divsi3.S
 
 # The app's vectors are at 0x3200, not 0. Stock points VTOR there itself
 # (FUN_34ec), so the IAP is not relied on to do it.

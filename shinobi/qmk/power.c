@@ -307,6 +307,19 @@ static void type_event(uint8_t code, bool pressed) {
     ble_flush_keys(TYPE_SETTLE_MS);
 }
 
+// Text and macros are typed with the modifiers cleared, so a held Shift or Ctrl changes nothing, and the held ones
+// come back afterwards (register_code on a modifier changes the same real-mods state the keys use).
+static uint8_t type_begin(void) {
+    uint8_t mods = get_mods();
+    clear_mods();
+    return mods;
+}
+
+static void type_end(uint8_t mods) {
+    set_mods(mods);
+    send_keyboard_report();
+}
+
 #ifndef TEX_NO_MACROS
 // Sequence macros: MC_n types the nth zero-terminated run of HID usages in tex_macros, a table the linker script
 // reserves and the keymap editor fills (its address is in the editor's data). 0xE0-0xE7 are modifiers: each
@@ -318,10 +331,10 @@ void macro_play(uint8_t n) {
     for (; n && p < tex_macros_end; p++) {
         if (!*p) n--;
     }
-    uint8_t held = 0;
+    uint8_t held = 0, mods = type_begin();
     for (;; p++) {
         uint8_t c = p < tex_macros_end ? *p : 0;
-        if (c >= KC_LEFT_CTRL) {
+        if (c >= KC_LEFT_CTRL && c <= KC_RIGHT_GUI) { // above 0xE7 isn't a modifier; it is tapped like a key
             type_event(c, true);
             held |= 1 << (c & 7);
             continue;
@@ -333,8 +346,9 @@ void macro_play(uint8_t n) {
         for (uint8_t m = KC_LEFT_CTRL; held; m++, held >>= 1) {
             if (held & 1) type_event(m, false);
         }
-        if (!c) return;
+        if (!c) break;
     }
+    type_end(mods);
 }
 #endif
 
@@ -346,6 +360,7 @@ static const char    type_punct[]      = " \n.-:%";
 static const uint8_t type_punct_code[] = {KC_SPC, KC_ENT, KC_DOT, KC_MINS, 0x80 | KC_SCLN, 0x80 | KC_5};
 
 void type_text(const char *s) {
+    uint8_t mods = type_begin();
     for (; *s; s++) {
         char    c    = *s;
         uint8_t code = KC_NO;
@@ -365,6 +380,7 @@ void type_text(const char *s) {
         type_event(code & 0x7F, false);
         if (code & 0x80) type_event(KC_LSFT, false);
     }
+    type_end(mods);
 }
 
 void type_number(uint16_t n, const char *after) {

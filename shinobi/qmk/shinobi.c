@@ -124,8 +124,8 @@ static void settings_save(void) {
 // Stock's factory flash test (FUN_4810), run over USB by tools/tex_selftest.py (raw HID command 14 00): write a
 // test value where the settings live, read it back, put the settings back. The low byte 0xA5 is no TrackPoint
 // level, so if power drops mid-test the next boot takes the defaults. Stock starts it by holding Up+LAlt+Fn for 6 s
-// and shows the result on Caps Lock (312 bytes here); this version is the read-back alone, 84 bytes. Off by default:
-// with Fn+B's idl15m34s the v1.1 image has 56 bytes free (2026-11-12), so it would be 28 over the IAP's 28,076.
+// and shows the result on Caps Lock (312 bytes here); this version is the read-back alone, 88 bytes. Off by default,
+// as in the v1.1 release.
 #    define SETTINGS_TEST (SETTINGS_KEY | 0xA5A5U)
 static bool settings_selftest(void) {
     settings_put(SETTINGS_TEST);
@@ -161,45 +161,59 @@ extern int tp_buttons; // action.c: the matrix mouse buttons, merged into the PS
 // DIP switch 4 (stock FUN_5614): Fn holds the middle button, so Fn + stick scrolls and a quick Fn tap clicks
 // (ps2_mouse.c's scroll button). Any key pressed while Fn is down cancels the click: the button is then held on
 // past PS2_MOUSE_SCROLL_BTN_SEND, so Fn+F1 doesn't click.
+// The middle button has two owners, its own key and Fn (while fn_scroll isn't 0); it is down while either holds
+// it. Housekeeping calls this with KC_NO, which only runs out the wait after a release.
 static uint8_t  fn_scroll; // 0 off, 1 Fn down, 2 Fn down and another key pressed, 3 released, waiting
 static uint16_t fn_scroll_time;
+static bool     mid_key;
 
 static void fn_scroll_record(uint16_t keycode, bool pressed) {
-    if (IS_QK_MOMENTARY(keycode)) {
+    if (fn_scroll == 3 && timer_elapsed(fn_scroll_time) > PS2_MOUSE_SCROLL_BTN_SEND) fn_scroll = 0;
+    if (keycode == MS_BTN3) {
+        mid_key = pressed;
+    } else if (IS_QK_MOMENTARY(keycode)) {
         if (pressed && (tex_dip & TEX_DIP4_FN_SCROLL)) {
-            tp_buttons |= 1 << PS2_MOUSE_BTN_MIDDLE;
-            fn_scroll      = 1;
-            fn_scroll_time = timer_read();
+            fn_scroll = 1;
         } else if (!pressed && fn_scroll == 1) {
-            tp_buttons &= ~(1 << PS2_MOUSE_BTN_MIDDLE); // a tap clicks, a hold that scrolled doesn't
-            fn_scroll = 0;
+            fn_scroll = 0; // a tap clicks, a hold that scrolled doesn't
         } else if (!pressed && fn_scroll == 2) {
-            fn_scroll = 3; // housekeeping lets go of the button once the click window has passed
+            fn_scroll      = 3; // held on until the click window has passed since this release
+            fn_scroll_time = timer_read();
         }
     } else if (pressed && fn_scroll == 1) {
         fn_scroll = 2;
+    }
+    if (mid_key || fn_scroll) {
+        tp_buttons |= 1 << PS2_MOUSE_BTN_MIDDLE;
+    } else {
+        tp_buttons &= ~(1 << PS2_MOUSE_BTN_MIDDLE);
     }
 }
 #endif
 
 #ifndef TEX_NO_MOUSEKEYS
-// Mouse movement keys: up, down, left, right as bits 0-3; the diagonals set two. Movement goes out with the
-// matrix mouse buttons every 16 ms and speeds up from 1 to 11 counts while held.
-static uint8_t  mk_dirs, mk_ticks;
+// Mouse movement keys: mk_held has a bit per key held, up, down, left, right as bits 0-3 and up-left, up-right,
+// down-left, down-right as 4-7. A direction moves while any of its three keys is held, so letting go of one key
+// never cancels another. Movement goes out with the matrix mouse buttons every 16 ms and speeds up from 1 to 11
+// counts while held.
+#define MK_UP    (1 << 0 | 1 << 4 | 1 << 5)
+#define MK_DOWN  (1 << 1 | 1 << 6 | 1 << 7)
+#define MK_LEFT  (1 << 2 | 1 << 4 | 1 << 6)
+#define MK_RIGHT (1 << 3 | 1 << 5 | 1 << 7)
+static uint8_t  mk_held, mk_ticks;
 static uint16_t mk_time;
-static const uint8_t mk_diagonal[] = {1 | 4, 1 | 8, 2 | 4, 2 | 8};
 
 static void mousekey_record(uint16_t keycode, bool pressed) {
-    uint8_t bits = keycode <= MS_RGHT ? 1 << (keycode - MS_UP) : mk_diagonal[keycode - MS_UPLEFT];
+    uint8_t bit = 1 << (keycode <= MS_RGHT ? keycode - MS_UP : keycode - MS_UPLEFT + 4);
     if (pressed) {
-        mk_dirs |= bits;
+        mk_held |= bit;
     } else {
-        mk_dirs &= ~bits;
+        mk_held &= ~bit;
     }
 }
 
 static void mousekey_task(void) {
-    if (!mk_dirs) {
+    if (!mk_held) {
         mk_ticks = 0;
         return;
     }
@@ -208,25 +222,28 @@ static void mousekey_task(void) {
     if (mk_ticks < 40) mk_ticks++;
     int8_t         step = 1 + mk_ticks / 4;
     report_mouse_t r    = {.buttons = tp_buttons};
-    if (mk_dirs & 1) r.y -= step;
-    if (mk_dirs & 2) r.y += step;
-    if (mk_dirs & 4) r.x -= step;
-    if (mk_dirs & 8) r.x += step;
+    if (mk_held & MK_UP) r.y -= step;
+    if (mk_held & MK_DOWN) r.y += step;
+    if (mk_held & MK_LEFT) r.x -= step;
+    if (mk_held & MK_RIGHT) r.x += step;
     host_mouse_send(&r);
 }
 #endif
 
 bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
     power_input();
+#ifndef TEX_NO_DIP4
+    // First, so a key another handler takes (Fn+Esc, Fn+slot) still cancels Fn's click. The middle button's key
+    // is handled here, not by action.c, which would let go of the button while Fn still holds it.
+    fn_scroll_record(keycode, record->event.pressed);
+    if (keycode == MS_BTN3) return false;
+#endif
     if (!process_record_user(keycode, record)) {
         return false;
     }
     if (!ble_process_record(keycode, record)) {
         return false;
     }
-#ifndef TEX_NO_DIP4
-    fn_scroll_record(keycode, record->event.pressed);
-#endif
 #ifndef TEX_NO_MACROS
     if (keycode >= QK_MACRO_0 && keycode <= QK_MACRO_31) {
         if (record->event.pressed) macro_play(keycode - QK_MACRO_0);
@@ -527,10 +544,7 @@ void housekeeping_task_kb(void) {
         profile_switch_user(profile);
     }
 #ifndef TEX_NO_DIP4
-    if (fn_scroll == 3 && timer_elapsed(fn_scroll_time) > PS2_MOUSE_SCROLL_BTN_SEND) {
-        tp_buttons &= ~(1 << PS2_MOUSE_BTN_MIDDLE);
-        fn_scroll = 0;
-    }
+    fn_scroll_record(KC_NO, false);
 #endif
 #ifndef TEX_NO_MOUSEKEYS
     mousekey_task();

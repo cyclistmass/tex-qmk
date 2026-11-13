@@ -134,11 +134,15 @@ curve as two arrays, reading CFCR once) and moved code into the gaps: `settings_
 keymaps (`.tex_text0b`) and the battery curve sits after the .data image in flash0 (`.tex_rodata0`). Fn+B then
 gained `dip` (56 bytes), `wake` (92) and `idle` (104), and its text got terse
 (`bat85% adc2900 aa zzz15m tp3 dip24 idl15m34s wk1420ms`): shorter words and no spaces inside fields saved 24
-bytes, a number and its trailing text in one call 4 more, and minutes in `idl` cost 36. The image is 28,020 bytes,
-leaving 60, all of it after the code in flash2 except 4 in flash0. The editor accepts both releases and picks one
-by the image's sha256; macros and mouse keys appear for v1.1 only. Stock's factory flash self-test is a raw HID
-command (`14 00`, `tools/tex_selftest.py`) behind `TEX_SELFTEST` and off: 84 bytes, 28 more than are free (the
-Up+LAlt+Fn hold and Caps Lock display stock uses cost 312).
+bytes, a number and its trailing text in one call 4 more, and minutes in `idl` cost 36, for 28,020 bytes. Review
+fixes then cost 192 (mouse keys keep a bit per key held, the middle button has two owners, typed text and macros
+save and restore the held modifiers, the wake time is 32-bit), cut to 124 by testing the mouse directions as masks
+and folding the Fn-scroll timeout into its handler; `divsi3.S` replaced libgcc's 460-byte signed division (one
+caller, ps2_mouse.c's scroll scaling) with 30 bytes around the unsigned one. The image is 27,704 bytes, leaving
+372, all of it after the code in flash2 except 4 in flash0. The editor accepts both releases and picks one by the
+image's sha256; macros and mouse keys appear for v1.1 only. Stock's factory flash self-test is a raw HID command
+(`14 00`, `tools/tex_selftest.py`) behind `TEX_SELFTEST` and off: 88 bytes (the Up+LAlt+Fn hold and Caps Lock
+display stock uses cost 312).
 
 Earlier (v1.0):
 
