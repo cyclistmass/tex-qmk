@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Owner's manual and troubleshooting
+    url: https://cyclistmass.github.io/tex-qmk/shinobi/MANUAL.html
+    about: Check the troubleshooting table and known issues first.

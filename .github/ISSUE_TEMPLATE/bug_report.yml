@@ -1,0 +1,102 @@
+name: Bug report
+description: Something on the keyboard or in the tools doesn't work as the manual says.
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. This is unofficial firmware; please don't contact TEX about it.
+        The fastest way to a fix: the two **Fn+B** lines, what you did, and what happened.
+        Fn+B types its lines into whatever has focus, so open a text editor first.
+  - type: dropdown
+    id: keyboard
+    attributes:
+      label: Keyboard
+      options:
+        - TEX Shinobi BLE5
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: What's wrong
+      description: Pick the closest.
+      options:
+        - Keys or layers (including DIP switches)
+        - TrackPoint or mouse keys
+        - Bluetooth (pairing, switching, reconnecting, wake)
+        - Battery, sleep or wake
+        - Macros or shortcuts
+        - Keymap editor web page
+        - Flashing or updater
+        - Documentation
+        - Something else
+    validations:
+      required: true
+  - type: textarea
+    id: fnb
+    attributes:
+      label: Fn+B output
+      description: Press Fn+B in a text editor and paste both lines exactly as typed. If the keyboard can't type, say so.
+      placeholder: |
+        v1.1 default 2026-11-13-09:00:00
+        bat85% adc2900 bat zzz15m tp3 dip24 idl15m34s wk1420ms
+      render: text
+    validations:
+      required: true
+  - type: dropdown
+    id: connection
+    attributes:
+      label: Connected by
+      options:
+        - USB cable
+        - Bluetooth
+        - Both / switching between them
+        - Not connected (flashing problem)
+    validations:
+      required: true
+  - type: input
+    id: host
+    attributes:
+      label: Computer
+      description: Operating system and version, and its keyboard layout setting (e.g. Windows 11, German layout).
+    validations:
+      required: true
+  - type: input
+    id: board
+    attributes:
+      label: Physical layout
+      description: US (ANSI), ISO or JIS. ISO and JIS reports are especially welcome.
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: What you pressed or did, in order. Include which keys were held at the same time.
+      placeholder: |
+        1. Hold the mouse-up key
+        2. Also press mouse up-left, then let go of it
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected, and what happened
+    validations:
+      required: true
+  - type: dropdown
+    id: frequency
+    attributes:
+      label: How often
+      options:
+        - Every time
+        - Sometimes
+        - Happened once
+    validations:
+      required: true
+  - type: textarea
+    id: more
+    attributes:
+      label: Anything else
+      description: How you flashed (updater .exe, tex_flash.py, editor image), custom keymap or macros, battery type (alkaline/NiMH), screenshots.
