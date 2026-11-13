@@ -90,7 +90,10 @@ static uint8_t  status_spare[2]; // module '4' bytes 6..7, echoed back as stock 
 static uint8_t  status_block[7]; // [0] link state, [1] slot 0..2; [6] is not the module's
 static bool     status_seen;
 static uint16_t link_down_at; // when keys started waiting for the link
-static uint16_t keys_acked_at;
+static uint32_t woke_at;      // ble_wake()
+static bool     wake_waiting; // from ble_wake() until the link is up
+uint16_t        ble_wake_ms;
+static uint32_t keys_acked_at; // 32-bit: keys can be idle past a 16-bit timer's 65 s wrap
 
 static report_keyboard_t last_keyboard;
 static report_nkro_t     last_nkro;
@@ -220,7 +223,7 @@ static void send_next(void) {
         flags = 0;
         build(TYPE_STATUS);
         return;
-    } else if (key_count && link_up && timer_elapsed(keys_acked_at) >= BLE_KEY_GAP_MS) {
+    } else if (key_count && link_up && timer_elapsed32(keys_acked_at) >= BLE_KEY_GAP_MS) {
         type = TYPE_KEYS;
     } else {
         // Idle: a '4' echoing what the module last said draws an answer only
@@ -238,7 +241,7 @@ static void acked(void) {
         case TYPE_KEYS:
             key_tail = (key_tail + inflight_keys) % KEY_RING_SIZE;
             key_count -= inflight_keys;
-            keys_acked_at = timer_read();
+            keys_acked_at = timer_read32();
             break;
         case TYPE_MOUSE:
             // Stock zeroes the accumulators here and loses what came in since
@@ -274,6 +277,11 @@ static void handle_status(const uint8_t *in, uint8_t len) {
         memcpy(status_block, in + 8, sizeof(status_block));
         status_seen = true;
         flags |= FLAG_STATUS;
+    }
+    if (wake_waiting && status_block[0] == LINK_CONNECTED) {
+        uint32_t ms  = timer_elapsed32(woke_at);
+        ble_wake_ms  = ms < 65535 ? ms : 65535;
+        wake_waiting = false;
     }
     if (inflight && in[2] == seq) acked();
     send_next();
@@ -373,6 +381,8 @@ void ble_wake(void) {
     sdStart(&BLE_SD, &ble_serial_config);
     queue_command(CMD_WAKE);
     status_seen = false; // the link may have dropped while asleep
+    woke_at      = timer_read32();
+    wake_waiting = true;
 }
 
 // QMK asks this only to pick the output in auto mode, where USB comes first.
@@ -475,6 +485,7 @@ bool ble_process_record(uint16_t keycode, keyrecord_t *record) {
     }
     if (keycode < BLE_SLOT1 || keycode > BLE_PAIR) return true;
     if (record->event.pressed) {
+        if (slot_key) return false; // the first one held wins; this one's release is ignored too
         slot_key        = keycode;
         slot_key_since  = timer_read();
         slot_key_paired = false;

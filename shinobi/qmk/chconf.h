@@ -6,6 +6,8 @@
 #define CH_CFG_ST_FREQUENCY 1000
 #define CH_CFG_ST_TIMEDELTA 0
 #define CH_CFG_TIME_QUANTUM 20
+// Ticks are milliseconds: skip the 64-bit conversion (tools/patch_qmk_tree.sh).
+#define TEX_TIME_MS_IDENTITY
 
 #include_next <chconf.h>
 

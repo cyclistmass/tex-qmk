@@ -32,6 +32,11 @@ enum shinobi_keycodes {
     SLEEP7,
     SLEEP8,
     SLEEP9,
+    // Mouse movement on the diagonals (shinobi.c); straight moves use QMK's MS_UP/MS_DOWN/MS_LEFT/MS_RGHT.
+    MS_UPLEFT,
+    MS_UPRIGHT,
+    MS_DOWNLEFT,
+    MS_DOWNRIGHT,
 };
 
 // ble.c
@@ -42,18 +47,23 @@ void ble_flush_keys(uint8_t settle_ms);
 void ble_set_battery(uint8_t percent);
 void ble_sleep(void);
 void ble_wake(void);
+// ms from the last wake (ble_wake) to the module's first status with the link connected; 0 before any sleep
+extern uint16_t ble_wake_ms;
 
 // power.c
 void     power_init(void);
 void     power_task(void);
 void     power_pointer_activity(void);
+void     power_input(void); // a key or a TrackPoint packet, for Fn+B's idle figure
 void     power_set_sleep(uint8_t choice, bool announce);
 uint16_t battery_raw(void);
 uint8_t  battery_percent(void);
 void     battery_report(void);
 // power.c: types text and numbers through the active output, for readbacks
 void     type_text(const char *s);
-void     type_number(uint16_t n);
+void     type_number(uint16_t n, const char *after);
+// power.c: plays sequence macro n (MC_n) from the editor's table
+void     macro_play(uint8_t n);
 
 // shinobi.c: TrackPoint power
 void tp_power_off(void);
@@ -65,5 +75,9 @@ void ps2_host_resume(void);
 extern bool     ps2_stream_paused;
 extern uint32_t ps2_last_packet;
 
-// Called when the profile switch moves: 0 = none/invalid, 1-3 = position.
+// Called when DIP switches 1-3 change: 0 = none or several on, 1-3 = the one that is on.
 void profile_switch_user(uint8_t profile);
+// DIP switches as read from matrix column 14 rows 0-5 (the six switches), bit n = switch n+1 on (shinobi.c).
+extern uint8_t tex_dip;
+#define TEX_DIP4_FN_SCROLL (1 << 3) // Fn + stick scrolls, an Fn tap is a middle click
+#define TEX_DIP5_REVERSE   (1 << 4) // vertical scrolling reversed

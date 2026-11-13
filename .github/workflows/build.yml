@@ -17,6 +17,12 @@ jobs:
         keymap: [default]
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # the editor check unpacks the release tag's sources
+      # Before the toolchain: these need only the runner's own gcc and python3, and take seconds.
+      - name: Host tests of the firmware's input logic
+        if: matrix.keymap == 'default'
+        run: shinobi/test/host/run.sh
       - name: Install the pinned toolchain
         run: |
           # The runner's Azure Ubuntu mirror has hung or failed DNS here (2026-11-11); use the main archive.
@@ -32,7 +38,19 @@ jobs:
         run: |
           shinobi/tools/build_firmware.sh "$RUNNER_TEMP/qmk_firmware" ${{ matrix.keymap }}
           cp "$RUNNER_TEMP/qmk_firmware/.build/tex_shinobi_${{ matrix.keymap }}.bin" .
+      - name: Signed division as linked (divsi3.S)
+        if: matrix.keymap == 'default'
+        run: shinobi/test/host/div_asm.sh "$RUNNER_TEMP/qmk_firmware/.build/tex_shinobi_default.elf"
       - uses: actions/upload-artifact@v4
         with:
           name: tex_shinobi_${{ matrix.keymap }}
           path: tex_shinobi_${{ matrix.keymap }}.bin
+      # The keymap editor patches the release image, so it is checked against the release's own sources: the
+      # editor's export of the default keymap must compile to the release, and a patched image to its own build.
+      - uses: actions/setup-node@v4
+        if: matrix.keymap == 'default'
+        with:
+          node-version: 22
+      - name: Keymap editor byte-identity check
+        if: matrix.keymap == 'default'
+        run: shinobi/editor/test/ci_check.sh "$RUNNER_TEMP/qmk_firmware" "$RUNNER_TEMP/editor_check"

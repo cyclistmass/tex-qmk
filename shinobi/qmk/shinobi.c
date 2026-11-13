@@ -106,14 +106,38 @@ static void fmc_run(uint32_t command) {
     }
 }
 
-static void settings_save(void) {
-    uint32_t word = SETTINGS_KEY | sleep_choice << 8 | tp_level;
-    if (word == settings_word) return;
+// In the 56 bytes after the keymaps (ld .tex_text0b): code beyond flash2's room.
+__attribute__((section(".tex_text0b"), noinline)) static void settings_put(uint32_t word) {
     fmc_run(FMC_OCMR_CMD_PAGE_ERASE);
     FMC->WRDR = word;
     fmc_run(FMC_OCMR_CMD_WORD_PROGRAM);
+}
+
+static void settings_save(void) {
+    uint32_t word = SETTINGS_KEY | sleep_choice << 8 | tp_level;
+    if (word == settings_word) return;
+    settings_put(word);
     settings_word = word;
 }
+
+#ifdef TEX_SELFTEST
+// Stock's factory flash test (FUN_4810), run over USB by tools/tex_selftest.py (raw HID command 14 00): write a
+// test value where the settings live, read it back, put the settings back. The low byte 0xA5 is no TrackPoint
+// level, so if power drops mid-test the next boot takes the defaults. Stock starts it by holding Up+LAlt+Fn for 6 s
+// and shows the result on Caps Lock (312 bytes here); this version is the read-back alone, 88 bytes. Off by default,
+// as in the v1.1 release.
+#    define SETTINGS_TEST (SETTINGS_KEY | 0xA5A5U)
+static bool settings_selftest(void) {
+    settings_put(SETTINGS_TEST);
+    // Branch cache and pre-fetch buffer off, so the read comes from the flash array (UM v1.60, CFCR bits 12 and 4).
+    uint32_t cfcr = FMC->CFCR;
+    FMC->CFCR     = cfcr & ~(FMC_CFCR_CE | 1U << 4);
+    bool ok       = *(volatile uint32_t *)SETTINGS_ADDR == SETTINGS_TEST;
+    FMC->CFCR     = cfcr;
+    settings_put(settings_word);
+    return ok;
+}
+#endif
 
 // Before ps2_mouse_init() sends the sensitivity.
 void keyboard_pre_init_kb(void) {
@@ -131,13 +155,116 @@ void keyboard_post_init_kb(void) {
     keyboard_post_init_user();
 }
 
+extern int tp_buttons; // action.c: the matrix mouse buttons, merged into the PS/2 report
+
+#ifndef TEX_NO_DIP4
+// DIP switch 4 (stock FUN_5614): Fn holds the middle button, so Fn + stick scrolls and a quick Fn tap clicks
+// (ps2_mouse.c's scroll button). Any key pressed while Fn is down cancels the click: the button is then held on
+// past PS2_MOUSE_SCROLL_BTN_SEND, so Fn+F1 doesn't click.
+// The middle button has two owners, its own key and Fn (while fn_scroll isn't 0); it is down while either holds
+// it. Housekeeping calls this with KC_NO, which only runs out the wait after a release.
+// Fn is MO(TEX_FN_LAYER), the editor's and the default keymap's last layer; another MO() key is an ordinary key
+// here. fn_down counts the Fn keys held (the Fn/Ctrl swap layer has a second one), so Fn ends when the last is let go.
+#ifndef TEX_FN_LAYER
+#    define TEX_FN_LAYER 3
+#endif
+static uint8_t  fn_scroll; // 0 off, 1 Fn down, 2 Fn down and another key pressed, 3 released, waiting
+static uint8_t  fn_down;
+static uint16_t fn_scroll_time;
+static bool     mid_key;
+
+static void fn_scroll_record(uint16_t keycode, bool pressed) {
+    if (fn_scroll == 3 && timer_elapsed(fn_scroll_time) > PS2_MOUSE_SCROLL_BTN_SEND) fn_scroll = 0;
+    if (keycode == MS_BTN3) {
+        mid_key = pressed;
+    } else if (keycode == MO(TEX_FN_LAYER)) {
+        if (pressed) {
+            if (!fn_down++ && (tex_dip & TEX_DIP4_FN_SCROLL)) fn_scroll = 1;
+        } else if (fn_down && --fn_down) {
+            // another Fn key is still down
+        } else if (fn_scroll == 1) {
+            fn_scroll = 0; // a tap clicks, a hold that scrolled doesn't
+        } else if (fn_scroll == 2) {
+            fn_scroll      = 3; // held on until the click window has passed since this release
+            fn_scroll_time = timer_read();
+        }
+    } else if (pressed && fn_scroll == 1) {
+        fn_scroll = 2;
+    }
+    if (mid_key || fn_scroll) {
+        tp_buttons |= 1 << PS2_MOUSE_BTN_MIDDLE;
+    } else {
+        tp_buttons &= ~(1 << PS2_MOUSE_BTN_MIDDLE);
+    }
+}
+#endif
+
+#ifndef TEX_NO_MOUSEKEYS
+// Mouse movement keys: mk_held has a bit per key held, up, down, left, right as bits 0-3 and up-left, up-right,
+// down-left, down-right as 4-7. A direction moves while any of its three keys is held, so letting go of one key
+// never cancels another. Movement goes out with the matrix mouse buttons every 16 ms and speeds up from 1 to 11
+// counts while held.
+#define MK_UP    (1 << 0 | 1 << 4 | 1 << 5)
+#define MK_DOWN  (1 << 1 | 1 << 6 | 1 << 7)
+#define MK_LEFT  (1 << 2 | 1 << 4 | 1 << 6)
+#define MK_RIGHT (1 << 3 | 1 << 5 | 1 << 7)
+static uint8_t  mk_held, mk_ticks;
+static uint16_t mk_time;
+
+static void mousekey_record(uint16_t keycode, bool pressed) {
+    uint8_t bit = 1 << (keycode <= MS_RGHT ? keycode - MS_UP : keycode - MS_UPLEFT + 4);
+    if (pressed) {
+        mk_held |= bit;
+    } else {
+        mk_held &= ~bit;
+    }
+}
+
+static void mousekey_task(void) {
+    if (!mk_held) {
+        mk_ticks = 0;
+        return;
+    }
+    if (timer_elapsed(mk_time) < 16) return;
+    mk_time = timer_read();
+    if (mk_ticks < 40) mk_ticks++;
+    int8_t         step = 1 + mk_ticks / 4;
+    report_mouse_t r    = {.buttons = tp_buttons};
+    if (mk_held & MK_UP) r.y -= step;
+    if (mk_held & MK_DOWN) r.y += step;
+    if (mk_held & MK_LEFT) r.x -= step;
+    if (mk_held & MK_RIGHT) r.x += step;
+    host_mouse_send(&r);
+}
+#endif
+
 bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
+    power_input();
     if (!process_record_user(keycode, record)) {
         return false;
     }
+#ifndef TEX_NO_DIP4
+    // Before the board's own keys, so a key they take (Fn+Esc, Fn+slot) still cancels Fn's click; after the
+    // keymap's hook, which may take or remap any key. The middle button's key is handled here, not by action.c,
+    // which would let go of the button while Fn still holds it.
+    fn_scroll_record(keycode, record->event.pressed);
+    if (keycode == MS_BTN3) return false;
+#endif
     if (!ble_process_record(keycode, record)) {
         return false;
     }
+#ifndef TEX_NO_MACROS
+    if (keycode >= QK_MACRO_0 && keycode <= QK_MACRO_31) {
+        if (record->event.pressed) macro_play(keycode - QK_MACRO_0);
+        return false;
+    }
+#endif
+#ifndef TEX_NO_MOUSEKEYS
+    if ((keycode >= MS_UP && keycode <= MS_RGHT) || (keycode >= MS_UPLEFT && keycode <= MS_DOWNRIGHT)) {
+        mousekey_record(keycode, record->event.pressed);
+        return false;
+    }
+#endif
     if (keycode == BAT_REPORT) {
         if (record->event.pressed) battery_report();
         return false;
@@ -147,8 +274,8 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
             tp_level = keycode - TP_SEN1;
             tp_send_sensitivity();
             settings_save();
-            type_text("tp ");
-            type_number(tp_level + 1);
+            type_text("tp");
+            type_number(tp_level + 1, "");
         }
         return false;
     }
@@ -400,28 +527,38 @@ void ps2_mouse_moved_user(report_mouse_t *mouse_report) {
 #endif
 }
 
-static uint8_t profile_read(void) {
-    // Stock decode (FUN_8598): exactly one closed position selects 1-3, anything else is 0.
-    uint8_t profile = 0;
-    uint8_t closed  = 0;
-    for (uint8_t row = 0; row < 3; row++) {
-        if (matrix_is_on(row, PROFILE_SWITCH_COL)) {
-            profile = row + 1;
-            closed++;
-        }
+uint8_t tex_dip;
+
+// DIP switch n closes matrix column 14, row n-1 (stock FUN_4c74 keeps the same bits; FUN_8598 decodes 1-3,
+// FUN_5614 tests 4, the scroll code FUN_5cc8 tests 5, FUN_541c tests 6 as bit 5). The block has six switches
+// (counted by Mauro, 2026-11-13) and stock never reads rows 6 and 7, so only rows 0-5 are read.
+#define TEX_DIP_SWITCHES 6
+static uint8_t dip_read(void) {
+    uint8_t dip = 0;
+    for (uint8_t row = 0; row < TEX_DIP_SWITCHES; row++) {
+        if (matrix_is_on(row, PROFILE_SWITCH_COL)) dip |= 1 << row;
     }
-    return closed == 1 ? profile : 0;
+    return dip;
 }
 
 __attribute__((weak)) void profile_switch_user(uint8_t profile) {}
 
 void housekeeping_task_kb(void) {
     static uint8_t profile = UINT8_MAX;
-    uint8_t        now     = profile_read();
+    tex_dip                = dip_read();
+    // Exactly one of switches 1-3 on selects profile 1-3; none or several is 0 (stock FUN_8598).
+    uint8_t three = tex_dip & 7;
+    uint8_t now   = three & (three - 1) ? 0 : three == 4 ? 3 : three;
     if (now != profile) {
         profile = now;
         profile_switch_user(profile);
     }
+#ifndef TEX_NO_DIP4
+    fn_scroll_record(KC_NO, false);
+#endif
+#ifndef TEX_NO_MOUSEKEYS
+    mousekey_task();
+#endif
     ble_housekeeping();
     tp_setup_task();
     tp_watch_task();
@@ -484,6 +621,14 @@ void raw_hid_receive(uint8_t *data, uint8_t length) {
                 iap_reset(data[1] == 0 ? IAP_MAGIC_VALUE : IAP_MAGIC_RUN_APP);
             }
             break;
+#ifdef TEX_SELFTEST
+        case 0x14: // 00: the flash self-test above; reply byte 4 is 1 for a pass, 0 for a failure
+            if (data[1] == 0x00) {
+                reply[4] = settings_selftest();
+                len      = 1;
+            }
+            break;
+#endif
 #ifdef TEX_DIAG
         case 0x13: // test build (keymap "diag"): main-loop passes, uptime, debounced matrix, raw port inputs
             if (data[1] == 0x00) {

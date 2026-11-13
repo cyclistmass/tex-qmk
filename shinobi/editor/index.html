@@ -1,0 +1,553 @@
+<!doctype html>
+<!-- Copyright 2026 Mauro DiBenedetto. SPDX-License-Identifier: GPL-2.0-or-later -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shinobi Keymap Editor</title>
+<style>
+:root {
+  --bg: #f6f7f9; --panel: #ffffff; --text: #1d2228; --muted: #5d6670; --line: #d5dae0;
+  --key: #fdfdfd; --key-edge: #b9c0c8; --key-text: #1d2228; --accent: #c2410c; --accent-soft: #fde7da;
+  --sel: #1d4ed8; --ok: #15803d; --ok-soft: #dcfce7; --bad: #b91c1c; --bad-soft: #fee2e2; --faded: #a3abb4;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15181c; --panel: #1e2227; --text: #e6e9ec; --muted: #9aa3ad; --line: #343a42;
+    --key: #2a2f36; --key-edge: #454c55; --key-text: #e6e9ec; --accent: #fb923c; --accent-soft: #43271a;
+    --sel: #60a5fa; --ok: #4ade80; --ok-soft: #173622; --bad: #f87171; --bad-soft: #3d1c1c; --faded: #6b737c;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15181c; --panel: #1e2227; --text: #e6e9ec; --muted: #9aa3ad; --line: #343a42;
+  --key: #2a2f36; --key-edge: #454c55; --key-text: #e6e9ec; --accent: #fb923c; --accent-soft: #43271a;
+  --sel: #60a5fa; --ok: #4ade80; --ok-soft: #173622; --bad: #f87171; --bad-soft: #3d1c1c; --faded: #6b737c;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width: 1060px; margin: 0 auto; padding: 20px 16px 60px; }
+a { color: var(--sel); }
+a:visited { color: var(--sel); }
+h1 { font-size: 1.45rem; margin: 0 0 4px; }
+h2 { font-size: 1.05rem; margin: 0 0 10px; }
+p { margin: 0 0 10px; }
+.sub { color: var(--muted); margin-bottom: 18px; }
+section { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+button, .filebtn { font: inherit; border: 1px solid var(--key-edge); background: var(--key); color: var(--text); border-radius: 7px; padding: 6px 12px; cursor: pointer; }
+button:hover:not(:disabled), .filebtn:hover { border-color: var(--sel); }
+button:disabled { opacity: .45; cursor: not-allowed; }
+button.primary { background: var(--sel); border-color: var(--sel); color: #fff; }
+.filebtn input { display: none; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.status { margin-top: 10px; padding: 8px 10px; border-radius: 7px; font-size: .92rem; }
+.status.ok { background: var(--ok-soft); color: var(--ok); }
+.status.bad { background: var(--bad-soft); color: var(--bad); }
+.status.info { background: var(--bg); color: var(--muted); }
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.tabs button[aria-selected="true"] { background: var(--sel); border-color: var(--sel); color: #fff; }
+.kbwrap { overflow-x: auto; padding-bottom: 4px; }
+.kb { position: relative; margin: 0 auto; }
+.key { position: absolute; border: 1px solid var(--key-edge); border-bottom-width: 3px; background: var(--key); color: var(--key-text);
+  border-radius: 6px; padding: 2px; display: flex; align-items: center; justify-content: center; text-align: center;
+  font-size: 11px; line-height: 1.1; cursor: pointer; overflow: hidden; word-break: break-word; }
+.key:hover { border-color: var(--sel); }
+.key.trans { color: var(--faded); }
+.key.changed { background: var(--accent-soft); border-color: var(--accent); }
+.key.sel { outline: 3px solid var(--sel); outline-offset: 1px; z-index: 2; }
+.legend { color: var(--muted); font-size: .85rem; margin-top: 8px; }
+.legend .sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -1px; margin: 0 4px 0 10px; border: 1px solid var(--key-edge); }
+.picker { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.cur { font-size: .95rem; }
+.cur code { background: var(--bg); padding: 1px 5px; border-radius: 4px; }
+input[type="search"] { font: inherit; width: 100%; max-width: 360px; padding: 6px 10px; border: 1px solid var(--key-edge); border-radius: 7px; background: var(--key); color: var(--text); }
+.mods label { margin-right: 12px; white-space: nowrap; }
+.groups { max-height: 340px; overflow-y: auto; border-top: 1px solid var(--line); padding-top: 8px; }
+.group h3 { font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 8px 0 6px; }
+.group .row button { padding: 4px 9px; font-size: .88rem; }
+.group .row button.on { border-color: var(--sel); box-shadow: inset 0 0 0 1px var(--sel); }
+pre { background: var(--bg); padding: 10px; border-radius: 7px; overflow-x: auto; font-size: .85rem; }
+.muted { color: var(--muted); }
+.hidden { display: none !important; }
+.macros { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 10px; align-items: center; }
+.macros label { font-weight: 600; font-size: .9rem; white-space: nowrap; }
+.macros input { font: 14px ui-monospace, Consolas, monospace; width: 100%; padding: 5px 8px; border: 1px solid var(--key-edge); border-radius: 6px; background: var(--key); color: var(--text); }
+.macros input.err { border-color: var(--bad); background: var(--bad-soft); }
+.macros .msg { grid-column: 2; color: var(--bad); font-size: .82rem; margin-top: -4px; }
+.meter { height: 8px; background: var(--bg); border: 1px solid var(--line); border-radius: 4px; overflow: hidden; max-width: 360px; }
+.meter div { height: 100%; background: var(--sel); }
+.meter.full div { background: var(--bad); }
+ul.tight { margin: 4px 0 10px; padding-left: 20px; }
+select { font: inherit; border: 1px solid var(--key-edge); background: var(--key); color: var(--text); border-radius: 7px; padding: 5px 8px; }
+.top { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: baseline; justify-content: space-between; }
+.lang { color: var(--muted); font-size: .9rem; }
+footer { margin-top: 18px; font-size: .85rem; }
+</style>
+</head>
+<body>
+<main>
+<div class="top">
+  <h1 data-i18n="ui.h1">TEX Shinobi keymap editor</h1>
+  <label class="lang"><span data-i18n="ui.language">Language:</span> <select id="lang"></select></label>
+</div>
+<p class="sub" data-i18n="ui.sub"></p>
+
+<section id="fw">
+  <h2 data-i18n="ui.fwH"></h2>
+  <p data-i18n-html="ui.fwP_html"></p>
+  <div class="row">
+    <label class="filebtn"><span data-i18n="ui.choose"></span><input type="file" id="binfile" accept=".bin,application/octet-stream"></label>
+    <button id="binlocal" data-i18n="ui.local"></button>
+  </div>
+  <div id="fwstatus" class="status info"></div>
+</section>
+
+<section id="edit">
+  <h2 data-i18n="ui.editH"></h2>
+  <p class="row"><label for="hostlayout" data-i18n="ui.layoutLabel"></label> <select id="hostlayout"></select></p>
+  <p class="muted" data-i18n="ui.layoutHelp"></p>
+  <div class="tabs" id="tabs" role="tablist"></div>
+  <p class="muted" id="layerhelp"></p>
+  <div class="kbwrap"><div class="kb" id="kb"></div></div>
+  <div class="legend"><span class="sw" style="background:var(--accent-soft);border-color:var(--accent)"></span><span data-i18n="ui.legendChanged"></span><span class="sw" style="background:var(--key)"></span><span data-i18n="ui.legendTrans"></span></div>
+</section>
+
+<section id="pick">
+  <h2 data-i18n="ui.pickH"></h2>
+  <div class="picker">
+    <div class="cur" id="cur"></div>
+    <div class="row hidden" id="keyactions">
+      <button id="keydefault" data-i18n="ui.keyDefault"></button>
+      <button id="layerreset" data-i18n="ui.layerReset"></button>
+    </div>
+    <div class="mods hidden" id="mods">
+      <span data-i18n="ui.modsBefore"></span>
+      <label><input type="checkbox" data-mod="0"> Ctrl</label>
+      <label><input type="checkbox" data-mod="1"> Shift</label>
+      <label><input type="checkbox" data-mod="2"> Alt</label>
+      <label><input type="checkbox" data-mod="3"> Win</label>
+      <span data-i18n="ui.modsAfter"></span>
+    </div>
+    <input type="search" id="search" autocomplete="off" data-i18n-placeholder="ui.search" class="hidden">
+    <div class="groups hidden" id="groups"></div>
+  </div>
+</section>
+
+<section id="macropanel">
+  <h2 data-i18n="ui.macroH"></h2>
+  <div id="macrooff" class="muted hidden"></div>
+  <div id="macroon">
+    <p data-i18n-html="ui.macroP_html"></p>
+    <div class="row"><div class="meter" id="meter" style="flex:1"><div></div></div><span id="metertext" class="muted"></span></div>
+    <div class="macros" id="macros" style="margin-top:10px"></div>
+  </div>
+</section>
+
+<section id="mousepanel">
+  <h2 data-i18n="ui.mouseH"></h2>
+  <div id="mouseoff" class="muted hidden"></div>
+  <div id="mouseon">
+    <p data-i18n-html="ui.mouseP_html"></p>
+    <div class="row">
+      <button id="mousepreset" data-i18n="ui.mousePreset"></button>
+      <span class="muted" id="mouseinfo"></span>
+    </div>
+    <p class="muted" style="margin-top:10px" data-i18n="ui.alsoNew"></p>
+    <ul class="tight muted">
+      <li data-i18n="ui.dip4"></li>
+      <li data-i18n="ui.dip5"></li>
+    </ul>
+  </div>
+</section>
+
+<section id="out">
+  <h2 data-i18n="ui.outH"></h2>
+  <p id="changes" class="muted"></p>
+  <div class="row">
+    <button id="dlbin" class="primary" disabled data-i18n="ui.dlbin"></button>
+    <button id="dljson" data-i18n="ui.dljson"></button>
+    <label class="filebtn"><span data-i18n="ui.loadjson"></span><input type="file" id="jsonfile" accept=".json,application/json"></label>
+    <button id="dlc" data-i18n="ui.dlc"></button>
+    <button id="resetall" data-i18n="ui.resetall"></button>
+  </div>
+  <div id="outstatus" class="status info hidden"></div>
+  <p class="muted" style="margin-top:12px" data-i18n="ui.flashP"></p>
+  <pre id="flashcmd"></pre>
+  <p class="muted" data-i18n-html="ui.updaterP_html"></p>
+  <p class="muted" data-i18n-html="ui.keymapcP_html"></p>
+</section>
+<footer id="machine" class="muted hidden"></footer>
+</main>
+
+<script src="shinobi_data.js"></script>
+<script src="i18n.js"></script>
+<script src="editor_core.js"></script>
+<script>
+(function () {
+  "use strict";
+  const DATA = SHINOBI_DATA;
+  const I18N = ShinobiI18n;
+  const newest = DATA.releases[DATA.releases.length - 1];
+  const $ = (id) => document.getElementById(id);
+  // Per-viewer choices, remembered in this browser only: the page's language (else the browser's) and the
+  // computer's keyboard layout.
+  function stored(name, ok) { try { const s = localStorage.getItem(name); return ok(s) ? s : null; } catch (e) { return null; } }
+  function store(name, v) { try { localStorage.setItem(name, v); } catch (e) { /* no storage */ } }
+  let lang = stored("shinobi.lang", (s) => I18N.languages.some((l) => l.id === s)) || I18N.pick(navigator.languages || [navigator.language]);
+  let tr = I18N.translator(lang);
+  let hostLayout = stored("shinobi.hostLayout", (s) => ShinobiCore.layouts.includes(s)) || "us";
+  let core = ShinobiCore.makeCore(DATA, undefined, { hostLayout, lang });
+  const data = core.data;
+  let rel = core.release;
+  let outName;
+  let defaults = core.defaultLayers();
+  let layers = core.defaultLayers();
+  let macros = Array.from({ length: 16 }, () => "");
+  let current = core.layerIds[0];
+  let selected = -1;
+  let image = null; // a verified release image
+  let imageFrom = "";
+  let fwLast = null, outLast = null; // the status lines, redrawn in a new language
+  // Fn + a 3x3 block around K: U I O / J K L / M , (K is down, , is down-right).
+  const MOUSE_PRESET = { KC_U: "MS_UPLEFT", KC_I: "MS_UP", KC_O: "MS_UPRIGHT", KC_J: "MS_LEFT", KC_L: "MS_RGHT", KC_M: "MS_DOWNLEFT", KC_K: "MS_DOWN", KC_COMM: "MS_DOWNRIGHT" };
+
+  // A translated template with some placeholders filled by nodes: "{layer} layer, the key that is {base}..."
+  function fillNodes(el, template, nodes) {
+    el.textContent = "";
+    template.split(/(\{\w+\})/).forEach((part) => {
+      const m = /^\{(\w+)\}$/.exec(part);
+      el.appendChild(m && nodes[m[1]] ? nodes[m[1]] : document.createTextNode(part));
+    });
+  }
+
+  // Static text, in the page's language.
+  for (const l of I18N.languages) $("lang").appendChild(Object.assign(document.createElement("option"), { value: l.id, textContent: l.name }));
+  for (const id of ShinobiCore.layouts) $("hostlayout").appendChild(Object.assign(document.createElement("option"), { value: id }));
+  function applyStatic() {
+    document.documentElement.lang = tr.lang;
+    document.title = tr("ui.title");
+    for (const el of document.querySelectorAll("[data-i18n]")) el.textContent = tr(el.dataset.i18n);
+    for (const el of document.querySelectorAll("[data-i18n-html]")) el.innerHTML = tr(el.dataset.i18nHtml); // our own strings
+    for (const el of document.querySelectorAll("[data-i18n-placeholder]")) el.placeholder = tr(el.dataset.i18nPlaceholder);
+    $("lang").value = tr.lang;
+    for (const o of $("hostlayout").options) o.textContent = tr("layout." + o.value);
+    $("rellist").textContent = DATA.releases.map((r) => r.file).join(tr("ui.and"));
+    $("relnew").textContent = DATA.releases.find((r) => r.macros).tag.replace(/^shinobi-/, "");
+    const note = tr("ui.machine");
+    $("machine").textContent = note;
+    $("machine").classList.toggle("hidden", !note);
+  }
+
+  // Switch to the release an image turned out to be, or to another language or layout; the keymap and macros carry over.
+  function useRelease(tag) {
+    core = ShinobiCore.makeCore(DATA, tag, { hostLayout, lang });
+    rel = core.release;
+    defaults = core.defaultLayers();
+    outName = rel.file.replace(/\.bin$/, "_custom.bin");
+    $("flashcmd").textContent = `python -I tex_flash.py ${outName} AP_0407_4.04.exe`;
+    $("hostlayout").value = hostLayout;
+    $("macrolayout").textContent = core.hostLayout.name;
+    const off = tr("ui.off", { new: newest.tag.replace(/^shinobi-/, ""), tag: rel.tag });
+    $("macrooff").textContent = off; $("mouseoff").textContent = off;
+    $("macrooff").classList.toggle("hidden", !!rel.macros); $("macroon").classList.toggle("hidden", !rel.macros);
+    $("mouseoff").classList.toggle("hidden", rel.mouse_keys); $("mouseon").classList.toggle("hidden", !rel.mouse_keys);
+  }
+  function setHostLayout(id) {
+    hostLayout = id;
+    store("shinobi.hostLayout", id);
+    useRelease(rel.tag);
+  }
+  $("hostlayout").addEventListener("change", () => { setHostLayout($("hostlayout").value); render(); renderPicker(); renderMacros(); });
+  $("lang").addEventListener("change", async () => {
+    lang = $("lang").value;
+    store("shinobi.lang", lang);
+    tr = I18N.translator(lang);
+    applyStatic();
+    useRelease(rel.tag);
+    renderTabs(); render(); renderPicker(); renderMacros();
+    if (image) await loadImage(image, imageFrom); else if (fwLast) fwLast();
+    if (outLast) outLast();
+  });
+  applyStatic();
+  useRelease(rel.tag);
+
+  // Tabs
+  for (const l of data.layers) {
+    const b = document.createElement("button");
+    b.setAttribute("role", "tab");
+    b.dataset.layer = l.id;
+    b.addEventListener("click", () => { current = l.id; render(); renderPicker(); });
+    $("tabs").appendChild(b);
+  }
+  function renderTabs() { for (const b of $("tabs").children) b.textContent = core.layerName(b.dataset.layer); }
+  renderTabs();
+
+  // Keyboard
+  const W = Math.max(...data.keys.map((k) => k.x + k.w)), H = Math.max(...data.keys.map((k) => k.y + 1));
+  function unit() { return Math.max(34, Math.min(54, Math.floor(($("kb").parentElement.clientWidth - 2) / W))); }
+  const keyEls = data.keys.map((k, i) => {
+    const el = document.createElement("div");
+    el.className = "key";
+    el.tabIndex = 0;
+    el.setAttribute("role", "button");
+    el.addEventListener("click", () => select(i));
+    el.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); select(i); } });
+    $("kb").appendChild(el);
+    return el;
+  });
+  function layout() {
+    const u = unit();
+    $("kb").style.width = W * u + "px";
+    $("kb").style.height = H * u + "px";
+    data.keys.forEach((k, i) => {
+      const s = keyEls[i].style;
+      s.left = k.x * u + 1 + "px"; s.top = k.y * u + 1 + "px";
+      s.width = k.w * u - 3 + "px"; s.height = u - 3 + "px";
+      s.fontSize = (u < 42 ? 9.5 : 11) + "px";
+    });
+  }
+  window.addEventListener("resize", layout);
+
+  // What a transparent key falls through to with no DIP switch on: Base. With switch 2 or 3 the Mac and Fn-Ctrl layers
+  // are active too and sit in between; the tooltip says so.
+  function below(id, i) {
+    return layers[core.layerIds[0]][i];
+  }
+
+  function render() {
+    for (const b of $("tabs").children) b.setAttribute("aria-selected", String(b.dataset.layer === current));
+    $("layerhelp").textContent = tr.has("help." + current) ? tr("help." + current) : "";
+    data.keys.forEach((k, i) => {
+      const v = layers[current][i];
+      const el = keyEls[i];
+      const trans = v === 1;
+      el.textContent = trans ? core.label(below(current, i)) : core.label(v);
+      const mi = core.macroIndex(v);
+      const what = mi >= 0 ? tr("ui.keyMacro", { n: mi, text: macros[mi] || tr("ui.keyMacroEmpty") }) : core.title(v);
+      const via = { _FN: tr("ui.keyTransFn"), _FNCTL: tr("ui.keyTransFnctl") }[current] || "";
+      el.title = (trans ? tr("ui.keyTrans", { token: core.tokenFor(below(current, i)) }) + via : what) + `  [matrix ${k.matrix.join(",")}]`;
+      el.classList.toggle("trans", trans);
+      el.classList.toggle("changed", v !== defaults[current][i]);
+      el.classList.toggle("sel", i === selected);
+      el.setAttribute("aria-label", `${el.textContent} (${core.tokenFor(v)})`);
+    });
+    const n = core.layerIds.reduce((a, id) => a + layers[id].filter((v, i) => v !== defaults[id][i]).length, 0);
+    const nm = macros.filter((t) => t).length;
+    const what = [n ? tr(n === 1 ? "ui.keys1" : "ui.keysN", { n }) : "", nm ? tr(nm === 1 ? "ui.macros1" : "ui.macrosN", { n: nm }) : ""]
+      .filter(Boolean).join(tr("list.sep"));
+    $("changes").textContent = what ? tr("ui.changesOn", { what, tag: rel.tag }) : tr("ui.noChanges", { tag: rel.tag });
+    const bad = core.unsupported(layers);
+    if (bad.length) $("changes").textContent += tr("ui.cantDo", { tag: rel.tag, list: bad.join("; ") });
+    $("dlbin").disabled = !image;
+    $("dlbin").title = image ? "" : tr("ui.loadFirst");
+  }
+
+  function select(i) {
+    selected = i;
+    render();
+    renderPicker();
+  }
+
+  function assign(v) {
+    layers[current][selected] = v;
+    render();
+    renderPicker();
+  }
+
+  function renderPicker() {
+    const show = selected >= 0;
+    for (const id of ["keyactions", "mods", "search", "groups"]) $(id).classList.toggle("hidden", !show);
+    if (!show) { $("cur").textContent = tr("ui.curNone"); return; }
+    const v = layers[current][selected];
+    const b = (text) => Object.assign(document.createElement("b"), { textContent: text });
+    fillNodes($("cur"), tr("ui.cur"), {
+      layer: document.createTextNode(core.layerName(current)),
+      base: b(core.label(defaults[core.layerIds[0]][selected])),
+      now: b(core.label(v)),
+      token: Object.assign(document.createElement("code"), { textContent: core.tokenFor(v) }),
+    });
+    if (v !== defaults[current][selected]) $("cur").appendChild(document.createTextNode(tr("ui.curDefault", { def: core.label(defaults[current][selected]) })));
+    const m = core.modsOf(v);
+    const basic = v <= 0xff || m;
+    for (const cb of document.querySelectorAll("#mods input")) {
+      cb.checked = !!(m && m.mods & (1 << cb.dataset.mod));
+      cb.disabled = !basic || (v <= 0xff && (v < 4 || (v >= 0xe0 && v <= 0xe7)));
+    }
+    const q = $("search").value.trim().toLowerCase();
+    const base = m ? m.base : v;
+    $("groups").innerHTML = "";
+    for (const g of core.catalog) {
+      const items = g.items.filter((it) => {
+        if (it.token === "_______" && current === core.layerIds[0]) return false;
+        if (!q) return true;
+        return (core.label(it.value) + " " + it.token + " " + g.group).toLowerCase().includes(q);
+      });
+      if (!items.length) continue;
+      const div = document.createElement("div");
+      div.className = "group";
+      div.appendChild(Object.assign(document.createElement("h3"), { textContent: g.group }));
+      const row = document.createElement("div");
+      row.className = "row";
+      for (const it of items) {
+        const btn = document.createElement("button");
+        btn.textContent = core.label(it.value);
+        btn.title = core.title(it.value);
+        btn.dataset.token = it.token;
+        if (it.value === base) btn.classList.add("on");
+        btn.addEventListener("click", () => {
+          const mm = core.modsOf(layers[current][selected]);
+          const keepMods = mm && it.value <= 0xff && it.value >= 4 && !(it.value >= 0xe0 && it.value <= 0xe7);
+          assign(keepMods ? core.withMods(it.value, mm.mods, mm.right) : it.value);
+        });
+        row.appendChild(btn);
+      }
+      div.appendChild(row);
+      $("groups").appendChild(div);
+    }
+  }
+
+  // Macros: one input per slot; the meter shows the shared table.
+  const macroInputs = [];
+  for (let i = 0; i < 16; i++) {
+    const lab = Object.assign(document.createElement("label"), { htmlFor: "macro" + i });
+    const inp = Object.assign(document.createElement("input"), { id: "macro" + i, type: "text", spellcheck: false, autocomplete: "off" });
+    const msg = Object.assign(document.createElement("div"), { className: "msg hidden" });
+    inp.addEventListener("input", () => { macros[i] = inp.value; renderMacros(); render(); });
+    $("macros").append(lab, inp, msg);
+    macroInputs.push({ lab, inp, msg });
+  }
+  function renderMacros() {
+    macroInputs.forEach(({ lab, inp }, i) => {
+      lab.textContent = tr("label.macro", { n: i });
+      inp.placeholder = i ? "" : tr("ui.macroPlaceholder");
+    });
+    if (!rel.macros) return;
+    let used = 0;
+    const last = macros.reduce((a, t, i) => (t ? i : a), -1);
+    macroInputs.forEach(({ inp, msg }, i) => {
+      if (inp.value !== macros[i]) inp.value = macros[i];
+      let err = "";
+      try { const bytes = core.parseMacro(macros[i]); if (i <= last) used += bytes.length + 1; } catch (e) { err = e.message; }
+      inp.classList.toggle("err", !!err);
+      msg.textContent = err;
+      msg.classList.toggle("hidden", !err);
+    });
+    const size = rel.macros.size;
+    $("meter").classList.toggle("full", used > size);
+    $("meter").firstElementChild.style.width = Math.min(100, (100 * used) / size) + "%";
+    $("metertext").textContent = tr("ui.meter", { used, size }) + (used > size ? tr("ui.meterOver", { n: used - size }) : "");
+  }
+  $("mousepreset").addEventListener("click", () => {
+    const base = rel.default_layers._BASE;
+    const replaced = [];
+    for (const [key, tok] of Object.entries(MOUSE_PRESET)) {
+      const i = base.indexOf(key);
+      const was = layers._FN[i];
+      if (was !== 1 && was !== core.resolve(tok)) replaced.push(tr("ui.mouseWas", { key: core.label(defaults._BASE[i]), old: core.label(was) }));
+      layers._FN[i] = core.resolve(tok);
+    }
+    $("mouseinfo").textContent = tr("ui.mouseDone") + (replaced.length ? tr("ui.mouseReplaced", { list: replaced.join(tr("list.sep")) }) : "");
+    current = "_FN"; render(); renderPicker();
+  });
+
+  for (const cb of document.querySelectorAll("#mods input")) {
+    cb.addEventListener("change", () => {
+      const v = layers[current][selected];
+      const m = core.modsOf(v) || { mods: 0, right: false, base: v };
+      const bit = 1 << cb.dataset.mod;
+      assign(core.withMods(m.base, cb.checked ? m.mods | bit : m.mods & ~bit, m.right));
+    });
+  }
+  $("search").addEventListener("input", renderPicker);
+  $("keydefault").addEventListener("click", () => assign(defaults[current][selected]));
+  $("layerreset").addEventListener("click", () => { layers[current] = defaults[current].slice(); render(); renderPicker(); });
+  $("resetall").addEventListener("click", () => {
+    if (!confirm(tr("ui.confirmReset"))) return;
+    layers = core.defaultLayers(); macros = macros.map(() => ""); render(); renderPicker(); renderMacros();
+  });
+
+  // Firmware. A status line is kept as a function, so a language switch can draw it again.
+  function fwStatus(cls, text) { fwLast = () => { const s = $("fwstatus"); s.className = "status " + cls; s.textContent = text(); }; fwLast(); }
+  async function loadImage(bytes, from) {
+    image = null;
+    imageFrom = from;
+    const tag = await ShinobiCore.identify(DATA, bytes);
+    if (tag && tag !== rel.tag) { useRelease(tag); renderPicker(); renderMacros(); }
+    const r = await core.checkImage(bytes);
+    const name = typeof from === "function" ? from() : from;
+    if (r.ok) {
+      image = bytes;
+      const bad = core.unsupported(layers);
+      fwStatus(bad.length ? "bad" : "ok", () => tr("ui.fwOk", { from: name, file: rel.file, tag: rel.tag, sha: r.sha256.slice(0, 16) }) +
+        (bad.length ? tr("ui.fwButBad", { tag: rel.tag, list: bad.join("; ") }) : tr("ui.fwReady")));
+    } else {
+      fwStatus("bad", () => tr("ui.fwBad", { from: name, files: DATA.releases.map((x) => x.file).join(", "), list: r.problems.join("; ") }));
+    }
+    render();
+  }
+  $("binfile").addEventListener("change", async (e) => {
+    const f = e.target.files[0];
+    if (f) await loadImage(new Uint8Array(await f.arrayBuffer()), f.name);
+    e.target.value = "";
+  });
+  $("binlocal").addEventListener("click", async () => {
+    const tried = [];
+    for (const r of DATA.releases.slice().reverse()) { // newest first
+      let bytes;
+      try {
+        const res = await fetch(r.file, { cache: "no-store" });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        bytes = new Uint8Array(await res.arrayBuffer());
+      } catch (e) { tried.push(`${r.file}: ${e.message}`); continue; }
+      await loadImage(bytes, () => tr("ui.fwNextTo", { file: r.file }));
+      return;
+    }
+    image = null;
+    fwStatus("bad", () => tr("ui.fwNone", { tried: tried.join("; ") }));
+    render();
+  });
+
+  // Output
+  function save(name, bytes, type) {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([bytes], { type }));
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  }
+  function outStatus(cls, text) { outLast = () => { const s = $("outstatus"); s.className = "status " + cls; s.textContent = text(); }; outLast(); }
+  $("dlbin").addEventListener("click", async () => {
+    try {
+      const out = await core.patch(image, layers, macros);
+      save(outName, out, "application/octet-stream");
+      const sha = await core.sha256(out);
+      outStatus("ok", () => tr("ui.saved", { name: outName, n: out.length, sha }));
+    } catch (e) { outStatus("bad", () => e.message); }
+  });
+  $("dljson").addEventListener("click", () => save("keymap.json", core.toJSON(layers, macros), "application/json"));
+  $("dlc").addEventListener("click", () => {
+    try { save("keymap.c", core.keymapC(layers, macros), "text/x-csrc"); } catch (e) { outStatus("bad", () => e.message); }
+  });
+  $("jsonfile").addEventListener("change", async (e) => {
+    const f = e.target.files[0];
+    e.target.value = "";
+    if (!f) return;
+    try {
+      const j = core.fromJSON(await f.text());
+      layers = j.layers; macros = j.macros;
+      const switched = j.hostLayout !== hostLayout;
+      if (switched) setHostLayout(j.hostLayout);
+      outStatus("ok", () => tr("ui.loaded", { name: f.name }) + (switched ? tr("ui.loadedLayout", { layout: core.hostLayout.name }) : ""));
+    } catch (err) { outStatus("bad", () => `${f.name}: ${err.message}`); }
+    render(); renderPicker(); renderMacros();
+  });
+
+  fwStatus("info", () => tr("ui.fwInfo", { file: rel.file }));
+  layout();
+  render();
+  renderPicker();
+  renderMacros();
+})();
+</script>
+</body>
+</html>

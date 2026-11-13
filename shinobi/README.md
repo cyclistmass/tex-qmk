@@ -89,8 +89,8 @@ Run TEX's original `AP_0407_4.04.exe` the same way. Add `-force` if it says ther
 * **USB plug and unplug restart the keyboard.** The keyboard's processor sees a power-on reset each
   time, as if its supply dropped for a moment. Settings are kept.
 * **No Bluetooth firmware updates.** Updates go over USB through TEX's bootloader.
-* **TEX's configurator and macro tool don't work** with this firmware. Keymaps and macros are set at build time
-  (edit `keymap.c`, see [Building](#building)). VIA/Vial live remapping does not fit yet: TEX's bootloader takes
+* **TEX's configurator and macro tool don't work** with this firmware. To remap keys and add shortcuts
+  without a compiler, use the [keymap editor](editor/README.md). Otherwise edit `keymap.c` (see [Building](#building)). VIA/Vial live remapping does not fit yet: TEX's bootloader takes
   images up to 28,076 bytes, and v1.0 is 28,072.
 * **ISO and JIS boards are untested.** The keymap comes from the stock table, which has the extra ISO key and the
   JIS keys (Ro, Yen, Kana, Henkan, Muhenkan), so they should work. Please report what you find.
@@ -112,6 +112,10 @@ ChibiOS-Contrib RSTCU base address for this chip. The output, `.build/tex_shinob
 0x3200 behind TEX's bootloader. `tools/build_updater.py AP_0407_4.04.exe <image.bin> <out dir>` wraps an image
 into a copy of TEX's updater. The [GitHub Actions workflow](../.github/workflows/build.yml) runs the same script on
 every push. Release images are built from a tagged commit and listed with their SHA-256 on the release page.
+
+`tools/tex_selftest.py` runs the stock factory flash self-test over USB (raw HID `14 00`) and prints PASS or FAIL.
+building. It costs 88 bytes; release images leave it out and answer with the stock refusal.
+building. It costs 84 bytes, more than v1.1 has free, so release images don't answer it.
 
 The other keymaps (`canary`, `canary_slow`, `test90`, `test600`, `diag`, `sleep30`) are developer test
 builds from the port. They return to the bootloader on a timer, sleep after 30 s or expose diagnostics. Don't flash them for daily use.
