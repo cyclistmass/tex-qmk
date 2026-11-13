@@ -14,7 +14,8 @@ Reads, without interpreting key meanings (editor/editor_core.js owns that):
   * qmk/keyboard.json: the LAYOUT's matrix positions, in argument order (the same in every release);
   * per release, qmk/keymaps/default/keymap.c: the layer names and the default keymap as tokens, and the rest of the
     file as the template the editor exports keymap.c from;
-  * per release, ld/HT32F52352_TEX_SHINOBI.ld: the sequence macro table's address and size (flash0m), if it has one;
+  * per release, ld/HT32F52352_TEX_SHINOBI.ld: the sequence macro table's address and size (flash0m), if it has one,
+    and from v1.2 the keymap-changed flag at the area's last byte (tex_keymap_custom);
   * the release image: its sha256 and size. The keymaps' place in it is fixed by the linker script (section
     .tex_keymaps at 0x3800, image base 0x3200); the editor checks those bytes against the default keymap, and the
     macro table against zeros, before it patches anything.
@@ -192,9 +193,20 @@ def release_reader(tag):
 
 
 def parse_macro_table(ld):
-    """The sequence macro table (flash0m in the linker script), as an image offset and size; None before v1.1."""
+    """The sequence macro table (flash0m in the linker script), as an image offset and size; None before v1.1.
+    From v1.2 the area's last byte is the keymap-changed flag (tex_keymap_custom): the macros get the bytes before
+    tex_macros_end, and "custom" is the flag's image offset."""
     m = re.search(r"^\s*flash0m\s*:\s*org\s*=\s*(0x[0-9A-Fa-f]+),\s*len\s*=\s*(\d+)\s", ld, re.M)
-    return {"offset": int(m.group(1), 16) - APP_BASE, "size": int(m.group(2))} if m else None
+    if not m:
+        return None
+    out = {"offset": int(m.group(1), 16) - APP_BASE, "size": int(m.group(2))}
+    if "tex_keymap_custom" in ld:
+        f = re.search(r"\.\s*=\s*tex_macros\s*\+\s*(\d+);\s*tex_macros_end\s*=\s*\.;\s*tex_keymap_custom\s*=\s*\.;", ld)
+        if not f:
+            fail("tex_keymap_custom: the linker script's macro area isn't laid out as expected")
+        out["size"] = int(f.group(1))
+        out["custom"] = out["offset"] + out["size"]
+    return out
 
 
 def main():

@@ -1,8 +1,9 @@
 # Keymap editor
 
 A static web page that remaps the Shinobi's keys without a compiler. It writes your keymap into a released image,
-`tex_shinobi_v1.0.bin` or `tex_shinobi_v1.1.bin`, and only into the 960 keymap bytes at 0x3800 and, for v1.1, the
-96-byte macro table at 0x37A0. It also exports the same keymap as `keymap.c` for people who build the firmware
+`tex_shinobi_v1.0.bin`, `tex_shinobi_v1.1.bin` or `tex_shinobi_v1.2.bin`, and only into the 960 keymap bytes at
+0x3800 and, from v1.1, the macro table at 0x37A0 (96 bytes in v1.1; in v1.2 95, then a byte that makes Fn+B say
+`cust`). It also exports the same keymap as `keymap.c` for people who build the firmware
 themselves. Why it works this way is in [DESIGN.md](DESIGN.md).
 
 ## Using it
@@ -14,22 +15,24 @@ themselves. Why it works this way is in [DESIGN.md](DESIGN.md).
 3. Choose the computer's keyboard layout, so the keys show what they type there. Pick a layer (Base, Mac, Fn-Ctrl
    swap, Fn), click a key, and pick what it should do. Tick Ctrl, Shift, Alt or Win
    for a shortcut such as Ctrl+C.
-4. v1.1 only: write sequence macros in **Macros** and assign Macro 0-15 to keys; put mouse movement keys on
+4. v1.1 and later: write sequence macros in **Macros** and assign Macro 0-15 to keys; put mouse movement keys on
    keys in step 3 or with the Fn + U I O / J K L / M , preset in **Mouse keys**.
 5. **Download firmware** saves `tex_shinobi_v1.x_custom.bin`. Flash it like a release:
 
-       python -I tools/tex_flash.py tex_shinobi_v1.1_custom.bin AP_0407_4.04.exe
+       python -I tools/tex_flash.py tex_shinobi_v1.2_custom.bin AP_0407_4.04.exe
 
    or wrap it into TEX's updater with `tools/build_updater.py`.
 6. **Save keymap.json** keeps your keymap and macros so you can load it again later. **Download keymap.c** gives the C source.
 
 Known limits:
 
-* Fn+B still reports the keymap name as `default` in a patched image, because the name is compiled into the code.
+* Fn+B names the keymap `cust` in an image the editor changed (keys or macros) and `dflt` otherwise, from v1.2:
+  the editor sets the byte after the macro table, and an exported `keymap.c` sets it too. v1.0 and v1.1 have no
+  such byte and say `default` either way.
 * The drawn layout is approximate and has not been checked against the board.
-* Sequence macros need v1.1. They are typed for the computer's keyboard layout chosen in step 2 (US, UK, German,
+* Sequence macros need v1.1 or later. They are typed for the computer's keyboard layout chosen in step 2 (US, UK, German,
   French, Spanish, Nordic or Japanese JIS, as Windows lays them out; macOS's differ), with no delays, and all of
-  them share 96 bytes: each key takes 1 byte, a key with Shift or AltGr (right Alt) or a shortcut 2, Shift+AltGr 3,
+  them share 95 bytes (96 in v1.1): each key takes 1 byte, a key with Shift or AltGr (right Alt) or a shortcut 2, Shift+AltGr 3,
   an accent from a dead key one more, and each macro up to the last one used 1 more. keymap.json records the
   layout. The layouts were written from Windows' and have not been typed on a real computer with each one.
 * Fn+B and the keyboard's other typed answers always type as on a US layout.
@@ -49,7 +52,8 @@ Known limits:
 
       python -I ../tools/gen_editor_data.py <qmk_firmware dir> \
           shinobi-v1.0 tex_shinobi_v1.0.bin 2026-11-04-12:22:53 \
-          shinobi-v1.1 tex_shinobi_v1.1.bin 2026-11-13-10:05:42
+          shinobi-v1.1 tex_shinobi_v1.1.bin 2026-11-13-10:05:42 \
+          shinobi-v1.2 tex_shinobi_v1.2.bin 2026-11-13-14:00:00
 
   Each release's sources are read at its git tag; one with no tag yet is read from the working tree. The date is
   the release's build date, which Fn+B prints and which a rebuild needs to match the image. A release that isn't
@@ -63,17 +67,17 @@ own sources. It needs node,
 the QMK CLI and the ARM toolchain (in WSL on Windows). It:
 
 * checks the editor core: keycode round trips, and that a changed code byte, a changed keymap or macro byte, a short
-  image and a changed bootloader record are all refused; for v1.1, macro text round trips and limits, and for v1.0,
+  image and a changed bootloader record are all refused (and in v1.2 an already set `cust` byte); from v1.1, macro text round trips and limits, and for v1.0,
   that macros and mouse keys are refused;
 * compiles the editor's export of the default keymap with the release's build date, which must equal the release;
-* changes a key on every layer and adds shortcuts (and for v1.1 mouse keys and three macros), then checks that the
-  patched release equals a compiled build of the exported `keymap.c`.
+* changes a key on every layer and adds shortcuts (and from v1.1 mouse keys and three macros), then checks that the
+  patched release, `cust` byte included, equals a compiled build of the exported `keymap.c`.
 
 `test/ci_check.sh <qmk_firmware dir> <work dir>` is what CI runs on every push. For each release it downloads the
 image and unpacks the tag's sources, or, for a release not tagged yet, builds this checkout and requires the SHA-256
 in `shinobi_data.js`. It then checks that `shinobi_data.js` regenerates identically and runs `byte_identity.sh` for
 each release in its own sources. Firmware changes after a release don't affect that release's check; changes before
-v1.1 is tagged must come with a rebuilt image and regenerated data.
+v1.2 is tagged must come with a rebuilt image and regenerated data.
 
 `test/qmk_fixed_date.sh` and `test/build_wsl.sh` are its helpers: QMK stamps the build date into the image, so the
 test pins it.

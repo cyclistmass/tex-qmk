@@ -75,12 +75,18 @@ SECTIONS {
 
     /* Sequence macros (power.c macro_play) at a fixed address, so the keymap editor can patch them. A keymap
        may fill them from C (tex_macro_data in section .tex_macros, as the editor exports it); the rest is zero.
-       power.c reads them through these linker symbols, so the compiler never sees their contents. */
+       power.c reads them through these linker symbols, so the compiler never sees their contents. The area's
+       last byte is not a macro byte but tex_keymap_custom: nonzero once the editor has changed the keymap or the
+       macros (an exported keymap.c sets it from C in section .tex_keymap_custom), so Fn+B says "cust", not "dflt".
+       Macros longer than 95 bytes move the location counter backwards, which ld refuses. */
     .tex_macros : {
         tex_macros = .;
         KEEP(*(.tex_macros))
-        . = tex_macros + 96;
+        . = tex_macros + 95;
         tex_macros_end = .;
+        tex_keymap_custom = .;
+        KEEP(*(.tex_keymap_custom))
+        . = tex_macros + 96;
     } > flash0m
 
     .tex_app_record : {

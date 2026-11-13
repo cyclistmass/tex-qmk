@@ -460,6 +460,10 @@
                 if (image.length < offset + size || image.subarray(offset, offset + size).some((b) => b !== 0)) {
                     problems.push(t("chk.macros", { off: "0x" + (offset + 0x3200).toString(16) }));
                 }
+                const flag = rel.macros.custom;
+                if (flag !== undefined && !(image.length > flag && image[flag] === 0)) {
+                    problems.push(t("chk.macros", { off: "0x" + (flag + 0x3200).toString(16) }));
+                }
             }
             if (image.length < RECORD_OFFSET + RECORD.length || RECORD.some((b, i) => image[RECORD_OFFSET + i] !== b)) {
                 problems.push(t("chk.record"));
@@ -476,7 +480,16 @@
             const out = new Uint8Array(image);
             out.set(encode(layers), rel.keymaps_offset);
             if (rel.macros) out.set(table, rel.macros.offset);
+            if (marksCustom(layers, macros)) out[rel.macros.custom] = 1;
             return out;
+        }
+
+        // From v1.2 a changed keymap or any macro sets the image's keymap-changed byte, so Fn+B says "cust"; the same
+        // keymap unchanged leaves it 0 ("dflt"). Releases without the byte report "default" whatever is patched.
+        function marksCustom(layers, macros) {
+            if (!rel.macros || rel.macros.custom === undefined) return false;
+            const now = encode(layers), was = encode(defaultLayers());
+            return now.some((b, i) => b !== was[i]) || encodeMacros(macros).used > 0;
         }
 
         function keymapC(layers, macros) {
@@ -509,6 +522,10 @@
                     `// The linker places them in the macro table (ld/HT32F52352_TEX_SHINOBI.ld) and zero-fills the rest.\n` +
                     listing +
                     `const uint8_t tex_macro_data[] __attribute__((section(".tex_macros"), used)) = {\n${rowsOut.join("\n")}\n};\n`;
+            }
+            if (marksCustom(layers, macros)) {
+                text += `\n// Changed with the keymap editor: Fn+B names this keymap "cust" (the linker places this byte after the macros).\n` +
+                    `const uint8_t tex_keymap_custom_flag __attribute__((section(".tex_keymap_custom"), used)) = 1;\n`;
             }
             return text;
         }

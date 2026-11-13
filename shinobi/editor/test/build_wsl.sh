@@ -3,7 +3,8 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # Builds a keymap.c as the "default" keymap with a fixed build date, for the editor's byte-identity test.
 # usage (inside WSL or Linux): build_wsl.sh <qmk_firmware dir> <keymap.c> <build date> <out.bin>
-# The keymap goes in as "default" because Fn+B types the keymap name: a patched release image says "default" too.
+# The keymap goes in as "default" because Fn+B types the keymap name: v1.0 and v1.1 type "default" in a patched image,
+# and from v1.2 the "default" keymap types "dflt" or "cust" from the flag byte the editor sets.
 # Prints one timing line: TIMING label=... start=... end=... seconds=... result=...
 set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"

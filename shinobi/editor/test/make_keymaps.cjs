@@ -60,6 +60,8 @@ function throws(fn, re) {
     let img = new Uint8Array(release); img[0x2000] ^= 0xff; bad.push(["one code byte changed", img]);
     img = new Uint8Array(release); img[rel.keymaps_offset + 10] ^= 0x01; bad.push(["one keymap byte changed", img]);
     if (rel.macros) { img = new Uint8Array(release); img[rel.macros.offset + rel.macros.size - 1] = 0x04; bad.push(["one macro byte changed", img]); }
+    const flag = rel.macros ? rel.macros.custom : undefined;
+    if (flag !== undefined) { img = new Uint8Array(release); img[flag] = 1; bad.push(["keymap-changed flag already set", img]); }
     bad.push(["image cut short", release.slice(0, release.length - 4)]);
     img = new Uint8Array(release); img[0x3bf8 - 0x3200 + 1] = 0; bad.push(["record at 0x3BF8 changed", img]);
     for (const [what, image] of bad) {
@@ -142,8 +144,19 @@ function throws(fn, re) {
     for (let i = 0; i < release.length; i++) if (patched[i] !== release[i]) diff.push(i);
     const lo = rel.keymaps_offset, hi = lo + core.encode(L).length;
     const inMacros = (i) => rel.macros && i >= rel.macros.offset && i < rel.macros.offset + rel.macros.size;
-    check(diff.length > 0 && diff.every((i) => (i >= lo && i < hi) || inMacros(i)),
-        `patch changes ${diff.length} bytes (${diff.filter(inMacros).length} in the macro table), all inside the keymaps and macros`);
+    check(diff.length > 0 && diff.every((i) => (i >= lo && i < hi) || inMacros(i) || i === flag),
+        `patch changes ${diff.length} bytes (${diff.filter(inMacros).length} in the macro table), all inside the keymaps, macros and flag`);
+    if (flag !== undefined) {
+        // Fn+B says "cust" for any change: the flag is set by a changed key alone and by a macro alone, not by none.
+        check(patched[flag] === 1 && same[flag] === 0, `keymap-changed flag at 0x${(flag + 0x3200).toString(16)}: ${patched[flag]} changed, ${same[flag]} unchanged`);
+        const oneKey = JSON.parse(JSON.stringify(def)); oneKey._BASE[keyIndex("KC_A")] = core.resolve("KC_B");
+        const onlyKey = await core.patch(release, oneKey, []), onlyMacro = await core.patch(release, def, ["hi"]);
+        check(onlyKey[flag] === 1 && onlyMacro[flag] === 1, "flag set by one changed key, and by one macro with the keymap unchanged");
+        check(/section\("\.tex_keymap_custom"\)/.test(core.keymapC(L, macros)) && !/tex_keymap_custom/.test(core.keymapC(def, [])),
+            "exported keymap.c sets the flag only when something changed");
+    } else {
+        check(!/tex_keymap_custom/.test(core.keymapC(L, macros)), `${tag} has no keymap-changed flag; keymap.c doesn't set one`);
+    }
     fs.writeFileSync(path.join(outDir, "custom_keymap.c"), core.keymapC(L, macros));
     fs.writeFileSync(path.join(outDir, "custom.json"), json);
     fs.writeFileSync(path.join(outDir, "custom_patched.bin"), patched);

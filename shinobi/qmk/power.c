@@ -324,7 +324,8 @@ static void type_end(uint8_t mods) {
 
 #ifndef TEX_NO_MACROS
 // Sequence macros: MC_n types the nth zero-terminated run of HID usages in tex_macros, a table the linker script
-// reserves and the keymap editor fills (its address is in the editor's data). 0xE0-0xE7 are modifiers: each
+// reserves and the keymap editor fills (its address is in the editor's data); tex_macros_end stops short of the
+// area's last byte, tex_keymap_custom. 0xE0-0xE7 are modifiers: each
 // stays held until the next other key has been tapped, so E1 0B 08 types "He".
 extern const uint8_t tex_macros[], tex_macros_end[];
 
@@ -412,16 +413,28 @@ void power_set_sleep(uint8_t choice, bool announce) {
     sleep_test_over = true;
 #endif
     if (!announce) return;
-    type_text("zzz");
+    type_text("z");
     type_sleep_time();
 }
 
+// The keymap editor sets this byte, the last of the macro area (linker script), when it changes the keymap or the
+// macros; a keymap.c it exports sets it too. It is 0 in a build as released.
+extern const uint8_t tex_keymap_custom[];
+
 // Fn+B: types, on one line, which build is running, the battery reading, for checking
-// the scale above, the sleep time and the TrackPoint level.
+// the scale above, the sleep time and the TrackPoint level. The keymap is "dflt" for the default one as built,
+// "cust" once the editor has changed it, or the name of any other keymap (test builds such as sleep30); the
+// compiler folds the name comparison.
 void battery_report(void) {
-    type_text("v" TEX_FW_VERSION " " QMK_KEYMAP " " QMK_BUILDDATE " bat");
+    type_text("v" TEX_FW_VERSION " ");
+    if (__builtin_strcmp(QMK_KEYMAP, "default")) {
+        type_text(QMK_KEYMAP);
+    } else {
+        type_text(tex_keymap_custom[0] ? "cust" : "dflt");
+    }
+    type_text(" " QMK_BUILDDATE " bt");
     type_number(battery_percent(), "% adc");
-    type_number(battery_raw(), on_battery() ? " aa zzz" : " usb zzz");
+    type_number(battery_raw(), on_battery() ? " aa z" : " usb z");
     type_sleep_time();
     type_text(" tp");
     type_number(tp_level + 1, " dip");

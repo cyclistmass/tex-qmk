@@ -1,6 +1,6 @@
 # TEX Shinobi BLE5 with QMK: owner's manual
 
-For the QMK firmware v1.0 and v1.1 from this repository. To install it, see [README.md](README.md#installing).
+For the QMK firmware v1.0, v1.1 and v1.2 from this repository. To install it, see [README.md](README.md#installing).
 
 ## At a glance
 
@@ -47,7 +47,7 @@ The DIP switches are separate from the Fn keys: Fn+F1...F9 set the sleep time wh
 | Fn+Mute / Fn+Vol- / Fn+Vol+ | Bluetooth host 1 / 2 / 3. Hold 3 s to pair a new host to that slot |
 | Fn+Esc | back to USB |
 | Fn+1 ... Fn+9 | TrackPoint sensitivity 1-9; types back `tp3` and so on |
-| Fn+F1 ... Fn+F9 | sleep on battery after 1, 2, 5, 10, 15, 30, 60, 120 min or never; types back `zzz15m` and so on |
+| Fn+F1 ... Fn+F9 | sleep on battery after 1, 2, 5, 10, 15, 30, 60, 120 min or never; types back `z15m` and so on |
 | Fn+B | types the firmware version and a status, on one line |
 | Fn+arrows | media keys: Stop, Play, Previous, Next |
 
@@ -60,41 +60,42 @@ a US keyboard layout: with another layout on the computer some characters come o
 
 **Fn+1 ... Fn+9** types `tp1` ... `tp9`: the TrackPoint sensitivity now set, 1 slowest, 9 fastest, 3 by default.
 
-**Fn+F1 ... Fn+F9** types `zzz` and the sleep time now set (`m` is minutes):
+**Fn+F1 ... Fn+F9** types `z` and the sleep time now set (`m` is minutes):
 
 | Keys | Types | Sleeps on battery after |
 |---|---|---|
-| Fn+F1 | `zzz1m` | 1 minute without input |
-| Fn+F2 | `zzz2m` | 2 minutes |
-| Fn+F3 | `zzz5m` | 5 minutes |
-| Fn+F4 | `zzz10m` | 10 minutes |
-| Fn+F5 | `zzz15m` | 15 minutes (the default) |
-| Fn+F6 | `zzz30m` | 30 minutes |
-| Fn+F7 | `zzz60m` | an hour |
-| Fn+F8 | `zzz120m` | two hours |
-| Fn+F9 | `zzz never` | never |
+| Fn+F1 | `z1m` | 1 minute without input |
+| Fn+F2 | `z2m` | 2 minutes |
+| Fn+F3 | `z5m` | 5 minutes |
+| Fn+F4 | `z10m` | 10 minutes |
+| Fn+F5 | `z15m` | 15 minutes (the default) |
+| Fn+F6 | `z30m` | 30 minutes |
+| Fn+F7 | `z60m` | an hour |
+| Fn+F8 | `z120m` | two hours |
+| Fn+F9 | `z never` | never |
 
 **Fn+B** types one line, for example:
 
-    v1.1 default 2026-11-13-10:05:42 bat85% adc2900 aa zzz15m tp3 dip24 idl15m34s wk1420ms
+    v1.2 dflt 2026-11-13-14:00:00 bt85% adc2900 aa z15m tp3 dip24 idl15m34s wk1420ms
 
 One space separates the fields; within a field the label and value run together. No answer presses Enter, so
 one typed into a chat or a search box doesn't send it.
 
 | Typed | Means | Useful for |
 |---|---|---|
-| `v1.1 default 2026-11-13-10:05:42` | Firmware version, keymap name and build time. An image made with the keymap editor also says `default`. | Knowing which firmware is on the keyboard. Quote it in bug reports. |
-| `bat85%` | Battery level, worked out from `adc` for two alkaline AA cells. | Knowing when to change the cells. NiMH rechargeables read low (see [Known issues](#known-issues)). |
+| `v1.2 dflt 2026-11-13-14:00:00` | Firmware version, keymap and build time. `dflt` is the built-in keymap; `cust` means the keymap editor changed the keys or added macros. A firmware built from another keymap types that keymap's name. | Knowing which firmware is on the keyboard. Quote it in bug reports. |
+| `bt85%` | Battery level, worked out from `adc` for two alkaline AA cells. | Knowing when to change the cells. NiMH rechargeables read low (see [Known issues](#known-issues)). |
 | `adc2900` | The raw battery reading the level comes from. | Calibrating the battery scale: a voltmeter reading across the cells, sent with this number, fixes it. |
 | `aa` / `usb` | Running on the AA cells, or on USB power. | On USB power the keyboard never sleeps. |
-| `zzz15m` | Sleep time on battery, as set with Fn+F1...F9 (`zzz never` if it never sleeps). | Checking the setting, which survives battery changes and power cuts. |
+| `z15m` | Sleep time on battery, as set with Fn+F1...F9 (`z never` if it never sleeps). | Checking the setting, which survives battery changes and power cuts. |
 | `tp3` | TrackPoint sensitivity, as set with Fn+1...9. | Checking the setting, which is saved the same way. |
 | `dip24` | The DIP switches that are on: here switches 2 and 4. `dip0` means none. | Checking a switch is read after you flip it (see [The DIP switches](#the-dip-switches)). |
 | `idl15m34s` | The last stretch of at least a second with no key and no TrackPoint movement: 15 minutes 34 seconds here, `idl37s` under a minute. Sleep doesn't count: a stretch that included sleep counts only its awake part. | Leave the keyboard alone for a while, then press Fn+B: it should show about how long you left it. If `idl` stays small and the keyboard never sleeps on battery, something keeps it busy, most likely a drifting TrackPoint. |
 | `wk1420ms` | After the last wake from sleep, the milliseconds from the keyboard waking up to the Bluetooth link being back. `wk0ms` if it hasn't slept since it was powered on. | Telling where wake time goes. A large `wk` is Bluetooth reconnecting; if waking feels slow but `wk` is small, the delay is elsewhere (the keyboard's own wake-up, or the computer). |
 
 v1.0 types the version and `bat 85% adc 2900 on bat sleep 15 min tp 3` as two lines, each ending in Enter, and
-`sleep 15 min` and `tp 3` for Fn+F1...F9 and Fn+1...9, with no `dip`, `idl` or `wk`.
+`sleep 15 min` and `tp 3` for Fn+F1...F9 and Fn+1...9, with no `dip`, `idl` or `wk`. v1.1 types the same line as v1.2 with longer labels: `default` for the keymap (also in
+an editor-made image), `bat85%` and `zzz15m`, and `zzz15m` for Fn+F1...F9.
 
 ## Bluetooth
 
@@ -149,10 +150,10 @@ battery changes, USB plugging and unplugging, and power cuts.
 * **USB plug and unplug restart the keyboard.** The processor sees a power-on reset each time. Settings are kept.
 * **TEX's configurator and macro tool don't work.** Remap keys and add shortcuts with the
   [keymap editor](https://cyclistmass.github.io/tex-qmk/shinobi/editor/) instead, then flash the image it gives
-  you. From v1.1 it also makes sequence macros (a key types a short phrase or a run of keys, 96 bytes in total)
+  you. From v1.1 it also makes sequence macros (a key types a short phrase or a run of keys, 95 bytes in total, 96 in v1.1)
   and mouse movement keys. Macros are typed for the keyboard layout you choose for the computer (US, UK, German,
   French, Spanish, Nordic or Japanese); Fn+B's answers stay US. ([How the editor works](editor/README.md).)
-* **No VIA/Vial live remapping.** TEX's bootloader takes images up to 28,076 bytes; v1.0 is 28,072 and v1.1 27,728. The keymap
+* **No VIA/Vial live remapping.** TEX's bootloader takes images up to 28,076 bytes; v1.0 is 28,072, v1.1 27,728 and v1.2 27,768. The keymap
   editor changes the keymap in the image, so a change takes a flash.
 * **ISO and JIS boards are untested.** The extra keys are in the keymap.
 * **No Bluetooth firmware updates.** Updates go over USB through TEX's bootloader.

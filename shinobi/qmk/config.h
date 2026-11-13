@@ -43,4 +43,4 @@ extern unsigned char tex_dip;
 #define PS2_MOUSE_SCROLL_DIVISOR_H (14 - tp_level)
 
 // This port's version, typed by Fn+B with the keymap and build date.
-#define TEX_FW_VERSION "1.1"
+#define TEX_FW_VERSION "1.2"

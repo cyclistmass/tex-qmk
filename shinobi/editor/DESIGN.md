@@ -147,6 +147,14 @@ image's sha256; macros and mouse keys appear for v1.1 only. Stock's factory flas
 (`14 00`, `tools/tex_selftest.py`) behind `TEX_SELFTEST` and off: 88 bytes (the Up+LAlt+Fn hold and Caps Lock
 display stock uses cost 312).
 
+v1.2 (2026-11-13): shorter Fn+B labels (`bt`, `z`, also `z15m` from Fn+F1...F9) and the keymap named `dflt`
+or `cust`. The flag is the last byte of the 96 at 0x37A0 (`tex_keymap_custom`, 0x37FF), so macros have 95; the
+editor writes 1 there when the keys or macros differ from the default, and an exported `keymap.c` puts the same
+byte there through the linker section `.tex_keymap_custom`, which keeps the byte-identity test exact. The
+firmware tests `QMK_KEYMAP` against "default" at compile time, so other keymaps (`sleep30`, test builds) still
+type their name. A comparison with the default keymap in flash would need a stored copy (960 bytes). Cost 40
+bytes: 27,768, leaving 308.
+
 Earlier (v1.0):
 
 Built: the editor page, the keycode data generated from the pinned QMK, patching and C export, and the
