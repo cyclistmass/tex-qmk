@@ -23,6 +23,9 @@ jobs:
       - name: Host tests of the firmware's input logic
         if: matrix.keymap == 'default'
         run: shinobi/test/host/run.sh
+      - name: Flasher tests (no keyboard, fake hidapi)
+        if: matrix.keymap == 'default'
+        run: python3 -I shinobi/tools/tests/test_flasher.py
       - name: Install the pinned toolchain
         run: |
           # The runner's Azure Ubuntu mirror has hung or failed DNS here (2026-11-11); use the main archive.
