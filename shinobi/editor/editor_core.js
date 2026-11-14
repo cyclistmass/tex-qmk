@@ -450,7 +450,7 @@
             if (image.length >= at + want.length) {
                 for (let i = 0; i < want.length; i++) {
                     if (image[at + i] !== want[i]) {
-                        problems.push(t("chk.keymap", { off: "0x" + (at + i).toString(16) }));
+                        problems.push(t("chk.keymap", { off: "0x" + (at + i + 0x3200).toString(16) }));
                         break;
                     }
                 }
@@ -462,7 +462,7 @@
                 }
                 const flag = rel.macros.custom;
                 if (flag !== undefined && !(image.length > flag && image[flag] === 0)) {
-                    problems.push(t("chk.macros", { off: "0x" + (flag + 0x3200).toString(16) }));
+                    problems.push(t("chk.custom", { off: "0x" + (flag + 0x3200).toString(16) }));
                 }
             }
             if (image.length < RECORD_OFFSET + RECORD.length || RECORD.some((b, i) => image[RECORD_OFFSET + i] !== b)) {

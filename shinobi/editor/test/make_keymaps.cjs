@@ -70,6 +70,17 @@ function throws(fn, re) {
         try { await core.patch(image, def, []); } catch (e) { threw = /^refused/.test(e.message); }
         check(!r.ok && threw, `refused: ${what} (${r.problems.join("; ")})`);
     }
+    // The reasons name what is wrong, with flash addresses (image base 0x3200), not file offsets.
+    if (flag !== undefined) {
+        img = new Uint8Array(release); img[flag] = 1;
+        const p = (await core.checkImage(img)).problems.join("; ");
+        const at = "0x" + (flag + 0x3200).toString(16);
+        check(p.includes(`keymap-changed byte at ${at} is set`) && !p.includes(`macro table at ${at}`),
+            `keymap-changed flag named as such at ${at} (${p})`);
+    }
+    img = new Uint8Array(release); img[rel.keymaps_offset] ^= 0x01;
+    const kp = (await core.checkImage(img)).problems.join("; ");
+    check(kp.includes(`differ from the default at 0x${(rel.keymaps_offset + 0x3200).toString(16)}`), `keymap change named at its flash address (${kp})`);
 
     // Unchanged keymap: patching writes the same bytes back.
     const same = await core.patch(release, def, []);

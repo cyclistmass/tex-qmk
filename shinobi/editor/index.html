@@ -230,7 +230,7 @@ footer { margin-top: 18px; font-size: .85rem; }
     for (const el of document.querySelectorAll("[data-i18n-placeholder]")) el.placeholder = tr(el.dataset.i18nPlaceholder);
     $("lang").value = tr.lang;
     for (const o of $("hostlayout").options) o.textContent = tr("layout." + o.value);
-    $("rellist").textContent = DATA.releases.map((r) => r.file).join(tr("ui.and"));
+    $("rellist").textContent = new Intl.ListFormat(tr.lang, { type: "conjunction" }).format(DATA.releases.map((r) => r.file));
     $("relnew").textContent = DATA.releases.find((r) => r.macros).tag.replace(/^shinobi-/, "");
     const note = tr("ui.machine");
     $("machine").textContent = note;
