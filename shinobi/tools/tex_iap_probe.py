@@ -43,6 +43,16 @@ APP, IAP, BLE = 0x0407, 0x1407, 0x2521
 NAMES = {APP: "app (04D9:0407)", IAP: "IAP (04D9:1407)", BLE: "Bluetooth (04D9:2521)"}
 VENDOR_PAGE = 0xFF00
 REFUSED = b"\xff\xaa"
+UPDATER_TITLE = "KB upgrade"  # window title of TEX's updater and of the updaters build_updater.py makes
+
+
+def updater_open():
+    """True when TEX's updater window is open (Windows only). It holds the keyboard too and can take our replies,
+    so a flash or command sent beside it can stop partway; a stopped flash leaves the keyboard in the IAP."""
+    if sys.platform != "win32":
+        return False
+    import ctypes
+    return bool(ctypes.windll.user32.FindWindowW(None, UPDATER_TITLE))
 
 
 def hid_module():
@@ -58,7 +68,10 @@ def hid_module():
 
 
 def open_device(path):
-    """Open one HID interface by the path hidapi enumerated; exit with a permission hint if the OS refuses."""
+    """Open one HID interface by the path hidapi enumerated; exit with a permission hint if the OS refuses, and
+    before opening anything if TEX's updater is open."""
+    if updater_open():
+        sys.exit(t("updater_open", title=UPDATER_TITLE))
     h = hid_module().device()
     try:
         h.open_path(path)

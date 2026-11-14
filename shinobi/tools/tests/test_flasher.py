@@ -315,6 +315,42 @@ def test_open_failure_points_at_the_permission_docs():
     assert "open failed" in msg and ("unix/README.md" in msg or sys.platform == "win32")
 
 
+def test_open_updater_stops_the_flash_before_any_device_is_opened():
+    import tempfile
+    d = tempfile.mkdtemp()
+    img = os.path.join(d, "img.bin")
+    open(img, "wb").write(good_image())
+
+    def never(*a, **kw):
+        raise AssertionError("a HID device was opened with the updater open")
+
+    names = ("updater_open", "modes", "vendor_path", "hid_module")
+    saved = [getattr(probe, n) for n in names] + [tex_key.load]
+    probe.updater_open, probe.modes, probe.vendor_path, probe.hid_module = (
+        lambda: True), (lambda: {probe.APP}), (lambda pid: b"/x"), never
+    tex_key.load = lambda p: bytes(52)
+    tex_i18n.set_language("en")
+    try:
+        msg = raises_exit(tex_flash.main, [img, os.path.join(d, "key.bin")])
+        assert raises_exit(probe.open_device, b"/x") == msg  # every probe command opens through here too
+    finally:
+        for n, v in zip(names, saved):
+            setattr(probe, n, v)
+        tex_key.load = saved[-1]
+    assert msg == tex_i18n.t("updater_open", title="KB upgrade"), msg
+
+
+def test_updater_check_is_windows_only():
+    old = sys.platform
+    sys.platform = "linux"
+    try:
+        assert probe.updater_open() is False
+    finally:
+        sys.platform = old
+    if old == "win32":
+        assert probe.updater_open() in (True, False)
+
+
 def test_udev_rule_covers_both_modes():
     lines = open(os.path.join(TOOLS, "unix", "70-tex-shinobi.rules"), encoding="utf-8").read().lower().splitlines()
     rule = " ".join(ln for ln in lines if not ln.lstrip().startswith("#"))

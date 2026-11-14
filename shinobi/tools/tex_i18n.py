@@ -204,6 +204,14 @@ MESSAGES = {
         "fr": "bloc de version écrit et relu ; démarrage du firmware (11 01)",
         "es": "bloque de versión escrito y releído; iniciando el firmware (11 01)",
     },
+    "updater_open": {
+        "en": "TEX's updater is open (window \"{title}\"). It holds the keyboard too; close it and run this again.",
+        "zh-TW": "TEX 的更新程式已開啟(視窗「{title}」)。它也佔用著鍵盤;請關閉它後再執行一次。",
+        "ja": "TEX のアップデータが開いています (ウィンドウ「{title}」)。キーボードを使用中なので、閉じてからもう一度実行してください。",
+        "de": "Der TEX-Updater ist geöffnet (Fenster \"{title}\"). Er belegt die Tastatur ebenfalls; schließen und erneut ausführen.",
+        "fr": "L'outil de TEX est ouvert (fenêtre « {title} »). Il occupe aussi le clavier ; fermez-le et relancez ceci.",
+        "es": "El actualizador de TEX está abierto (ventana «{title}»). También ocupa el teclado; ciérrelo y vuelva a ejecutar esto.",
+    },
     "stopped": {
         "en": "stopped: {detail}. The keyboard stays in the bootloader; run this again, or run TEX's updater.",
         "zh-TW": "已停止:{detail}。鍵盤會停留在啟動載入器中;請再執行一次,或改用 TEX 的更新程式。",
