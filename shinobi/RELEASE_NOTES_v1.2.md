@@ -16,7 +16,7 @@ never touched: you can flash the stock firmware back at any time with TEX's own 
 | `tex_shinobi_v1.2.bin` | The firmware image, for `shinobi/tools/tex_flash.py` (needs Python 3, `hidapi`, and TEX's `AP_0407_4.04.exe` as the key source), and the image the keymap editor patches. |
 | `SHA256SUMS.txt` | SHA-256 of both files. |
 
-`tex_shinobi_v1.2.bin` is 28,048 bytes, SHA-256 `907f418c7e2610eb7155d6d7a40f3296429b20027e6a5a2b38adb3f043538506`.
+`tex_shinobi_v1.2.bin` is 28,048 bytes, SHA-256 `a8e34054b47fb229ca5691d06efcf887dff13d8ab883f9b6d311bab101b0ada0`.
 The keymap editor knows the release by this hash, so the release must carry exactly this image.
 
 Turn the PC's Bluetooth off before flashing. Full instructions: [shinobi/README.md](https://github.com/cyclistmass/tex-qmk/blob/main/shinobi/README.md). Keys, Fn combinations and
@@ -24,6 +24,10 @@ known issues: the [owner's manual](https://github.com/cyclistmass/tex-qmk/blob/m
 
 ## Changed
 
+* **Battery level from meter readings.** Up to v1.1 the battery scale was a guess and read about 27 % high: nearly
+  flat NiMH cells (2.32 V) showed 95 %. v1.2 uses a scale set from voltmeter readings, and the LED's low-battery
+  blinks start at 1.10 V a cell (before, only near 0.86 V). The percentages follow alkaline cells, so NiMH
+  rechargeables show 30-60 % for most of their charge.
 * **TrackPoint up/down against left/right.** Fn+- makes up/down a step slower, Fn+= a step faster, Fn+0 the same
   as left/right again: 50 % to 200 % in 16 steps. For a stick whose up/down feels faster than sideways, or a
   portrait screen. Scrolling is unchanged. The keys type back `tp3 ud90` and so on, Fn+1...9 now type
@@ -43,7 +47,7 @@ known issues: the [owner's manual](https://github.com/cyclistmass/tex-qmk/blob/m
 ## Known limits
 
 As in v1.1, except that Fn+B no longer reports an editor-made keymap as `default`. In short: battery percentage
-assumes alkaline AA cells (NiMH reads low); plugging or unplugging USB restarts the keyboard; ISO and JIS layouts
+follows alkaline AA cells (NiMH shows 30-60 % for most of its charge); plugging or unplugging USB restarts the keyboard; ISO and JIS layouts
 are untested; DIP switch 6 isn't ported; macros play with no delays; Fn+B's answers type as on a US layout.
 
 ## Tested

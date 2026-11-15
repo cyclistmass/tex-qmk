@@ -200,9 +200,11 @@ XOR key). What `ble.c` relies on:
 * B12 `WAKEUP` (input, GPIO function) is high on USB power; low means battery.
 * Battery: ADC channel 0 on A0, set up as stock FUN_340c (CK_AHB/64, 16-cycle sampling, continuous), read every
   100 ms and filtered. Below 0x834 on battery the LED does stock's low-battery pattern (3 blinks of 25 ms, 3 s
-  pause), unless the module is pairing. The percentage sent to the module is not stock: the divider values
-  (R7, R11) are not readable from the schematic file, so the scale assumes two alkaline AA cells and that 0x834 is
-  1.10 V a cell [I]. Fn+B types the percentage and the raw reading, to check the scale against a meter.
+  pause), unless the module is pairing. The percentage sent to the module is not stock. The divider values
+  (R7, R11) are not readable from the schematic file, so the scale comes from meter readings of the 2xAA pack
+  against Fn+B's raw value (NiMH, 2026-11-15: 2.318 V = 2810, 2.934 V = 3538): raw = 1181.8 * V_pack + 71 [O].
+  Up to v1.1 the firmware assumed 954.5 per pack volt (0x834 = 1.10 V a cell [I]) and read 27 % high. Stock's
+  0x834 is only 0.86 V a cell, so from v1.2 the low-battery LED starts at 2671 (1.10 V a cell).
 * Sleep: on battery after 15 min without a key or TrackPoint input (stock default). USART0 stops with TX held
   high, the TrackPoint is switched off (C8 high, PS/2 lines released), the ADC stops, the columns drive high
   except C13 and the rows A1-A8 are pulled down. EXTI wake on lines 1-8 (port A) and 12 (B12); a line already
@@ -252,8 +254,8 @@ Keymaps that only exist for bring-up, each a `rules.mk` flag on top of `default`
 ## Open questions
 
 * The physical key coordinates, for a proper `LAYOUT` and a configurator layout.
-* Battery scale: the divider values (R7, R11) are not readable from the schematic file, so the percentage assumes
-  two alkaline AA cells. It needs a meter reading against the Fn+B raw value, for alkaline and NiMH.
+* Battery scale: measured on NiMH only (two readings). An alkaline reading would confirm it, and the percentages
+  follow an alkaline discharge shape, so NiMH shows 30-60 % for most of its charge.
 * The Up+LAlt+Fn hold combo in stock (0x9776, toggles a flag) is not ported.
 * The record at 0x3BF8: the fields after the version word.
 * Room for VIA/Vial: the 28,076-byte IAP limit leaves 4 bytes.

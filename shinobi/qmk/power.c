@@ -31,14 +31,15 @@
 
 // Stock's only use of the reading: below 0x834 on battery, the LED shows a low
 // battery (FUN_974c). The percentage is not stock: stock always tells the BLE
-// module 100. The divider values are not known, so the scale below assumes
-// two alkaline AA cells and that stock warns at 1.10 V a cell [I]; BAT_REPORT
-// types the raw reading so the scale can be checked against a meter.
-#define BAT_LOW 0x834
+// module 100. Scale from meter readings of the 2xAA pack against BAT_REPORT's
+// raw value (NiMH, 2026-11-15: 2.318 V = 2810, 2.934 V = 3538):
+// raw = 1181.8 * V_pack + 71. Stock's 0x834 is then only 0.86 V a cell, so the
+// low-battery LED now starts at 1.10 V a cell instead.
+#define BAT_LOW 2671
 #define BAT_LOW_CLEAR (BAT_LOW + 40)
 // Two arrays, not one of structs: a {uint16_t, uint8_t} pads to 4 bytes. They sit in flash0's spare bytes
-// (ld .tex_rodata0). raw = 0x834 * V_cell / 1.10 V; alkaline discharge shape
-__attribute__((section(".tex_rodata0"))) static const uint16_t bat_curve_raw[]     = {2864, 2673, 2482, 2386, 2291, 2195, 2100, 1909};
+// (ld .tex_rodata0). Raw values at 1.50 1.40 1.30 1.25 1.20 1.15 1.10 1.00 V a cell; alkaline discharge shape
+__attribute__((section(".tex_rodata0"))) static const uint16_t bat_curve_raw[]     = {3616, 3380, 3143, 3025, 2907, 2789, 2671, 2434};
 __attribute__((section(".tex_rodata0"))) static const uint8_t  bat_curve_percent[] = {100, 85, 60, 45, 30, 18, 8, 0};
 
 // Low battery on the LED (stock FUN_569c, 0.5 ms ticks): 3 blinks of 25 ms,

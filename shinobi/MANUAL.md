@@ -93,8 +93,8 @@ one typed into a chat or a search box doesn't send it.
 | Typed | Means | Useful for |
 |---|---|---|
 | `v1.2 dflt 2026-11-13-14:00:00` | Firmware version, keymap and build time. `dflt` is the built-in keymap; `cust` means the keymap editor changed the keys or added macros. A firmware built from another keymap types that keymap's name. | Knowing which firmware is on the keyboard. Quote it in bug reports. |
-| `bt85%` | Battery level, worked out from `adc` for two alkaline AA cells. | Knowing when to change the cells. NiMH rechargeables read low (see [Known issues](#known-issues)). |
-| `adc2900` | The raw battery reading the level comes from. | Calibrating the battery scale: a voltmeter reading across the cells, sent with this number, fixes it. |
+| `bt85%` | Battery level, worked out from `adc`. The percentages follow alkaline cells. | Knowing when to change or charge the cells. NiMH rechargeables show 30-60 % for most of their charge (see [Known issues](#known-issues)). |
+| `adc2900` | The raw battery reading the level comes from: about 1,180 per volt across the two cells. | Checking the scale against a voltmeter across the cells. |
 | `aa` / `usb` | Running on the AA cells, or on USB power. | On USB power the keyboard never sleeps. |
 | `z15m` | Sleep time on battery, as set with Fn+F1...F9 (`z never` if it never sleeps). | Checking the setting, which survives battery changes and power cuts. |
 | `tp3` | TrackPoint sensitivity, as set with Fn+1...9. | Checking the setting, which is saved the same way. |
@@ -148,16 +148,16 @@ battery changes, USB plugging and unplugging, and power cuts.
 | Up/down faster or slower than sideways | Fn+- or Fn+=, a step at a time; Fn+0 to undo. |
 | Middle button scrolls when you want a click | Tap it without moving the stick. |
 | Keys are swapped (Fn/Ctrl, Alt/Win) | Check DIP switches 1-3 on the bottom; turn them all off for the stock layout. |
-| Battery percentage looks low | With NiMH rechargeables it reads low; see [Known issues](#known-issues). |
+| Battery percentage looks low | With NiMH rechargeables it shows 30-60 % for most of their charge; see [Known issues](#known-issues). |
 | Flashing can't find the keyboard | Turn the PC's Bluetooth off. Or hold Esc while plugging in the USB cable: the keyboard starts in the bootloader, ready to flash. |
 | Settings (TrackPoint level, sleep time) aren't kept | With a firmware built with `TEX_SELFTEST`, run `python -I tools/tex_selftest.py` with the keyboard on USB: it tests the flash page that holds them and prints PASS or FAIL. The released v1.1 doesn't include the test, and the script says so. |
 | Want the stock firmware back | Run TEX's `AP_0407_4.04.exe` from a Command Prompt run as administrator, with `-force` if it says there is nothing to update. |
 
 ## Known issues
 
-* **Battery percentage isn't calibrated.** It assumes two alkaline AA cells, so NiMH rechargeables read low. A
-  voltmeter reading next to the Fn+B `adc` value, for alkaline and NiMH, would fix the scale. Please send one
-  if you can.
+* **Battery percentage follows alkaline cells.** The scale is set from voltmeter readings, but the percentages
+  follow an alkaline cell's discharge. NiMH rechargeables stay near 1.2-1.3 V a cell for most of their charge, which
+  shows as 30-60 %, then drop quickly near the end. The LED's low-battery blinks start at 1.10 V a cell for both.
 * **USB plug and unplug restart the keyboard.** The processor sees a power-on reset each time. Settings are kept.
 * **TEX's configurator and macro tool don't work.** Remap keys and add shortcuts with the
   [keymap editor](https://cyclistmass.github.io/tex-qmk/shinobi/editor/) instead, then flash the image it gives

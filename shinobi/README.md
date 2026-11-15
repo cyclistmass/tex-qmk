@@ -104,8 +104,8 @@ Run TEX's original `AP_0407_4.04.exe` the same way, from a Command Prompt run as
 
 ## Known limits
 
-* **Battery percentage** assumes two alkaline AA cells. With NiMH rechargeables it reads low. Fn+B also types the
-  raw reading.
+* **Battery percentage** follows alkaline AA cells; NiMH rechargeables show 30-60 % for most of their charge.
+  The scale is set from voltmeter readings (v1.2). Fn+B also types the raw reading.
 * **USB plug and unplug restart the keyboard.** The keyboard's processor sees a power-on reset each
   time, as if its supply dropped for a moment. Settings are kept.
 * **No Bluetooth firmware updates.** Updates go over USB through TEX's bootloader.
