@@ -42,6 +42,7 @@ APP_PTR = 0x200  # write pointers are relative to 0x3000: the app at 0x3200, the
 ERASE_ARG = 0x1CE  # sent by the updater in the erase report at byte 9 (unaligned); meaning not decoded
 VERSION_BLOCK = 180  # 3 x 60 bytes, the payloads of `12 20`, `12 21`, `12 22`
 REFUSED = b"\xff\xaa"
+PROG = "tex_flash.exe" if getattr(sys, "frozen", False) else "tex_flash.py"  # the one-file exe names itself
 
 
 def u32(v):
@@ -152,11 +153,11 @@ def lang_arg(value):
 
 def parse_args(argv):
     """Parse the command line; the language (--lang, else the locale) is chosen first so --help is in it."""
-    pre = argparse.ArgumentParser(prog="tex_flash.py", add_help=False)
+    pre = argparse.ArgumentParser(prog=PROG, add_help=False)
     pre.add_argument("--lang", type=lang_arg)
     known, _ = pre.parse_known_args(argv)
     tex_i18n.setup(known.lang)
-    ap = argparse.ArgumentParser(prog="tex_flash.py", description=t("help_desc"))
+    ap = argparse.ArgumentParser(prog=PROG, description=t("help_desc"))
     ap.add_argument("image", help=t("help_image"))
     ap.add_argument("key", nargs="?", help=t("help_key"))
     ap.add_argument("--wait", type=float, default=15, metavar="SECONDS", help=t("help_wait"))
