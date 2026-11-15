@@ -134,8 +134,9 @@ The keyboard runs on two AA cells, or on USB power when the cable is in.
 
 ## Settings that are saved
 
-The TrackPoint level and the sleep time are saved in the keyboard's flash when you change them. They survive
-battery changes, USB plugging and unplugging, and power cuts.
+The TrackPoint settings and the sleep time are saved in the keyboard's flash when you change them. They survive
+battery changes, USB plugging and unplugging, and power cuts. Flashing a firmware, with `tex_flash` or TEX's
+updater, sets them back to the defaults; set them again afterwards.
 
 ## Troubleshooting
 

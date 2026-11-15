@@ -31,8 +31,8 @@ known issues: the [owner's manual](https://github.com/cyclistmass/tex-qmk/blob/m
 * **TrackPoint up/down against left/right.** Fn+- makes up/down a step slower, Fn+= a step faster, Fn+0 the same
   as left/right again: 50 % to 200 % in 16 steps. For a stick whose up/down feels faster than sideways, or a
   portrait screen. Scrolling is unchanged. The keys type back `tp3 ud90` and so on, Fn+1...9 now type
-  `tp3 ud100`, and Fn+B adds `ud100`. Saved with the other settings; flashing back to v1.1 resets them to the
-  defaults. In the keymap editor the three keys are under "TrackPoint up/down against left/right".
+  `tp3 ud100`, and Fn+B adds `ud100`. Saved with the other settings. Flashing any firmware, this one included, resets the settings to
+  the defaults. In the keymap editor the three keys are under "TrackPoint up/down against left/right".
 * **Fn+B names the keymap `dflt` or `cust`.** `dflt` is the built-in keymap; `cust` means the keymap editor
   changed keys or added macros (v1.1 said `default` either way). The editor marks its images with one byte after
   the macro table, so macros now share 95 bytes instead of 96.

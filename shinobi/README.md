@@ -35,7 +35,7 @@ Status: v1.2. v1.0 has been in daily use on one Shinobi BLE5 (US layout) over US
 | Fn+arrows | media keys: Stop, Play, Previous, Next |
 
 The TrackPoint settings and sleep time are saved in flash. They survive a power cut, and every USB plug or unplug is
-a power cut on this keyboard.
+a power cut on this keyboard. Flashing a firmware sets them back to the defaults.
 
 ## Installing
 

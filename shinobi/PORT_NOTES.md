@@ -163,8 +163,9 @@ repository contains it.
   `-force`. Fed the stock image, it reproduces the stock updater byte for byte.
 * `tools/tex_flash.py` speaks the same protocol directly. It reads the version block before erasing, keeps a
   copy, writes it back unchanged and reads it back. A failed step leaves the keyboard in the IAP.
-* Whether the IAP erases flash page 254 (the settings) when flashing is unknown. If it does, a reflash brings
-  back the defaults.
+* The IAP's erase clears the settings page too: v1.2 set to `tp5 ud90`, reflashed with tex_flash.exe, came up as
+  `tp3 ud100` (2026-11-15) [O]. The updater's erase argument 0x1CE, read as 256-byte units, is 0x1CE00 bytes:
+  exactly 0x3200 to the end of the 128 KB flash [I], which takes in page 254. TEX's updater sends the same erase.
 
 ## BLE link
 
