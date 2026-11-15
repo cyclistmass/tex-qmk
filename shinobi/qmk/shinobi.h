@@ -37,6 +37,11 @@ enum shinobi_keycodes {
     MS_UPRIGHT,
     MS_DOWNLEFT,
     MS_DOWNRIGHT,
+    // TrackPoint up/down speed against left/right (shinobi.c), Fn+- / Fn+= / Fn+0. Appended, so the codes above
+    // keep their values in editor-made keymaps.
+    TP_UD_DOWN,
+    TP_UD_UP,
+    TP_UD_EVEN,
 };
 
 // ble.c
@@ -64,6 +69,9 @@ void     type_text(const char *s);
 void     type_number(uint16_t n, const char *after);
 // power.c: plays sequence macro n (MC_n) from the editor's table
 void     macro_play(uint8_t n);
+
+// shinobi.c: types "tp3 ud100" (sensitivity level, up/down speed in percent of left/right), then after
+void tp_type(const char *after);
 
 // shinobi.c: TrackPoint power
 void tp_power_off(void);

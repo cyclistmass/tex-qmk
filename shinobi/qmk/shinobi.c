@@ -18,6 +18,30 @@ static void tp_send_sensitivity(void) {
     ps2_host_send(tp_sensitivity[tp_level]);
 }
 
+// The second TrackPoint tune: up/down speed against left/right (Mauro, 2026-11-15: up/down felt about 20 % faster;
+// also for a portrait screen). Fn+= steps up to 200 %, Fn+- down to 50 %, Fn+0 goes back to even. tp_ud is the step
+// as a 4-bit two's-complement number, 0 = even, 1-7 faster, 8-15 slower, so a settings word from before this (bits
+// 4-7 clear) reads as even.
+static const uint8_t tp_ud_percent[16] = {100, 105, 110, 120, 130, 150, 175, 200, 50, 55, 60, 70, 80, 85, 90, 95};
+static uint8_t       tp_ud;
+
+// Types the TrackPoint settings, "tp3 ud100", then after: the readback of Fn+1..9, Fn+-/=/0 and part of Fn+B.
+void tp_type(const char *after) {
+    type_text("tp");
+    type_number(tp_level + 1, " ud");
+    type_number(tp_ud_percent[tp_ud], after);
+}
+
+// Scales the vertical movement; the remainder carries over, so slow movement isn't lost or rounded one way. At
+// 100 % the remainder stays 0 and y comes out unchanged.
+static void tp_ud_scale(report_mouse_t *r) {
+    static int16_t rest;
+    int16_t        t = r->y * tp_ud_percent[tp_ud] + rest;
+    int16_t y = t / 100;
+    rest      = t - y * 100;
+    r->y      = y > 127 ? 127 : y < -127 ? -127 : y;
+}
+
 // QMK has no _kb hook here; ps2_mouse_init() calls this after reset and BAT.
 void ps2_mouse_init_user(void) {
     tp_send_sensitivity();
@@ -114,7 +138,7 @@ __attribute__((section(".tex_text0b"), noinline)) static void settings_put(uint3
 }
 
 static void settings_save(void) {
-    uint32_t word = SETTINGS_KEY | sleep_choice << 8 | tp_level;
+    uint32_t word = SETTINGS_KEY | sleep_choice << 8 | tp_ud << 4 | tp_level;
     if (word == settings_word) return;
     settings_put(word);
     settings_word = word;
@@ -122,11 +146,11 @@ static void settings_save(void) {
 
 #ifdef TEX_SELFTEST
 // Stock's factory flash test (FUN_4810), run over USB by tools/tex_selftest.py (raw HID command 14 00): write a
-// test value where the settings live, read it back, put the settings back. The low byte 0xA5 is no TrackPoint
+// test value where the settings live, read it back, put the settings back. The low nibble 0xF is no TrackPoint
 // level, so if power drops mid-test the next boot takes the defaults. Stock starts it by holding Up+LAlt+Fn for 6 s
 // and shows the result on Caps Lock (312 bytes here); this version is the read-back alone, 88 bytes. Off by default,
 // as in the v1.1 release.
-#    define SETTINGS_TEST (SETTINGS_KEY | 0xA5A5U)
+#    define SETTINGS_TEST (SETTINGS_KEY | 0xA5AFU)
 static bool settings_selftest(void) {
     settings_put(SETTINGS_TEST);
     // Branch cache and pre-fetch buffer off, so the read comes from the flash array (UM v1.60, CFCR bits 12 and 4).
@@ -142,8 +166,9 @@ static bool settings_selftest(void) {
 // Before ps2_mouse_init() sends the sensitivity.
 void keyboard_pre_init_kb(void) {
     uint32_t word = settings_word = *(volatile uint32_t *)SETTINGS_ADDR;
-    if ((word & 0xFFFF0000U) == SETTINGS_KEY && (uint8_t)word < 9) {
-        tp_level     = word;
+    if ((word & 0xFFFF0000U) == SETTINGS_KEY && (word & 15) < 9) {
+        tp_level     = word & 15;
+        tp_ud        = (uint8_t)word >> 4;
         sleep_choice = word >> 8;
         if (sleep_choice < 9) power_set_sleep(sleep_choice, false);
     }
@@ -269,13 +294,21 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
         if (record->event.pressed) battery_report();
         return false;
     }
-    if (keycode >= TP_SEN1 && keycode <= TP_SEN9) {
+    if ((keycode >= TP_SEN1 && keycode <= TP_SEN9) || (keycode >= TP_UD_DOWN && keycode <= TP_UD_EVEN)) {
         if (record->event.pressed) {
-            tp_level = keycode - TP_SEN1;
-            tp_send_sensitivity();
+            if (keycode <= TP_SEN9) {
+                tp_level = keycode - TP_SEN1;
+                tp_send_sensitivity();
+            } else {
+                // Steps stop at 7 (200 %) and 8 (50 %), the ends of the 4-bit range.
+                uint8_t u = tp_ud;
+                if (keycode == TP_UD_EVEN) u = 0;
+                else if (keycode == TP_UD_UP) u += u != 7;
+                else u -= u != 8;
+                tp_ud = u & 15;
+            }
             settings_save();
-            type_text("tp");
-            type_number(tp_level + 1, "");
+            tp_type("");
         }
         return false;
     }
@@ -520,6 +553,7 @@ static uint8_t diag_pairs(bool high, uint8_t *out, uint8_t max, uint16_t idle_ou
 // QMK's idle time counts the matrix only; the stick counts too.
 void ps2_mouse_moved_user(report_mouse_t *mouse_report) {
     power_pointer_activity();
+    tp_ud_scale(mouse_report);
 #ifdef TEX_DIAG
     diag_tp[0]++;
     diag_tp[1] += mouse_report->x < 0 ? -mouse_report->x : mouse_report->x;

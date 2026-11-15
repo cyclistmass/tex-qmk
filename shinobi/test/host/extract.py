@@ -24,6 +24,9 @@ PIECES = {
         ("func", "mousekey_record"),
         ("line", r"^#define TEX_DIP_SWITCHES\b"),
         ("func", "dip_read"),
+        ("line", r"^static const uint8_t tp_ud_percent\[16\]"),
+        ("line", r"^static uint8_t\s+tp_ud;"),
+        ("func", "tp_ud_scale"),
     ],
     "power.c": [
         ("line", r"^#define TYPE_SETTLE_MS\b"),

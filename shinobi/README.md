@@ -29,11 +29,12 @@ Status: v1.2. v1.0 has been in daily use on one Shinobi BLE5 (US layout) over US
 | Fn+Mute / Fn+Vol- / Fn+Vol+ | Bluetooth host 1 / 2 / 3. Hold 3 s to pair a new host to that slot |
 | Fn+Esc | back to USB |
 | Fn+1 ... Fn+9 | TrackPoint sensitivity 1-9; the keyboard types back "tp N" (default 3) |
+| Fn+- / Fn+= / Fn+0 | TrackPoint up/down speed against left/right: a step slower, a step faster, the same (50-200 %) |
 | Fn+F1 ... Fn+F9 | sleep on battery after 1, 2, 5, 10, 15, 30, 60, 120 min or never; typed back (default 15 min) |
-| Fn+B | types the firmware version, then a line with the battery level, power source, sleep time and TrackPoint level |
+| Fn+B | types one line: firmware version, battery level, power source, sleep time and TrackPoint settings |
 | Fn+arrows | media keys: Stop, Play, Previous, Next |
 
-The TrackPoint level and sleep time are saved in flash. They survive a power cut, and every USB plug or unplug is
+The TrackPoint settings and sleep time are saved in flash. They survive a power cut, and every USB plug or unplug is
 a power cut on this keyboard.
 
 ## Installing
@@ -110,7 +111,7 @@ Run TEX's original `AP_0407_4.04.exe` the same way, from a Command Prompt run as
 * **No Bluetooth firmware updates.** Updates go over USB through TEX's bootloader.
 * **TEX's configurator and macro tool don't work** with this firmware. To remap keys and add shortcuts
   without a compiler, use the [keymap editor](editor/README.md). Otherwise edit `keymap.c` (see [Building](#building)). VIA/Vial live remapping does not fit yet: TEX's bootloader takes
-  images up to 28,076 bytes; v1.0 is 28,072, v1.1 27,728 and v1.2 27,768.
+  images up to 28,076 bytes; v1.0 is 28,072, v1.1 27,728 and v1.2 28,048.
 * **ISO and JIS boards are untested.** The keymap comes from the stock table, which has the extra ISO key and the
   JIS keys (Ro, Yen, Kana, Henkan, Muhenkan), so they should work. Please report what you find.
 * Tested on the Shinobi BLE5 with firmware AP_0407 V1.04.04 only.

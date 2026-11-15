@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 //
 // Host tests of the firmware's input logic: Fn scrolling and the middle button, mouse movement keys, sequence
-// macros and typed text. extract.py copies the real functions from shinobi.c and power.c into extracted.c; this
+// macros and typed text, and the TrackPoint's up/down scaling. extract.py copies the real functions from shinobi.c and power.c into extracted.c; this
 // file gives them the QMK pieces they use, as stubs that keep QMK's behaviour where it matters (register_code on a
 // modifier changes the real mods), drives them with random press and release sequences, and checks each step
 // against a model of what the keyboard should do. Also checks divsi3.S's arithmetic, step by step, against C's;
@@ -100,6 +100,8 @@ static const uint8_t macro_table[] = {
     0xE0, 0xE1, 0x1D, 0, // 3: Ctrl+Shift+Z
 };
 static const uint8_t *tex_macros = macro_table, *tex_macros_end = macro_table + sizeof(macro_table);
+
+typedef struct { uint8_t buttons; int8_t x, y, v, h; } report_mouse_t; // QMK's, without MOUSE_EXTENDED_REPORT
 
 #include "extracted.c"
 
@@ -256,8 +258,48 @@ static void test_dip(void) {
     }
 }
 
+// --- TrackPoint up/down scaling (Fn+-, Fn+=, Fn+0). The steps -8..7, stored as 4-bit two's complement, rise from
+// 50 % to 200 % with step 0 at 100 % (a settings word from before the tune reads as even). Each packet's y is
+// scaled with the remainder carried over, so over any run the movement out equals the movement in times the
+// percentage, within one count, except where a packet hits the ±127 report limit. x is never touched.
+static void test_tp_ud(void) {
+    CHECK(tp_ud_percent[0] == 100, "step 0: %d %%", tp_ud_percent[0]);
+    CHECK(tp_ud_percent[8] == 50 && tp_ud_percent[7] == 200, "ends %d %% and %d %%", tp_ud_percent[8], tp_ud_percent[7]);
+    for (int s = -8; s < 7; s++) {
+        CHECK(tp_ud_percent[s & 15] < tp_ud_percent[(s + 1) & 15], "step %d %d %% not below step %d %d %%", s, tp_ud_percent[s & 15], s + 1, tp_ud_percent[(s + 1) & 15]);
+    }
+    // Even, from the start: every packet comes out as it went in. QMK's ps2_mouse.c hands over -127..127 (HID leaves
+    // -128 unused).
+    tp_ud = 0;
+    for (int y = -127; y < 128; y++) {
+        report_mouse_t r = {.x = 7, .y = (int8_t)y};
+        tp_ud_scale(&r);
+        CHECK(r.y == y && r.x == 7, "100 %%: y %d came out %d (x %d)", y, r.y, r.x);
+    }
+    // Every step, in random order, with slow and fast movement mixed; the carried remainder runs on across steps.
+    long want = 0, got = 0; // movement in times the percentage, and movement out times 100
+    for (int round = 0; round < 2000; round++) {
+        tp_ud = (uint8_t)(rand() % 16);
+        int pct = tp_ud_percent[tp_ud];
+        for (int i = 0; i < 200; i++) {
+            int            y = rand() % 4 ? rand() % 7 - 3 : rand() % 255 - 127;
+            report_mouse_t r = {.x = -5, .y = (int8_t)y};
+            tp_ud_scale(&r);
+            int  exact   = y * pct;                        // in hundredths
+            long unbound = (exact + (want - got)) / 100;   // the output without the report limit, if the carry is right
+            CHECK(r.y >= -127 && r.y <= 127, "%d %%: y %d gave %d", pct, y, r.y);
+            CHECK(r.y == unbound || labs(unbound) > 127, "%d %%: y %d gave %d, want %ld", pct, y, r.y, unbound);
+            CHECK(r.x == -5, "%d %%: x changed to %d", pct, r.x);
+            want += exact - (unbound - r.y) * 100; // past the limit the excess is dropped on purpose
+            got += r.y * 100;
+            CHECK(labs(want - got) < 100, "%d %%: after y %d, out %ld/100 against %ld/100", pct, y, got, want);
+        }
+    }
+}
+
 int main(void) {
     srand(1);
+    test_tp_ud();
     test_dip();
     test_mousekeys();
     test_middle();
@@ -267,6 +309,6 @@ int main(void) {
         printf("FAIL host tests: %d failures\n", failures);
         return 1;
     }
-    printf("PASS host tests: mouse keys, Fn scroll and middle button, macros and typed text with held modifiers, six DIP switches, divsi3\n");
+    printf("PASS host tests: mouse keys, Fn scroll and middle button, macros and typed text with held modifiers, six DIP switches, divsi3, TrackPoint up/down scaling\n");
     return 0;
 }

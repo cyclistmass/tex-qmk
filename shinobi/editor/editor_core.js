@@ -16,7 +16,8 @@
     const MACRO_SLOTS = 16; // MC_0-MC_15; the firmware plays MC_n as the n-th 0-terminated sequence in the table
 
     // What the editor offers, by group (its name is "grp.<id>" in i18n.js). Everything here must resolve against the
-    // pinned QMK and shinobi.h (checked at load). A third field names the release feature a group needs. Left out on purpose: features compiled out of the
+    // pinned QMK and shinobi.h (checked at load). A third field names the release feature a group needs, or a board
+    // keycode the release must define. Left out on purpose: features compiled out of the
     // firmware (mouse wheel keys, buttons 4-8, send_string, tap dance, mod-tap and layer-tap).
     const CATALOG = [
         ["letters", "KC_A KC_B KC_C KC_D KC_E KC_F KC_G KC_H KC_I KC_J KC_K KC_L KC_M KC_N KC_O KC_P KC_Q KC_R KC_S KC_T KC_U KC_V KC_W KC_X KC_Y KC_Z"],
@@ -34,6 +35,7 @@
         ["mmove", "MS_UPLEFT MS_UP MS_UPRIGHT MS_LEFT MS_RGHT MS_DOWNLEFT MS_DOWN MS_DOWNRIGHT", "mouse_keys"],
         ["macros", Array.from({ length: MACRO_SLOTS }, (_, i) => "MC_" + i).join(" "), "macros"],
         ["tp", "TP_SEN1 TP_SEN2 TP_SEN3 TP_SEN4 TP_SEN5 TP_SEN6 TP_SEN7 TP_SEN8 TP_SEN9"],
+        ["tpud", "TP_UD_DOWN TP_UD_UP TP_UD_EVEN", "TP_UD_UP"],
         ["ble", "BLE_SLOT1 BLE_SLOT2 BLE_SLOT3 BLE_PAIR BLE_USB BAT_REPORT"],
         ["sleep", "SLEEP1 SLEEP2 SLEEP3 SLEEP4 SLEEP5 SLEEP6 SLEEP7 SLEEP8 SLEEP9"],
         ["layers", "MO(_FN) TG(_FN) MO(_MAC) TG(_MAC) MO(_FNCTL) TG(_FNCTL)"],
@@ -57,8 +59,10 @@
         BLE_PAIR: "BT pair", BLE_USB: "USB", BAT_REPORT: "Battery", KC_NO: "None", _______: "▽",
     };
     const MOUSE_ARROWS = { MS_UP: "↑", MS_DOWN: "↓", MS_LEFT: "←", MS_RGHT: "→", MS_UPLEFT: "↖", MS_UPRIGHT: "↗", MS_DOWNLEFT: "↙", MS_DOWNRIGHT: "↘" };
+    // TrackPoint up/down speed against left/right; the same in every language, and no macro key names.
+    const TP_UD = { TP_UD_DOWN: "TP ↕−", TP_UD_UP: "TP ↕+", TP_UD_EVEN: "TP ↕=" };
     // Keys with a title of their own ("title.<token>" in i18n.js).
-    const TITLED = new Set(["_______", "KC_NO", "BLE_PAIR", "BLE_USB", "BAT_REPORT", "KC_NUBS", "KC_NUHS"]);
+    const TITLED = new Set(["_______", "KC_NO", "BLE_PAIR", "BLE_USB", "BAT_REPORT", "KC_NUBS", "KC_NUHS", "TP_UD_DOWN", "TP_UD_UP", "TP_UD_EVEN"]);
     // Every user-visible string is in i18n.js. The English labels above double as macro key names ({Enter}, {Bksp}),
     // so those don't change with the page's language; i18n.js may rename a label for display only ("key.<token>").
     const I18N = root.ShinobiI18n || (typeof require === "function" ? require("./i18n.js") : null);
@@ -196,7 +200,8 @@
             throw new Error(t("err.keycode", { token: tok }));
         }
 
-        const groups = CATALOG.filter(([, , feature]) => !feature || rel[feature]);
+        // A feature in capitals is a board keycode the release's shinobi.h must have (TP_UD_UP from v1.2).
+        const groups = CATALOG.filter(([, , f]) => !f || (/^[A-Z]/.test(f) ? Object.prototype.hasOwnProperty.call(custom, f) : rel[f]));
         // Preferred name for each value: catalog names first, then the shortest KC_/MS_ alias.
         const names = new Map();
         for (const [, list] of CATALOG) for (const n of list.split(" ")) if (!/\(/.test(n)) { try { names.set(resolve(n), n); } catch (e) { /* not in this release */ } }
@@ -248,6 +253,7 @@
                 return t(m[1] === "MO" ? "label.hold" : "label.toggle", { layer: layerName(m[2]).replace(/ \(.*\)$/, "") });
             }
             if ((m = /^TP_SEN(\d)$/.exec(tok))) return t("label.tp", { n: m[1] });
+            if (TP_UD[tok]) return TP_UD[tok];
             if ((m = /^SLEEP(\d)$/.exec(tok))) return t("label.sleep", { n: m[1] });
             if (v >= 0x100 && v <= 0x1fff && names.has(v & 0xff)) {
                 const parts = [];

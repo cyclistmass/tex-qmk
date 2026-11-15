@@ -41,7 +41,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
         _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______
     ),
-    // Stock Fn tables 0x9E62/0x9E7C. Fn+Mute / Fn+Vol- / Fn+Vol+ pick BLE host slot 1-3 (hold 3 s to pair); Fn+Esc goes back to USB (stock action 0x8D); Fn+B types the battery level; Fn+1..9 set TrackPoint sensitivity, Fn+F1..F9 the sleep time (power.c).
+    // Stock Fn tables 0x9E62/0x9E7C. Fn+Mute / Fn+Vol- / Fn+Vol+ pick BLE host slot 1-3 (hold 3 s to pair); Fn+Esc goes back to USB (stock action 0x8D); Fn+B types the battery level; Fn+1..9 set TrackPoint sensitivity, Fn+- / Fn+= / Fn+0 its up/down speed against left/right (slower, faster, even), Fn+F1..F9 the sleep time (power.c).
     [_FN] = LAYOUT(
         _______, _______, _______, _______, _______, _______, _______, _______, SLEEP4, _______, KC_MNXT, _______,
         BAT_REPORT, _______, _______, _______, _______, _______, _______, _______, SLEEP3, _______, KC_MPLY, KC_MSTP,
@@ -49,7 +49,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         _______, _______, _______, _______, _______, _______, _______, _______, SLEEP1, _______, _______, _______,
         _______, _______, _______, _______, _______, _______, _______, _______, BLE_USB, _______, _______, _______,
         _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, SLEEP9, _______, BLE_SLOT1,
-        TP_SEN8, TP_SEN9, _______, _______, _______, _______, _______, _______, _______, SLEEP6, SLEEP8, _______, BLE_SLOT2, KC_INT4,
+        TP_SEN8, TP_SEN9, TP_UD_EVEN, TP_UD_DOWN, TP_UD_UP, _______, _______, _______, _______, SLEEP6, SLEEP8, _______, BLE_SLOT2, KC_INT4,
         _______, TP_SEN1, TP_SEN2, TP_SEN3, TP_SEN4, TP_SEN5, TP_SEN6, TP_SEN7, _______, SLEEP5, SLEEP7, _______, BLE_SLOT3, _______
     ),
 };

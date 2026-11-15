@@ -35,6 +35,7 @@ Tags: [T] stated by TEX (page or manual), [C] read from the configurator's code,
 | Pointer movement from keys (8 directions) | [T] | **Adapted (v1.1):** a small handler in `shinobi.c` (16 ms steps, accelerating) instead of QMK's mousekey |
 | TrackPoint speed 1-9 | [T] | **Covered** (`TP_SEN1-9`) |
 | TrackPoint speed −/+ | [T] | **Not in v1.0.** It needs a few bytes of code |
+| TrackPoint up/down against left/right | (not in stock) | **Added (v1.2):** `TP_UD_DOWN`, `TP_UD_UP`, `TP_UD_EVEN`, offered for releases whose `shinobi.h` has them |
 | Macros: 12 (M1-M12), up to 15 steps each, each step a chord of up to 5 keys, fixed timing | [T] 12 macros; [C] 15 steps, 5-key limit, timing value 128, not editable | **Adapted (v1.1):** 16 macros sharing 96 bytes, 1 byte per key, modifiers held for the next key. The 12 × 15 maximum does not fit |
 | Mouse and TrackPoint keycodes inside macros | [C] | **Not possible** in the budget |
 | Firmware-level macros: 24 slots, per-event delays, mouse movement, repeat once / N times / until stopped, 4 KB | [O] (`51 18`, `44 xx`, `FUN_8698`); no tool for them was found | **Not possible** in the budget, beyond one optional fixed delay code |
@@ -153,7 +154,8 @@ editor writes 1 there when the keys or macros differ from the default, and an ex
 byte there through the linker section `.tex_keymap_custom`, which keeps the byte-identity test exact. The
 firmware tests `QMK_KEYMAP` against "default" at compile time, so other keymaps (`sleep30`, test builds) still
 type their name. A comparison with the default keymap in flash would need a stored copy (960 bytes). Cost 40
-bytes: 27,768, leaving 308.
+bytes: 27,768, leaving 308. Then the TrackPoint up/down tune (Fn+-, Fn+=, Fn+0, `ud` in Fn+B): 280 bytes, 28,048,
+leaving 28. One function now types `tp3 ud100` for Fn+1..9, Fn+-/=/0 and Fn+B.
 
 Earlier (v1.0):
 

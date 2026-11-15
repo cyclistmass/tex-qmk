@@ -436,8 +436,8 @@ void battery_report(void) {
     type_number(battery_percent(), "% adc");
     type_number(battery_raw(), on_battery() ? " aa z" : " usb z");
     type_sleep_time();
-    type_text(" tp");
-    type_number(tp_level + 1, " dip");
+    type_text(" ");
+    tp_type(" dip");
     // The DIP switches that are on, by number ("dip 24"), or 0.
     uint8_t dip = tex_dip;
     if (!dip) type_text("0");

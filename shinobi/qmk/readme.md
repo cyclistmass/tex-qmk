@@ -21,8 +21,9 @@ Flashing: `shinobi/tools/tex_flash.py <image.bin> <AP_0407_4.04.exe>` through th
 * **Fn+Mute / Fn+Vol- / Fn+Vol+**: Bluetooth host 1-3; hold 3 s to pair
 * **Fn+Esc**: back to USB
 * **Fn+1..9**: TrackPoint sensitivity, typed back as "tp N"
+* **Fn+- / Fn+= / Fn+0**: TrackPoint up/down speed against left/right, a step slower / faster / even, typed back as "ud N" (percent)
 * **Fn+F1..F9**: sleep on battery after 1, 2, 5, 10, 15, 30, 60, 120 min or never, typed back (default 15 min)
-* **Fn+B**: types the firmware version, battery level, power source, sleep time and TrackPoint level
+* **Fn+B**: types the firmware version, battery level, power source, sleep time and TrackPoint settings
 
 The sensitivity and sleep time are kept in flash, so they survive a power cut (every USB plug and unplug is one).
 
