@@ -97,7 +97,7 @@ and the bytes at the offset must equal the default keymap, before anything is pa
 `workflow_dispatch` input on the build workflow can take a keymap folder name, for forks. That path needs a GitHub
 account or the ARM toolchain, so it is not the default for owners.
 
-**Flashing does not change.** `tex_flash.py tex_shinobi_custom.bin AP_0407_4.04.exe`, or
+**Flashing does not change.** `tex_flash.py tex_shinobi_custom.bin`, or
 `build_updater.py AP_0407_4.04.exe tex_shinobi_custom.bin out/`, which gives an updater exe to run with `-force`.
 Flashing from the page over WebHID would be possible later, but it would be a second implementation of the flash
 protocol, so it is out of scope here.

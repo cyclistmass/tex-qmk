@@ -2,19 +2,20 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 """Flash the TEX Shinobi through its stock IAP, without the vendor updater.
 
-usage: python -I tex_flash.py <image.bin> <key> [--wait SECONDS] [--lang LANG]
-       python -I tex_flash.py <image.bin> <key> --dry-run <transcript.jsonl>
+usage: python -I tex_flash.py <image.bin> [<key>] [--wait SECONDS] [--lang LANG]
+       python -I tex_flash.py <image.bin> [<key>] --dry-run <transcript.jsonl>
 
 Runs unchanged on Windows, Linux, FreeBSD and OpenBSD (Linux and the BSDs need a permission rule, see
 unix/README.md). Messages are in English, Traditional Chinese, Japanese, German, French or Spanish (--lang, else
 the system locale; tex_i18n.py); hex dumps and mismatch details stay English for bug reports.
 
-<image.bin> is the plain app image linked at 0x3200 (a QMK .bin, or a stock image); <key> is TEX's stock
-updater AP_0407_4.04.exe or the keyboard's 52-byte key file (tex_key.py). The reports are the vendor
+<image.bin> is the plain app image linked at 0x3200 (a QMK .bin, or a stock image). The keyboard's 52-byte key is
+built in (tex_key.py, published with TEX's permission); <key> is optional and can be TEX's stock updater
+AP_0407_4.04.exe or a 52-byte key file instead. The reports are the vendor
 updater's, as recorded from it (PORT_NOTES.md, "Flashing"): erase `1D 00`, write pointer `1E 01`/`1E 00`, 52-byte blocks `1F`, checksum `1D 01`, the version
 block at pointer 0, start `11 01`. The version block is read from the keyboard (`12 20`/`12 21`/`12 22`)
-before the erase and written back unchanged; a valid copy is kept next to the <key> file as
-tex_version_block.bin and used when the keyboard's is blank (after an interrupted flash).
+before the erase and written back unchanged; a valid copy is kept next to the <key> file (else next to
+<image.bin>) as tex_version_block.bin and used when the keyboard's is blank (after an interrupted flash).
 
 Starts from either mode: in the app (04D9:0407) it sends `11 00` and waits for the IAP (04D9:1407). Stops
 at the first report the IAP refuses or does not answer; the IAP itself is never erased, so a stopped flash
@@ -157,7 +158,7 @@ def parse_args(argv):
     tex_i18n.setup(known.lang)
     ap = argparse.ArgumentParser(prog="tex_flash.py", description=t("help_desc"))
     ap.add_argument("image", help=t("help_image"))
-    ap.add_argument("key", help=t("help_key"))
+    ap.add_argument("key", nargs="?", help=t("help_key"))
     ap.add_argument("--wait", type=float, default=15, metavar="SECONDS", help=t("help_wait"))
     ap.add_argument("--dry-run", metavar="TRANSCRIPT", help=t("help_dry"))
     ap.add_argument("--lang", type=lang_arg, metavar="LANG", help=t("help_lang"))
@@ -205,7 +206,7 @@ def main(argv=None):
     sp, reset = bu.check_image(img)
     _, enc = bu.device_image(img, key)
     print(f"{args.image}: {len(img)} bytes, SP {sp:#x}, reset {reset:#x}, sha256 {bu.sha(img)[:12]}, sum {word_sum(enc):08x}")
-    saved = os.path.join(os.path.dirname(os.path.abspath(args.key)), "tex_version_block.bin")
+    saved = os.path.join(os.path.dirname(os.path.abspath(args.key or args.image)), "tex_version_block.bin")
 
     if args.dry_run:
         rows = read_transcript(args.dry_run)

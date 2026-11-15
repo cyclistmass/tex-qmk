@@ -38,12 +38,27 @@ a power cut on this keyboard.
 
 ## Installing
 
-You need the USB cable and a PC: Windows for option 1, and Windows, Linux, FreeBSD or OpenBSD for option 2
+You need the USB cable and a PC: Windows, Linux, FreeBSD or OpenBSD for option 1, and Windows for option 2
 (see [Other operating systems](#other-operating-systems)). **Turn the PC's Bluetooth off before flashing** (Settings > Bluetooth &
 devices), so the PC only talks to the keyboard over USB. Downloads are on the
 [Releases](https://github.com/cyclistmass/tex-qmk/releases) page. Each release lists SHA-256 sums.
 
-### Option 1: TEX's updater (no other software needed)
+### Option 1: the installer, `tex_flash.py`
+
+Needs Python 3 with `pip install hidapi`, the `tools` folder from this repository, and the firmware
+`tex_shinobi_v1.1.bin`. Nothing from TEX is needed: the keyboard's firmware key is built in, published with TEX's
+permission.
+
+From the `tools` folder:
+
+    python -I tex_flash.py tex_shinobi_v1.1.bin
+
+It takes about 5 seconds. It switches the keyboard to the bootloader, keeps a copy of the version block, writes
+the image, checks the bootloader's checksum, and restarts the keyboard. "the app is up (04D9:0407)" means
+success. Press Fn+B in a text editor: the keyboard types a line starting `v1.1 default ...`. If any step fails,
+the installer stops and the keyboard stays in the bootloader, ready for another try or for option 2.
+
+### Option 2: TEX's updater (Windows, no Python needed)
 
 `tex_shinobi_v1.1_updater.exe` is TEX's AP_0407 V1.04.04 updater with this firmware inside it in place of the
 stock image. Nothing else in the updater is changed. TEX allowed sharing it.
@@ -59,24 +74,6 @@ stock image. Nothing else in the updater is changed. TEX allowed sharing it.
    04D9:1407) for about 10 seconds, then comes back as the keyboard (04D9:0407).
 4. Press Fn+B in a text editor. The keyboard types one line starting `v1.1 default ...`.
 
-### Option 2: the Python flasher
-
-Needs Python 3, `pip install hidapi`, the `tools` folder from this repository, the firmware
-`tex_shinobi_v1.1.bin`, and a key. The key can come from either of these:
-
-* TEX's own stock updater, `AP_0407_4.04.exe`, from TEX's download page. It is the key source: the flasher reads
-  the key out of it.
-* A 52-byte key file, if you have one. `python tools/tex_key.py AP_0407_4.04.exe xor_key_52.bin` writes one.
-
-From the `tools` folder:
-
-    python tex_flash.py tex_shinobi_v1.1.bin AP_0407_4.04.exe
-
-It takes about 5 seconds. It switches the keyboard to the bootloader, keeps a copy of the version block, writes
-the image, checks the bootloader's checksum, and restarts the keyboard. "the app is up (04D9:0407)" means
-success. If any step fails, it stops and the keyboard stays in the bootloader, ready for another try or for TEX's
-updater.
-
 ### Other operating systems
 
 `tools/tex_flash.py` is the same file on every OS. Details, the permission rules and what is verified are in
@@ -84,13 +81,17 @@ updater.
 
 | OS | Status | Install hidapi | Permission rule (once, as root) | Run |
 |---|---|---|---|---|
-| Windows | tested | `pip install hidapi` | none | `python tex_flash.py tex_shinobi_v1.1.bin AP_0407_4.04.exe` |
-| Linux | **not yet tested on hardware** | `pip install hidapi` in a venv, or `apt install python3-hid` | copy `tools/unix/70-tex-shinobi.rules` to `/etc/udev/rules.d/`, `udevadm control --reload`, replug | `python3 -I tex_flash.py tex_shinobi_v1.1.bin AP_0407_4.04.exe` |
+| Windows | tested | `pip install hidapi` | none | `python -I tex_flash.py tex_shinobi_v1.1.bin` |
+| Linux | **not yet tested on hardware** | `pip install hidapi` in a venv, or `apt install python3-hid` | copy `tools/unix/70-tex-shinobi.rules` to `/etc/udev/rules.d/`, `udevadm control --reload`, replug | `python3 -I tex_flash.py tex_shinobi_v1.1.bin` |
 | FreeBSD | **untested** | `pkg install hidapi libusb`, then `pip install hidapi` | group `texflash` and `tools/unix/tex-shinobi.devd.conf` | as Linux |
 | OpenBSD | **untested; no working backend known** (hidapi needs libusb, which needs `uhid` out of the kernel) | - | `/dev/uhid*` group, see the guide | flash from another OS |
 
 Messages are in English, Traditional Chinese, Japanese, German, French or Spanish, chosen from the system locale
 or with `--lang` (for example `--lang de`). **The translations are unreviewed.**
+
+The installer can also take the key from TEX's stock updater or a key file, as a second argument, for anyone who
+wants to check the built-in key: `python -I tex_flash.py tex_shinobi_v1.1.bin AP_0407_4.04.exe`.
+`python -I tex_key.py AP_0407_4.04.exe xor_key_52.bin` writes the key file.
 
 ### Bootloader by hand
 
