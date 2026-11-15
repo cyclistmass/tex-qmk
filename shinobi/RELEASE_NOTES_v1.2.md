@@ -39,7 +39,7 @@ known issues: the [owner's manual](https://github.com/cyclistmass/tex-qmk/blob/m
 * **Shorter labels:** `bt` for the battery level (was `bat`) and `z` for the sleep time (was `zzz`), also when
   Fn+F1...F9 types it back (`z15m`, `z never`). The rest of the line is as in v1.1:
 
-      v1.2 dflt 2026-11-13-14:00:00 bt85% adc2900 aa z15m tp3 ud100 dip24 idl15m34s wk1420ms
+      v1.2 dflt 2026-11-13-14:00:00 bt85% adc3380 aa z15m tp3 ud100 dip24 idl15m34s wk1420ms
 
   The [manual](https://github.com/cyclistmass/tex-qmk/blob/main/shinobi/MANUAL.md#what-the-keyboard-types)
   translates every field.

@@ -288,7 +288,8 @@ static void test_tp_ud(void) {
             int  exact   = y * pct;                        // in hundredths
             long unbound = (exact + (want - got)) / 100;   // the output without the report limit, if the carry is right
             CHECK(r.y >= -127 && r.y <= 127, "%d %%: y %d gave %d", pct, y, r.y);
-            CHECK(r.y == unbound || labs(unbound) > 127, "%d %%: y %d gave %d, want %ld", pct, y, r.y, unbound);
+            long limited = unbound > 127 ? 127 : unbound < -127 ? -127 : unbound;
+            CHECK(r.y == limited, "%d %%: y %d gave %d, want %ld", pct, y, r.y, limited);
             CHECK(r.x == -5, "%d %%: x changed to %d", pct, r.x);
             want += exact - (unbound - r.y) * 100; // past the limit the excess is dropped on purpose
             got += r.y * 100;

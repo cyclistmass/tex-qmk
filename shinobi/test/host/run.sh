@@ -10,7 +10,9 @@ start=$(date +%s)
 work="$(mktemp -d)"
 result=fail
 trap 'echo "TIMING label=host_tests start=$start end=$(date +%s) seconds=$(( $(date +%s) - start )) result=$result"; rm -rf "$work"' EXIT
-python3 -I "$here/extract.py" "$here/../../qmk" "$work/extracted.c"
-"${CC:-gcc}" -std=gnu11 -O1 -Wall -Werror -Wno-unused-variable -Wno-unused-function -I"$work" -o "$work/host_tests" "$here/host_tests.c"
+py=python3; "$py" -c "" 2>/dev/null || py=python # Windows: python3 may be the Store stub
+cc="${CC:-gcc}"; command -v "$cc" >/dev/null || { echo "FAIL no C compiler: $cc not found (set CC)"; exit 1; }
+"$py" -I "$here/extract.py" "$here/../../qmk" "$work/extracted.c"
+"$cc" -std=gnu11 -O1 -Wall -Werror -Wno-unused-variable -Wno-unused-function -I"$work" -o "$work/host_tests" "$here/host_tests.c"
 "$work/host_tests"
 result=ok

@@ -85,7 +85,7 @@ up and down. It changes the pointer only: scrolling stays as it was. Saved with 
 
 **Fn+B** types one line, for example:
 
-    v1.2 dflt 2026-11-13-14:00:00 bt85% adc2900 aa z15m tp3 ud100 dip24 idl15m34s wk1420ms
+    v1.2 dflt 2026-11-13-14:00:00 bt85% adc3380 aa z15m tp3 ud100 dip24 idl15m34s wk1420ms
 
 One space separates the fields; within a field the label and value run together. No answer presses Enter, so
 one typed into a chat or a search box doesn't send it.
@@ -94,7 +94,7 @@ one typed into a chat or a search box doesn't send it.
 |---|---|---|
 | `v1.2 dflt 2026-11-13-14:00:00` | Firmware version, keymap and build time. `dflt` is the built-in keymap; `cust` means the keymap editor changed the keys or added macros. A firmware built from another keymap types that keymap's name. | Knowing which firmware is on the keyboard. Quote it in bug reports. |
 | `bt85%` | Battery level, worked out from `adc`. The percentages follow alkaline cells. | Knowing when to change or charge the cells. NiMH rechargeables show 30-60 % for most of their charge (see [Known issues](#known-issues)). |
-| `adc2900` | The raw battery reading the level comes from: about 1,180 per volt across the two cells. | Checking the scale against a voltmeter across the cells. |
+| `adc3380` | The raw battery reading the level comes from: about 1,180 per volt across the two cells. | Checking the scale against a voltmeter across the cells. |
 | `aa` / `usb` | Running on the AA cells, or on USB power. | On USB power the keyboard never sleeps. |
 | `z15m` | Sleep time on battery, as set with Fn+F1...F9 (`z never` if it never sleeps). | Checking the setting, which survives battery changes and power cuts. |
 | `tp3` | TrackPoint sensitivity, as set with Fn+1...9. | Checking the setting, which is saved the same way. |

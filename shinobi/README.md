@@ -2,7 +2,7 @@
 
 Open-source [QMK](https://qmk.fm) firmware for the TEX Shinobi BLE5, the 7-row ThinkPad-style keyboard with a
 TrackPoint. It is a full replacement for the stock firmware (AP_0407 V1.04.04). It supports USB, Bluetooth with
-three hosts, the TrackPoint, battery sleep, and settings that survive a power cut.
+three hosts, the TrackPoint, battery sleep, and settings that survive a power cut (a firmware flash resets them).
 
 **Unofficial.** This is not TEX firmware, and TEX does not support it. It is published with TEX's permission, and
 thanks to TEX for sharing the schematic and answering questions. Install it at your own risk. TEX's bootloader is
@@ -28,8 +28,8 @@ Status: v1.2. v1.0 has been in daily use on one Shinobi BLE5 (US layout) over US
 |---|---|
 | Fn+Mute / Fn+Vol- / Fn+Vol+ | Bluetooth host 1 / 2 / 3. Hold 3 s to pair a new host to that slot |
 | Fn+Esc | back to USB |
-| Fn+1 ... Fn+9 | TrackPoint sensitivity 1-9; the keyboard types back "tp N" (default 3) |
-| Fn+- / Fn+= / Fn+0 | TrackPoint up/down speed against left/right: a step slower, a step faster, the same (50-200 %) |
+| Fn+1 ... Fn+9 | TrackPoint sensitivity 1-9 (default 3); the keyboard types back both TrackPoint settings, e.g. "tp3 ud100" |
+| Fn+- / Fn+= / Fn+0 | TrackPoint up/down speed against left/right: a step slower, a step faster, the same (50-200 %); typed back the same way |
 | Fn+F1 ... Fn+F9 | sleep on battery after 1, 2, 5, 10, 15, 30, 60, 120 min or never; typed back (default 15 min) |
 | Fn+B | types one line: firmware version, battery level, power source, sleep time and TrackPoint settings |
 | Fn+arrows | media keys: Stop, Play, Previous, Next |
