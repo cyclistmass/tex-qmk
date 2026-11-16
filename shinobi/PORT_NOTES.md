@@ -105,14 +105,14 @@ Read-only GATT dump of a paired keyboard (WinRT) [O]:
   which turned the PS/2 driver's 10 ms timeouts into 10-20 s stalls.
 * Fn+1..9 set TrackPoint sensitivity 1-9 (stock levels). Scrolling scales with the level: one wheel notch per
   14 - level stick counts.
-* Fn+- / Fn+= / Fn+0 scale the pointer's vertical movement against horizontal, 50-200 % in 16 steps (v1.2).
+* Fn+_- / Fn+=+ / Fn+0 scale the pointer's vertical movement against horizontal, 50-200 % in 16 steps (v1.2).
   The stick's sensitivity register (0x4A) covers both axes, so the scaling is in `ps2_mouse_moved_user`, after
   QMK's scroll handling (scrolling is untouched), with the remainder carried so slow movement isn't lost.
 * A stuck TrackPoint is power-cycled (C8), as stock does, after a while without packets. Unlike stock, the stick
   stays powered during USB suspend, which avoids the stock slow-wake bug.
 * Settings: the TrackPoint level, up/down step and sleep time go in internal flash page 254 (0x1FC00) as one
   word `0x5E77 << 16 | sleep << 8 | ud << 4 | tp`; `ud` is the step as 4-bit two's complement, 0 = even, so a
-  word from v1.0/v1.1 reads as even. They are written only when Fn+1..9, Fn+-/=/0 or Fn+F1..F9 changes them (page erase +
+  word from v1.0/v1.1 reads as even. They are written only when Fn+1..9, Fn+_-/=+/0 or Fn+F1..F9 changes them (page erase +
   word program through the FMC, Holtek UM v1.60 ch. 4). Page 255 holds the option bytes and is never touched.
   Erased flash fails the key, so a fresh board gets the build defaults. Every USB plug and unplug resets the MCU
   (RSTCU reports a power-on reset), so settings have to survive power cuts.

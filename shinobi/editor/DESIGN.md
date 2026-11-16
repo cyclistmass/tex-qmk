@@ -154,8 +154,8 @@ editor writes 1 there when the keys or macros differ from the default, and an ex
 byte there through the linker section `.tex_keymap_custom`, which keeps the byte-identity test exact. The
 firmware tests `QMK_KEYMAP` against "default" at compile time, so other keymaps (`sleep30`, test builds) still
 type their name. A comparison with the default keymap in flash would need a stored copy (960 bytes). Cost 40
-bytes: 27,768, leaving 308. Then the TrackPoint up/down tune (Fn+-, Fn+=, Fn+0, `ud` in Fn+B): 280 bytes, 28,048,
-leaving 28. One function now types `tp3 ud100` for Fn+1..9, Fn+-/=/0 and Fn+B.
+bytes: 27,768, leaving 308. Then the TrackPoint up/down tune (Fn+_-, Fn+=+, Fn+0, `ud` in Fn+B): 280 bytes, 28,048,
+leaving 28. One function now types `tp3 ud100` for Fn+1..9, Fn+_-/=+/0 and Fn+B.
 
 Earlier (v1.0):
 
