@@ -13,8 +13,9 @@ never touched: you can flash the stock firmware back at any time with TEX's own 
 | File | What it is |
 |---|---|
 | `tex_shinobi_v1.2_updater.exe` | Easiest. TEX's AP_0407 V1.04.04 updater with this firmware inside in place of the stock image; nothing else in it is changed. Shared with TEX's permission. Run `tex_shinobi_v1.2_updater.exe -force` from a Command Prompt run as administrator (Windows asks for administrator rights for TEX's updater). |
-| `tex_shinobi_v1.2.bin` | The firmware image, for `shinobi/tools/tex_flash.py` (needs Python 3, `hidapi`, and TEX's `AP_0407_4.04.exe` as the key source), and the image the keymap editor patches. |
-| `SHA256SUMS.txt` | SHA-256 of both files. |
+| `tex_flash.exe` | New. The installer as one Windows file, no Python needed and no administrator rights: `tex_flash.exe tex_shinobi_v1.2.bin`, or an image from the keymap editor. TEX's key is built in, published with TEX's permission. Not signed, so Windows may warn about an unknown publisher (More info, Run anyway). |
+| `tex_shinobi_v1.2.bin` | The firmware image, for `tex_flash.exe` or `shinobi/tools/tex_flash.py` (Python 3 and `hidapi`; nothing from TEX needed any more), and the image the keymap editor patches. |
+| `SHA256SUMS.txt` | SHA-256 of the three files. |
 
 `tex_shinobi_v1.2.bin` is 28,048 bytes, SHA-256 `a8e34054b47fb229ca5691d06efcf887dff13d8ab883f9b6d311bab101b0ada0`.
 The keymap editor knows the release by this hash, so the release must carry exactly this image.
@@ -24,6 +25,9 @@ known issues: the [owner's manual](https://github.com/cyclistmass/tex-qmk/blob/m
 
 ## Changed
 
+* **The installer needs nothing from TEX.** `tex_flash.py` has TEX's firmware key built in (published with TEX's
+  permission), and the release adds `tex_flash.exe`, the same installer as one Windows file. It also stops with a
+  message if TEX's updater window is open, which used to leave the keyboard in the bootloader.
 * **Battery level from meter readings.** Up to v1.1 the battery scale was a guess and read about 27 % high: nearly
   flat NiMH cells (2.32 V) showed 95 %. v1.2 uses a scale set from voltmeter readings, and the LED's low-battery
   blinks start at 1.10 V a cell (before, only near 0.86 V). The percentages follow alkaline cells, so NiMH

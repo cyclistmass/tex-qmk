@@ -19,7 +19,7 @@ themselves. Why it works this way is in [DESIGN.md](DESIGN.md).
    keys in step 3 or with the Fn + U I O / J K L / M , preset in **Mouse keys**.
 5. **Download firmware** saves `tex_shinobi_v1.x_custom.bin`. Flash it like a release:
 
-       python -I tools/tex_flash.py tex_shinobi_v1.2_custom.bin AP_0407_4.04.exe
+       python -I tools/tex_flash.py tex_shinobi_v1.2_custom.bin
 
    or wrap it into TEX's updater with `tools/build_updater.py`.
 6. **Save keymap.json** keeps your keymap and macros so you can load it again later. **Download keymap.c** gives the C source.

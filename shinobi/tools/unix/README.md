@@ -17,8 +17,8 @@ The keyboard shows up as `04D9:0407` (firmware) and `04D9:1407` (TEX's bootloade
 re-enumerates from one to the other, so the permission rule must cover both. `tex_flash.py` does the switch
 itself; you do not need to hold Esc.
 
-Turn the computer's Bluetooth off first, as in the main README, and take the firmware and a key source
-(`AP_0407_4.04.exe` from TEX's site, read as data and never run, or a 52-byte key file) from the main README.
+Turn the computer's Bluetooth off first, as in the main README, and take the firmware from the release. TEX's
+firmware key is built into `tex_flash.py`, so nothing from TEX is needed.
 
 ## Linux
 
@@ -42,7 +42,7 @@ Turn the computer's Bluetooth off first, as in the main README, and take the fir
    to you, remove the rule after flashing.
 3. Run, from `tools/`:
 
-       ~/.venvs/tex/bin/python -I tex_flash.py tex_shinobi_v1.1.bin AP_0407_4.04.exe
+       ~/.venvs/tex/bin/python -I tex_flash.py tex_shinobi_v1.2.bin
 
    `-I` is Python's isolated mode (the flasher adds its own folder to the module path).
 4. If it says it cannot open the keyboard, the rule is not applied: replug the keyboard, and check that you are

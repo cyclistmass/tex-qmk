@@ -37,12 +37,12 @@ MESSAGES = {
         "es": "imagen de firmware enlazada en 0x3200 (.bin)",
     },
     "help_key": {
-        "en": "TEX's own AP_0407_4.04.exe (read as data, never run) or the 52-byte key file",
-        "zh-TW": "TEX 的 AP_0407_4.04.exe(只當資料讀取,不會執行)或 52 位元組的金鑰檔",
-        "ja": "TEX 純正の AP_0407_4.04.exe(データとして読むだけで実行しません)または 52 バイトの鍵ファイル",
-        "de": "TEXs eigene AP_0407_4.04.exe (wird nur als Daten gelesen, nie ausgeführt) oder die 52-Byte-Schlüsseldatei",
-        "fr": "l'AP_0407_4.04.exe de TEX (lu comme données, jamais exécuté) ou le fichier de clé de 52 octets",
-        "es": "el AP_0407_4.04.exe de TEX (se lee como datos, nunca se ejecuta) o el archivo de clave de 52 bytes",
+        "en": "optional: TEX's own AP_0407_4.04.exe (read as data, never run) or a 52-byte key file; the key is built in",
+        "zh-TW": "選用:TEX 的 AP_0407_4.04.exe(只當資料讀取,不會執行)或 52 位元組的金鑰檔;金鑰已內建",
+        "ja": "省略可: TEX 純正の AP_0407_4.04.exe(データとして読むだけで実行しません)または 52 バイトの鍵ファイル。鍵は内蔵されています",
+        "de": "optional: TEXs eigene AP_0407_4.04.exe (wird nur als Daten gelesen, nie ausgeführt) oder eine 52-Byte-Schlüsseldatei; der Schlüssel ist eingebaut",
+        "fr": "facultatif : l'AP_0407_4.04.exe de TEX (lu comme données, jamais exécuté) ou un fichier de clé de 52 octets ; la clé est intégrée",
+        "es": "opcional: el AP_0407_4.04.exe de TEX (se lee como datos, nunca se ejecuta) o un archivo de clave de 52 bytes; la clave viene incluida",
     },
     "help_wait": {
         "en": "seconds to watch USB after the restart (default 15)",

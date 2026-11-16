@@ -13,7 +13,7 @@ Make example for this keyboard (after setting up your build environment):
 The QMK checkout needs `shinobi/tools/patch_qmk_tree.sh` once: it makes the raw HID reports 64 bytes, as the updater
 expects, and fixes ChibiOS-Contrib's RSTCU base address for this chip.
 
-Flashing: `shinobi/tools/tex_flash.py <image.bin> <AP_0407_4.04.exe>` through the stock IAP, or the stock updater
+Flashing: `shinobi/tools/tex_flash.py <image.bin>` through the stock IAP, or the stock updater
 (`shinobi/tools/build_updater.py` wraps the image into a copy of it). See `README.md` and `PORT_NOTES.md` in the `shinobi` folder of the repository.
 
 ## Fn keys

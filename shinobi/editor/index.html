@@ -243,7 +243,7 @@ footer { margin-top: 18px; font-size: .85rem; }
     rel = core.release;
     defaults = core.defaultLayers();
     outName = rel.file.replace(/\.bin$/, "_custom.bin");
-    $("flashcmd").textContent = `python -I tex_flash.py ${outName} AP_0407_4.04.exe`;
+    $("flashcmd").textContent = `python -I tex_flash.py ${outName}`;
     $("hostlayout").value = hostLayout;
     $("macrolayout").textContent = core.hostLayout.name;
     const off = tr("ui.off", { new: newest.tag.replace(/^shinobi-/, ""), tag: rel.tag });

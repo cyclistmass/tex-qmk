@@ -1,12 +1,12 @@
 # Copyright 2026 Mauro DiBenedetto
 # SPDX-License-Identifier: GPL-2.0-or-later
-"""Load the TEX Shinobi's 52-byte firmware key, from a key file or from TEX's own updater.
+"""The TEX Shinobi's 52-byte firmware key: built in, or from a key file, or from TEX's own updater.
 
 usage: python -I tex_key.py <AP_0407_4.04.exe> <out xor_key_52.bin>
 
-The stock IAP undoes a 52-byte repeating XOR on every image it is sent. The key is not
-stored anywhere in TEX's updater; it is recovered here from the encrypted stock image the
-updater carries:
+The stock IAP undoes a 52-byte repeating XOR on every image it is sent. TEX allowed publishing the key, so it is
+built in (KEY) and nothing else is needed to flash. It can still be checked against TEX's updater, which does not
+store it either; it is recovered from the encrypted stock image the updater carries:
   1. Vector-table bytes 0x68..0x9B of the stock image are the same default-handler word
      (0x000032CF) thirteen times, so ciphertext XOR that word gives a first key guess.
   2. Each key byte is then refined by maximum likelihood against the byte distribution of
@@ -15,8 +15,8 @@ The result is accepted only if its SHA-256 matches the known key's, so a wrong g
 never used. The stock updater is the AP_0407 V1.04.04 Windows updater from TEX's site
 (sha256 in build_updater.STOCK_EXE_SHA).
 
-tex_flash.py and build_updater.py take either the key file or the updater exe wherever
-they ask for the key, through load().
+tex_flash.py uses the built-in key unless given a key file or the updater exe; build_updater.py needs the exe
+anyway, since it wraps it. Every source goes through load(), which checks the result against KEY_SHA.
 """
 import collections
 import hashlib
@@ -29,6 +29,10 @@ import build_updater as bu  # noqa: E402
 from tex_i18n import t  # noqa: E402
 
 LEN = 52
+# The key itself, published with TEX's permission (2026-11-15). TEX says it was not made in-house: TEX planned the
+# functions and a third-party firmware company wrote the firmware. load() checks it against KEY_SHA like any source.
+KEY = bytes.fromhex("7494c2e7104b08790d4bd553328f1efc9b1ae8488e803c775235"
+                    "48b7768ccbd9c68b8c2aa8ad67095c0f52d49d27c3d0c591c0ea")
 KEY_SHA = "f16ee8f89ba10701814564614693a13be0a69cd27531de6e88cf380f10922a51"
 DEFAULT_HANDLER = bytes.fromhex("cf320000")  # stock's default handler, 0x32CF
 
@@ -70,8 +74,13 @@ def from_updater(exe):
     return key
 
 
-def load(path):
-    """The key from a 52-byte key file or from the stock updater exe. Exits with a message on failure."""
+def load(path=None):
+    """The built-in key (path None), or the key from a 52-byte key file or from the stock updater exe. Exits with a
+    message on failure."""
+    if path is None:
+        if hashlib.sha256(KEY).hexdigest() != KEY_SHA:
+            sys.exit(t("key_wrong", path="tex_key.KEY"))
+        return KEY
     try:
         with open(path, "rb") as f:
             data = f.read()

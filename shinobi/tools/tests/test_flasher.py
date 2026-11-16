@@ -24,6 +24,11 @@ import tex_i18n  # noqa: E402
 import tex_iap_probe as probe  # noqa: E402
 import tex_key  # noqa: E402
 
+# The real check reads the PC's open windows; a TEX updater left open made the open-failure test fail
+# (2026-11-15). Tests see no updater unless they set one; test_updater_check_is_windows_only uses the real check.
+REAL_UPDATER_OPEN = probe.updater_open
+probe.updater_open = lambda: False
+
 
 def fields(template):
     return {f for _, f, _, _ in string.Formatter().parse(template) if f}
@@ -147,8 +152,28 @@ def test_parse_args():
     tex_i18n.set_language("en")
 
 
+def test_key_is_optional():
+    a = tex_flash.parse_args(["fw.bin"])
+    assert (a.image, a.key) == ("fw.bin", None)
+    tex_i18n.set_language("en")
+
+
+def test_built_in_key_is_the_checked_key():
+    import hashlib
+    assert len(tex_key.KEY) == tex_key.LEN
+    assert hashlib.sha256(tex_key.KEY).hexdigest() == tex_key.KEY_SHA
+    assert tex_key.load() == tex_key.load(None) == tex_key.KEY
+
+
+def test_key_file_gives_the_same_key_as_the_built_in_one():
+    import tempfile
+    path = os.path.join(tempfile.mkdtemp(), "xor_key_52.bin")
+    open(path, "wb").write(tex_key.KEY)
+    assert tex_key.load(path) == tex_key.KEY
+
+
 def test_parse_args_rejects_bad_input():
-    for bad in ([], ["only.bin"], ["a", "b", "--lang", "xx"], ["a", "b", "--wait", "soon"], ["a", "b", "--zap"]):
+    for bad in ([], ["a", "b", "--lang", "xx"], ["a", "b", "--wait", "soon"], ["a", "b", "--zap"]):
         try:
             tex_flash.parse_args(bad)
         except SystemExit as e:
@@ -230,6 +255,27 @@ def test_dry_run_matches_and_detects_a_difference():
     bad = [dict(r) for r in rows]
     bad[5]["hex"] = "ff" + bad[5]["hex"][2:]
     assert "differs" in raises_exit(tex_flash.dry_run, steps, bad)
+
+
+def write_transcript(path, rows):
+    with open(path, "w", encoding="utf-8") as f:
+        f.write("\n".join(json.dumps(r) for r in rows) + "\n")
+
+
+def test_dry_run_without_a_key_argument_uses_the_built_in_key():
+    import tempfile
+    d = tempfile.mkdtemp()
+    img = good_image()
+    image = os.path.join(d, "fw.bin")
+    open(image, "wb").write(img)
+    vb = b"\x1a\x00" + bytes(174) + b"\xa5\x5a" + b"\x00\x00"
+    transcript = os.path.join(d, "t.jsonl")
+    write_transcript(transcript, transcript_for(tex_flash.plan(bu.device_image(img, tex_key.KEY)[1], vb)))
+    assert tex_flash.main([image, "--dry-run", transcript, "--lang", "en"]) is None
+    other = bytes(b ^ 1 for b in tex_key.KEY)  # a different key gives different reports
+    write_transcript(transcript, transcript_for(tex_flash.plan(bu.device_image(img, other)[1], vb)))
+    assert "differs" in raises_exit(tex_flash.main, [image, "--dry-run", transcript, "--lang", "en"])
+    tex_i18n.set_language("en")
 
 
 def test_transcript_reading():
@@ -344,11 +390,11 @@ def test_updater_check_is_windows_only():
     old = sys.platform
     sys.platform = "linux"
     try:
-        assert probe.updater_open() is False
+        assert REAL_UPDATER_OPEN() is False
     finally:
         sys.platform = old
     if old == "win32":
-        assert probe.updater_open() in (True, False)
+        assert REAL_UPDATER_OPEN() in (True, False)
 
 
 def test_udev_rule_covers_both_modes():
