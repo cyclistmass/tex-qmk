@@ -1,7 +1,7 @@
 # TEX Shinobi BLE5: QMK v1.2
 
 Third release of the open-source QMK firmware for the **TEX Shinobi BLE5**. A second TrackPoint tune sets up/down
-speed against left/right (Fn+-_, Fn+=+, Fn+0). Fn+B's line is shorter, and it says
+speed against left/right (Fn+-_, Fn++=, Fn+0). Fn+B's line is shorter, and it says
 whether the keymap is the built-in one or one changed with the
 [keymap editor](https://cyclistmass.github.io/tex-qmk/shinobi/editor/).
 
@@ -34,7 +34,7 @@ known issues: the [owner's manual](https://github.com/cyclistmass/tex-qmk/blob/m
   flat NiMH cells (2.32 V) showed 95 %. v1.2 uses a scale set from voltmeter readings, and the LED's low-battery
   blinks start at 1.10 V a cell (before, only near 0.86 V). The percentages follow alkaline cells, so NiMH
   rechargeables show 30-60 % for most of their charge.
-* **TrackPoint up/down against left/right.** Fn+-_ makes up/down a step slower, Fn+=+ a step faster, Fn+0 the same
+* **TrackPoint up/down against left/right.** Fn+-_ makes up/down a step slower, Fn++= a step faster, Fn+0 the same
   as left/right again: 50 % to 200 % in 16 steps. For a stick whose up/down feels faster than sideways, or a
   portrait screen. Scrolling is unchanged. The keys type back `tp3 ud90` and so on, Fn+1...9 now type
   `tp3 ud100`, and Fn+B adds `ud100`. Saved with the other settings. Flashing any firmware, this one included, resets the settings to
@@ -68,7 +68,7 @@ On one keyboard (US ANSI, two NiMH AA cells), 2026-11-15: three flashes with the
 (over v1.1 with an editor-made keymap, and over v1.2 both ways), each with the bootloader's checksum matching
 and the keyboard back about a second later; the Fn+B line with the built-in keymap (`dflt`) and with an
 editor-made image (`cust`, Caps Lock as Esc, which typed Esc); typing over USB and over Bluetooth after a power
-cycle; Fn+-_ down to `ud90` and Fn+=+ back, with the answers typed back; `ud90` kept through a power cut; the
+cycle; Fn+-_ down to `ud90` and Fn++= back, with the answers typed back; `ud90` kept through a power cut; the
 battery line on battery (`bt87% adc3423`) against meter readings.
 
 Not tested on the keyboard: flashing over the stock firmware, the updater exe for v1.2, Fn+0, the ends of
