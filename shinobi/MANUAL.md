@@ -10,7 +10,7 @@ For the QMK firmware v1.0, v1.1 and v1.2 from this repository. To install it, se
 | Use it over Bluetooth | Fn+Mute, Fn+Vol- or Fn+Vol+ picks host 1, 2 or 3. |
 | Pair a new computer | Hold Fn+Mute (or Vol-, Vol+) for 3 s, then pick "TEX-BLE" on the computer. |
 | Change TrackPoint speed | Fn+1 (slowest) ... Fn+9 (fastest). Default 3. |
-| Make up/down slower or faster than left/right | Fn+-_ (slower) or Fn++= (faster); Fn+0 makes them the same again. |
+| Make up/down slower or faster than left/right | Fn+- (slower) or Fn+= (faster); Fn+0 makes them the same again. |
 | Change the sleep time on battery | Fn+F1 ... Fn+F9. Default 15 min. |
 | Check battery and settings | Fn+B, in a text editor. |
 | Scroll with the TrackPoint | Hold the middle button and push the stick. Tap it for a middle click. |
@@ -48,13 +48,13 @@ The DIP switches are separate from the Fn keys: Fn+F1...F9 set the sleep time wh
 | Fn+Mute / Fn+Vol- / Fn+Vol+ | Bluetooth host 1 / 2 / 3. Hold 3 s to pair a new host to that slot |
 | Fn+Esc | back to USB |
 | Fn+1 ... Fn+9 | TrackPoint sensitivity 1-9; types back `tp3 ud100` and so on |
-| Fn+-_ / Fn++= / Fn+0 | TrackPoint up/down speed one step slower / one step faster / the same as left/right; types back `tp3 ud90` and so on |
+| Fn+- / Fn+= / Fn+0 | TrackPoint up/down speed one step slower / one step faster / the same as left/right; types back `tp3 ud90` and so on |
 | Fn+F1 ... Fn+F9 | sleep on battery after 1, 2, 5, 10, 15, 30, 60, 120 min or never; types back `z15m` and so on |
 | Fn+B | types the firmware version and a status, on one line |
 | Fn+arrows | media keys: Stop, Play, Previous, Next |
 
 The keyboard "types back" by sending keystrokes, so have a text editor or other text field in focus when you
-press Fn+1...9, Fn+-_, Fn++=, Fn+0, Fn+F1...F9 or Fn+B. The answers are short; the tables below translate them. They are typed as on
+press Fn+1...9, Fn+-, Fn+=, Fn+0, Fn+F1...F9 or Fn+B. The answers are short; the tables below translate them. They are typed as on
 a US keyboard layout: with another layout on the computer some characters come out as that layout's, for example
 `y` and `z` swapped on German, or punctuation in place of digits on French.
 
@@ -63,9 +63,9 @@ a US keyboard layout: with another layout on the computer some characters come o
 **Fn+1 ... Fn+9** types `tp1` ... `tp9`: the TrackPoint sensitivity now set, 1 slowest, 9 fastest, 3 by default,
 then the up/down speed (below), for example `tp3 ud100`.
 
-**Fn+-_ / Fn++= / Fn+0** set how fast the pointer moves up and down compared with left and right, and type the
+**Fn+- / Fn+= / Fn+0** set how fast the pointer moves up and down compared with left and right, and type the
 same answer: `ud100` means the same speed, `ud90` up/down at 90 % of left/right, `ud120` at 120 %. The steps are
-50, 55, 60, 70, 80, 85, 90, 95, 100, 105, 110, 120, 130, 150, 175 and 200 %; Fn+-_ and Fn++= stop at the ends. Use it
+50, 55, 60, 70, 80, 85, 90, 95, 100, 105, 110, 120, 130, 150, 175 and 200 %; Fn+- and Fn+= stop at the ends. Use it
 if up/down feels faster or slower than sideways, or with a portrait screen, where the pointer has further to go
 up and down. It changes the pointer only: scrolling stays as it was. Saved with the other settings.
 
@@ -98,7 +98,7 @@ one typed into a chat or a search box doesn't send it.
 | `aa` / `usb` | Running on the AA cells, or on USB power. | On USB power the keyboard never sleeps. |
 | `z15m` | Sleep time on battery, as set with Fn+F1...F9 (`z never` if it never sleeps). | Checking the setting, which survives battery changes and power cuts. |
 | `tp3` | TrackPoint sensitivity, as set with Fn+1...9. | Checking the setting, which is saved the same way. |
-| `ud100` | TrackPoint up/down speed in percent of left/right, as set with Fn+-_, Fn++= and Fn+0. | The same. |
+| `ud100` | TrackPoint up/down speed in percent of left/right, as set with Fn+-, Fn+= and Fn+0. | The same. |
 | `dip24` | The DIP switches that are on: here switches 2 and 4. `dip0` means none. | Checking a switch is read after you flip it (see [The DIP switches](#the-dip-switches)). |
 | `idl15m34s` | The last stretch of at least a second with no key and no TrackPoint movement: 15 minutes 34 seconds here, `idl37s` under a minute. Sleep doesn't count: a stretch that included sleep counts only its awake part. | Leave the keyboard alone for a while, then press Fn+B: it should show about how long you left it. If `idl` stays small and the keyboard never sleeps on battery, something keeps it busy, most likely a drifting TrackPoint. |
 | `wk1420ms` | After the last wake from sleep, the milliseconds from the keyboard waking up to the Bluetooth link being back. `wk0ms` if it hasn't slept since it was powered on. | Telling where wake time goes. A large `wk` is Bluetooth reconnecting; if waking feels slow but `wk` is small, the delay is elsewhere (the keyboard's own wake-up, or the computer). |
@@ -150,7 +150,7 @@ updater, sets them back to the defaults; set them again afterwards.
 | It types on the wrong computer | Tap the Fn slot key for the computer you want, or Fn+Esc for USB. |
 | TrackPoint doesn't move | Wait a few seconds: the keyboard restarts a stuck TrackPoint by itself. Unplugging and replugging USB restarts the whole keyboard. |
 | TrackPoint too fast or slow | Fn+1 ... Fn+9. |
-| Up/down faster or slower than sideways | Fn+-_ or Fn++=, a step at a time; Fn+0 to undo. |
+| Up/down faster or slower than sideways | Fn+- or Fn+=, a step at a time; Fn+0 to undo. |
 | Middle button scrolls when you want a click | Tap it without moving the stick. |
 | Keys are swapped (Fn/Ctrl, Alt/Win) | Check DIP switches 1-3 on the bottom; turn them all off for the stock layout. |
 | Battery percentage looks low | With NiMH rechargeables it shows 30-60 % for most of their charge; see [Known issues](#known-issues). |
