@@ -254,6 +254,11 @@ Keymaps that only exist for bring-up, each a `rules.mk` flag on top of `default`
 
 ## Open questions
 
+* Bluetooth stops after a USB unplug [O, v1.1 and v1.2, 2026-11-15]: power on with batteries, Bluetooth types;
+  plug USB, unplug, wait 10 s: nothing types over Bluetooth, Windows still lists the HID device as connected;
+  the power switch brings it back. A USB plug or unplug gives the MCU a power-on reset, while the nRF52810
+  stays on the batteries; `bluetooth_init` then sends the config block and three wakes to a module that never
+  restarted [I]. Unchecked: v1.0, stock, and what stock sends after its own reset.
 * The physical key coordinates, for a proper `LAYOUT` and a configurator layout.
 * Battery scale: measured on NiMH only (two readings). An alkaline reading would confirm it, and the percentages
   follow an alkaline discharge shape, so NiMH shows 30-60 % for most of its charge.

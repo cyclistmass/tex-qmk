@@ -104,6 +104,9 @@ Run TEX's original `AP_0407_4.04.exe` the same way, from a Command Prompt run as
 
 ## Known limits
 
+* **Bluetooth stops after unplugging USB.** Once the USB cable is pulled out, the keyboard no longer types
+  over Bluetooth until its power switch is turned off and on again; the computer still lists it as connected.
+  Seen on v1.1 and v1.2 (2026-11-15); not yet checked on v1.0 or the stock firmware. Being investigated.
 * **Battery percentage** follows alkaline AA cells; NiMH rechargeables show 30-60 % for most of their charge.
   The scale is set from voltmeter readings (v1.2). Fn+B also types the raw reading.
 * **USB plug and unplug restart the keyboard.** The keyboard's processor sees a power-on reset each

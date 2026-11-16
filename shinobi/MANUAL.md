@@ -116,6 +116,8 @@ The keyboard remembers three hosts, one per slot.
   had.
 * **Switch:** tap Fn+Mute, Fn+Vol- or Fn+Vol+. The keyboard reconnects to that slot's host.
 * **Back to USB:** Fn+Esc, with the cable plugged in.
+* **After unplugging USB:** turn the power switch off and on before using Bluetooth again; see
+  [Known issues](#known-issues).
 
 Bluetooth uses the keyboard's own Bluetooth module, which keeps its pairings across firmware changes.
 
@@ -143,6 +145,7 @@ updater, sets them back to the defaults; set them again afterwards.
 | Problem | Try |
 |---|---|
 | Nothing types over Bluetooth | Press a key to wake it, wait a few seconds. Tap the slot's Fn key (Fn+Mute, Vol-, Vol+). Check the computer still lists the keyboard as paired; if not, pair the slot again. |
+| Nothing types over Bluetooth after unplugging USB | Turn the power switch off and on. See [Known issues](#known-issues). |
 | It types on the wrong computer | Tap the Fn slot key for the computer you want, or Fn+Esc for USB. |
 | TrackPoint doesn't move | Wait a few seconds: the keyboard restarts a stuck TrackPoint by itself. Unplugging and replugging USB restarts the whole keyboard. |
 | TrackPoint too fast or slow | Fn+1 ... Fn+9. |
@@ -156,6 +159,9 @@ updater, sets them back to the defaults; set them again afterwards.
 
 ## Known issues
 
+* **Bluetooth stops after unplugging USB.** Once the USB cable is pulled out, the keyboard no longer types
+  over Bluetooth until its power switch is turned off and on again; the computer still lists it as connected.
+  Seen on v1.1 and v1.2 (2026-11-15); not yet checked on v1.0 or the stock firmware. Being investigated.
 * **Battery percentage follows alkaline cells.** The scale is set from voltmeter readings, but the percentages
   follow an alkaline cell's discharge. NiMH rechargeables stay near 1.2-1.3 V a cell for most of their charge, which
   shows as 30-60 %, then drop quickly near the end. The LED's low-battery blinks start at 1.10 V a cell for both.

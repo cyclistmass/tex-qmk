@@ -46,15 +46,28 @@ known issues: the [owner's manual](https://github.com/cyclistmass/tex-qmk/blob/m
 
 ## Known limits
 
-As in v1.1, except that Fn+B no longer reports an editor-made keymap as `default`. In short: battery percentage
+As in v1.1, except that Fn+B no longer reports an editor-made keymap as `default`.
+
+* **Bluetooth stops after unplugging USB.** Once the USB cable is pulled out, the keyboard no longer types
+  over Bluetooth until its power switch is turned off and on again; the computer still lists it as connected.
+  Seen on v1.1 and v1.2 (2026-11-15); not yet checked on v1.0 or the stock firmware. Being investigated.
+
+In short: battery percentage
 follows alkaline AA cells (NiMH shows 30-60 % for most of its charge); plugging or unplugging USB restarts the keyboard; ISO and JIS layouts
 are untested; DIP switch 6 isn't ported; macros play with no delays; Fn+B's answers type as on a US layout.
 
 ## Tested
 
-**Not yet on the keyboard.** Pending before release: flashing v1.2 (over v1.1 and over stock), the Fn+B line with
-the built-in keymap (`dflt`) and with an editor-made image (`cust`), Fn+F1...F9's `z` answers, and Fn+-/=/0
-(feel at each end, the answers, the setting surviving a power cut, scrolling unchanged).
+On one keyboard (US ANSI, two NiMH AA cells), 2026-11-15: three flashes with the one-file `tex_flash.exe`
+(over v1.1 with an editor-made keymap, and over v1.2 both ways), each with the bootloader's checksum matching
+and the keyboard back about a second later; the Fn+B line with the built-in keymap (`dflt`) and with an
+editor-made image (`cust`, Caps Lock as Esc, which typed Esc); typing over USB and over Bluetooth after a power
+cycle; Fn+- down to `ud90` and Fn+= back, with the answers typed back; `ud90` kept through a power cut; the
+battery line on battery (`bt87% adc3423`) against meter readings.
+
+Not tested on the keyboard: flashing over the stock firmware, the updater exe for v1.2, Fn+0, the ends of
+the up/down range, scrolling with the up/down tune set, and DIP switches 4 and 5. Bluetooth stops after a USB
+unplug (above).
 
 Checked off the keyboard (2026-11-13): the image is 28,048 of the 28,076 bytes TEX's bootloader takes, with the
 settings record in place; the editor's byte-identity test passes for v1.0, v1.1 and v1.2 (for v1.2 a patched image,
