@@ -19,6 +19,8 @@ Status: v1.2. v1.0 has been in daily use on one Shinobi BLE5 (US layout) over US
 * TrackPoint with stock sensitivity levels, middle-button scrolling, and a fix for the stock slow-wake bug.
 * Bluetooth: three hosts, pairing, and the battery level reported to the host.
 * Sleep on battery after an idle time you choose. Key presses wake it.
+* After pulling out the USB cable, switch the keyboard off and on before using Bluetooth (as with the stock
+  firmware).
 * Caps Lock LED, low-battery blink, and the pairing blink.
 * TEX's updater still recognises the keyboard. You can flash stock firmware back with it at any time.
 
@@ -110,9 +112,9 @@ Run TEX's original `AP_0407_4.04.exe` the same way, from a Command Prompt run as
 
 ## Known limits
 
-* **Bluetooth stops after unplugging USB.** Once the USB cable is pulled out, the keyboard no longer types
-  over Bluetooth until its power switch is turned off and on again; the computer still lists it as connected.
-  Seen on v1.1 and v1.2 (2026-11-15); not yet checked on v1.0 or the stock firmware. Being investigated.
+* **After pulling out the USB cable, switch the keyboard off and on.** Otherwise it doesn't type over Bluetooth,
+  although the computer still lists it as connected. TEX's stock firmware does the same (checked 2026-11-15, as
+  were v1.1 and v1.2), so it comes from the hardware or the Bluetooth module, not from this firmware.
 * **Battery percentage** follows alkaline AA cells; NiMH rechargeables show 30-60 % for most of their charge.
   The scale is set from voltmeter readings (v1.2). Fn+B also types the raw reading.
 * **USB plug and unplug restart the keyboard.** The keyboard's processor sees a power-on reset each

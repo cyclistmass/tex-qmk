@@ -258,7 +258,8 @@ Keymaps that only exist for bring-up, each a `rules.mk` flag on top of `default`
   plug USB, unplug, wait 10 s: nothing types over Bluetooth, Windows still lists the HID device as connected;
   the power switch brings it back. A USB plug or unplug gives the MCU a power-on reset, while the nRF52810
   stays on the batteries; `bluetooth_init` then sends the config block and three wakes to a module that never
-  restarted [I]. Unchecked: v1.0, stock, and what stock sends after its own reset.
+  restarted [I]. Stock 4.04 does the same [O, 2026-11-15], so the cause is below this firmware (module or
+  power wiring); a fix would mean resetting the module (C1 `RESET_N`) after a USB-caused reset. Unchecked: v1.0.
 * The physical key coordinates, for a proper `LAYOUT` and a configurator layout.
 * Battery scale: measured on NiMH only (two readings). An alkaline reading would confirm it, and the percentages
   follow an alkaline discharge shape, so NiMH shows 30-60 % for most of its charge.

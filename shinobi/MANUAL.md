@@ -116,7 +116,7 @@ The keyboard remembers three hosts, one per slot.
   had.
 * **Switch:** tap Fn+Mute, Fn+Vol- or Fn+Vol+. The keyboard reconnects to that slot's host.
 * **Back to USB:** Fn+Esc, with the cable plugged in.
-* **After unplugging USB:** turn the power switch off and on before using Bluetooth again; see
+* **After pulling out the USB cable:** switch the keyboard off and on, or Bluetooth won't type. See
   [Known issues](#known-issues).
 
 Bluetooth uses the keyboard's own Bluetooth module, which keeps its pairings across firmware changes.
@@ -132,7 +132,8 @@ The keyboard runs on two AA cells, or on USB power when the cable is in.
 * **Low battery:** the Caps Lock light blinks three times every 3 seconds. Replace the cells.
 * **Battery level:** sent to the computer over Bluetooth and typed by Fn+B. It assumes alkaline cells; see
   [Known issues](#known-issues).
-* **USB plug and unplug restart the keyboard.** This is normal on this hardware. Settings are kept.
+* **USB plug and unplug restart the keyboard.** This is normal on this hardware. Settings are kept. After
+  unplugging, switch the keyboard off and on before using Bluetooth.
 
 ## Settings that are saved
 
@@ -159,9 +160,9 @@ updater, sets them back to the defaults; set them again afterwards.
 
 ## Known issues
 
-* **Bluetooth stops after unplugging USB.** Once the USB cable is pulled out, the keyboard no longer types
-  over Bluetooth until its power switch is turned off and on again; the computer still lists it as connected.
-  Seen on v1.1 and v1.2 (2026-11-15); not yet checked on v1.0 or the stock firmware. Being investigated.
+* **After pulling out the USB cable, switch the keyboard off and on.** Otherwise it doesn't type over Bluetooth,
+  although the computer still lists it as connected. TEX's stock firmware does the same (checked 2026-11-15, as
+  were v1.1 and v1.2), so it comes from the hardware or the Bluetooth module, not from this firmware.
 * **Battery percentage follows alkaline cells.** The scale is set from voltmeter readings, but the percentages
   follow an alkaline cell's discharge. NiMH rechargeables stay near 1.2-1.3 V a cell for most of their charge, which
   shows as 30-60 %, then drop quickly near the end. The LED's low-battery blinks start at 1.10 V a cell for both.

@@ -20,6 +20,8 @@ never touched: you can flash the stock firmware back at any time with TEX's own 
 `tex_shinobi_v1.2.bin` is 28,048 bytes, SHA-256 `a8e34054b47fb229ca5691d06efcf887dff13d8ab883f9b6d311bab101b0ada0`.
 The keymap editor knows the release by this hash, so the release must carry exactly this image.
 
+After pulling out the USB cable, switch the keyboard off and on before using Bluetooth (stock firmware too).
+
 Turn the PC's Bluetooth off before flashing. Full instructions: [shinobi/README.md](https://github.com/cyclistmass/tex-qmk/blob/main/shinobi/README.md). Keys, Fn combinations and
 known issues: the [owner's manual](https://github.com/cyclistmass/tex-qmk/blob/main/shinobi/MANUAL.md).
 
@@ -52,9 +54,9 @@ known issues: the [owner's manual](https://github.com/cyclistmass/tex-qmk/blob/m
 
 As in v1.1, except that Fn+B no longer reports an editor-made keymap as `default`.
 
-* **Bluetooth stops after unplugging USB.** Once the USB cable is pulled out, the keyboard no longer types
-  over Bluetooth until its power switch is turned off and on again; the computer still lists it as connected.
-  Seen on v1.1 and v1.2 (2026-11-15); not yet checked on v1.0 or the stock firmware. Being investigated.
+* **After pulling out the USB cable, switch the keyboard off and on.** Otherwise it doesn't type over Bluetooth,
+  although the computer still lists it as connected. TEX's stock firmware does the same (checked 2026-11-15, as
+  were v1.1 and v1.2), so it comes from the hardware or the Bluetooth module, not from this firmware.
 
 In short: battery percentage
 follows alkaline AA cells (NiMH shows 30-60 % for most of its charge); plugging or unplugging USB restarts the keyboard; ISO and JIS layouts
@@ -71,7 +73,7 @@ battery line on battery (`bt87% adc3423`) against meter readings.
 
 Not tested on the keyboard: flashing over the stock firmware, the updater exe for v1.2, Fn+0, the ends of
 the up/down range, scrolling with the up/down tune set, and DIP switches 4 and 5. Bluetooth stops after a USB
-unplug (above).
+unplug until the keyboard is switched off and on, as with stock (above).
 
 Checked off the keyboard (2026-11-13): the image is 28,048 of the 28,076 bytes TEX's bootloader takes, with the
 settings record in place; the editor's byte-identity test passes for v1.0, v1.1 and v1.2 (for v1.2 a patched image,
