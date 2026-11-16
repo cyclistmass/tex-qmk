@@ -31,10 +31,11 @@ Status: v1.2. v1.0 has been in daily use on one Shinobi BLE5 (US layout) over US
 | Fn+Mute / Fn+Vol- / Fn+Vol+ | Bluetooth host 1 / 2 / 3. Hold 3 s to pair a new host to that slot |
 | Fn+Esc | back to USB |
 | Fn+1 ... Fn+9 | TrackPoint sensitivity 1-9 (default 3); the keyboard types back both TrackPoint settings, e.g. "tp3 ud100" |
-| Fn - / Fn = / Fn+0 | TrackPoint up/down speed against left/right: a step slower, a step faster, the same (50-200 %); typed back the same way |
+| Fn+Down / Fn+Up / Fn+0 (or Fn - / Fn =) | TrackPoint up/down speed against left/right: a step slower, a step faster, the same (50-200 %); typed back the same way |
 | Fn+F1 ... Fn+F9 | sleep on battery after 1, 2, 5, 10, 15, 30, 60, 120 min or never; typed back (default 15 min) |
 | Fn+B | types one line: firmware version, battery level, power source, sleep time and TrackPoint settings |
-| Fn+arrows | media keys: Stop, Play, Previous, Next |
+| Fn+PgUp / Fn+PgDn | Play/pause / Stop |
+| Fn+Left / Fn+Right | Previous / next track |
 
 The TrackPoint settings and sleep time are saved in flash. They survive a power cut, and every USB plug or unplug is
 a power cut on this keyboard. Flashing a firmware sets them back to the defaults.
