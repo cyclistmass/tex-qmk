@@ -1,8 +1,8 @@
 # Keymap editor
 
 A static web page that remaps the Shinobi's keys without a compiler. It writes your keymap into a released image,
-`tex_shinobi_v1.0.bin`, `tex_shinobi_v1.1.bin` or `tex_shinobi_v1.2.bin`, and only into the 960 keymap bytes at
-0x3800 and, from v1.1, the macro table at 0x37A0 (96 bytes in v1.1; in v1.2 95, then a byte that makes Fn+B say
+`tex_shinobi_v1.0.bin`, `tex_shinobi_v1.1.bin`, `tex_shinobi_v1.2.bin` or `tex_shinobi_v1.3.bin`, and only into the
+960 keymap bytes at 0x3800 and, from v1.1, the macro table at 0x37A0 (96 bytes in v1.1; from v1.2 95, then a byte that makes Fn+B say
 `cust`). It also exports the same keymap as `keymap.c` for people who build the firmware
 themselves. Why it works this way is in [DESIGN.md](DESIGN.md).
 
@@ -19,7 +19,7 @@ themselves. Why it works this way is in [DESIGN.md](DESIGN.md).
    keys in step 3 or with the Fn + U I O / J K L / M , preset in **Mouse keys**.
 5. **Download firmware** saves `tex_shinobi_v1.x_custom.bin`. Flash it like a release:
 
-       python -I tools/tex_flash.py tex_shinobi_v1.2_custom.bin
+       python -I tools/tex_flash.py tex_shinobi_v1.3_custom.bin
 
    or wrap it into TEX's updater with `tools/build_updater.py`.
 6. **Save keymap.json** keeps your keymap and macros so you can load it again later. **Download keymap.c** gives the C source.
@@ -53,7 +53,8 @@ Known limits:
       python -I ../tools/gen_editor_data.py <qmk_firmware dir> \
           shinobi-v1.0 tex_shinobi_v1.0.bin 2026-11-04-12:22:53 \
           shinobi-v1.1 tex_shinobi_v1.1.bin 2026-11-13-10:05:42 \
-          shinobi-v1.2 tex_shinobi_v1.2.bin 2026-11-13-14:00:00
+          shinobi-v1.2 tex_shinobi_v1.2.bin 2026-11-13-14:00:00 \
+          shinobi-v1.3 tex_shinobi_v1.3.bin 2026-11-17-17:05:00
 
   Each release's sources are read at its git tag; one with no tag yet is read from the working tree. The date is
   the release's build date, which Fn+B prints and which a rebuild needs to match the image. A release that isn't
@@ -77,7 +78,7 @@ the QMK CLI and the ARM toolchain (in WSL on Windows). It:
 image and unpacks the tag's sources, or, for a release not tagged yet, builds this checkout and requires the SHA-256
 in `shinobi_data.js`. It then checks that `shinobi_data.js` regenerates identically and runs `byte_identity.sh` for
 each release in its own sources. Firmware changes after a release don't affect that release's check; changes before
-v1.2 is tagged must come with a rebuilt image and regenerated data.
+v1.3 is tagged must come with a rebuilt image and regenerated data.
 
 `test/qmk_fixed_date.sh` and `test/build_wsl.sh` are its helpers: QMK stamps the build date into the image, so the
 test pins it.

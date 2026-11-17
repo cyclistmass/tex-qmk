@@ -1,6 +1,6 @@
 # TEX Shinobi BLE5 with QMK: owner's manual
 
-For the QMK firmware v1.0, v1.1 and v1.2 from this repository. To install it, see [README.md](README.md#installing).
+For the QMK firmware v1.0, v1.1, v1.2 and v1.3 from this repository. To install it, see [README.md](README.md#installing).
 
 ## At a glance
 
@@ -86,14 +86,14 @@ up and down. It changes the pointer only: scrolling stays as it was. Saved with 
 
 **Fn+B** types one line, for example:
 
-    v1.2 dflt 2026-11-13-14:00:00 bt85% adc3380 aa z15m tp3 ud100 dip24 idl15m34s wk1420ms
+    v1.3 dflt 2026-11-17-17:05:00 bt85% adc3380 aa z15m tp3 ud100 dip24 idl15m34s wk1420ms
 
 One space separates the fields; within a field the label and value run together. No answer presses Enter, so
 one typed into a chat or a search box doesn't send it.
 
 | Typed | Means | Useful for |
 |---|---|---|
-| `v1.2 dflt 2026-11-13-14:00:00` | Firmware version, keymap and build time. `dflt` is the built-in keymap; `cust` means the keymap editor changed the keys or added macros. A firmware built from another keymap types that keymap's name. | Knowing which firmware is on the keyboard. Quote it in bug reports. |
+| `v1.3 dflt 2026-11-17-17:05:00` | Firmware version, keymap and build time. `dflt` is the built-in keymap; `cust` means the keymap editor changed the keys or added macros. A firmware built from another keymap types that keymap's name. | Knowing which firmware is on the keyboard. Quote it in bug reports. |
 | `bt85%` | Battery level, worked out from `adc`. The percentages follow alkaline cells. | Knowing when to change or charge the cells. NiMH rechargeables show 30-60 % for most of their charge (see [Known issues](#known-issues)). |
 | `adc3380` | The raw battery reading the level comes from: about 1,180 per volt across the two cells. | Checking the scale against a voltmeter across the cells. |
 | `aa` / `usb` | Running on the AA cells, or on USB power. | On USB power the keyboard never sleeps. |
@@ -105,7 +105,8 @@ one typed into a chat or a search box doesn't send it.
 | `wk1420ms` | After the last wake from sleep, the milliseconds from the keyboard waking up to the Bluetooth link being back. `wk0ms` if it hasn't slept since it was powered on. | Telling where wake time goes. A large `wk` is Bluetooth reconnecting; if waking feels slow but `wk` is small, the delay is elsewhere (the keyboard's own wake-up, or the computer). |
 
 v1.0 types the version and `bat 85% adc 2900 on bat sleep 15 min tp 3` as two lines, each ending in Enter, and
-`sleep 15 min` and `tp 3` for Fn+F1...F9 and Fn+1...9, with no `dip`, `idl` or `wk`. v1.1 types the same line as v1.2 with longer labels: `default` for the keymap (also in
+`sleep 15 min` and `tp 3` for Fn+F1...F9 and Fn+1...9, with no `dip`, `idl` or `wk`. v1.2 types the same line as v1.3; in v1.2 Fn+Down and Fn+Up are Play and Stop, and only Fn - and Fn = set the
+up/down speed. v1.1 types the same line as v1.2 with longer labels: `default` for the keymap (also in
 an editor-made image), `bat85%` and `zzz15m`, and `zzz15m` for Fn+F1...F9.
 
 ## Bluetooth
@@ -173,7 +174,7 @@ updater, sets them back to the defaults; set them again afterwards.
   you. From v1.1 it also makes sequence macros (a key types a short phrase or a run of keys, 95 bytes in total, 96 in v1.1)
   and mouse movement keys. Macros are typed for the keyboard layout you choose for the computer (US, UK, German,
   French, Spanish, Nordic or Japanese); Fn+B's answers stay US. ([How the editor works](editor/README.md).)
-* **No VIA/Vial live remapping.** TEX's bootloader takes images up to 28,076 bytes; v1.0 is 28,072, v1.1 27,728 and v1.2 28,048. The keymap
+* **No VIA/Vial live remapping.** TEX's bootloader takes images up to 28,076 bytes; v1.0 is 28,072, v1.1 27,728, v1.2 28,048 and v1.3 28,048. The keymap
   editor changes the keymap in the image, so a change takes a flash.
 * **ISO and JIS boards are untested.** The extra keys are in the keymap.
 * **No Bluetooth firmware updates.** Updates go over USB through TEX's bootloader.
