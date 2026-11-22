@@ -39,18 +39,13 @@ jobs:
             --paths shinobi/tools --hidden-import hid shinobi/tools/tex_flash.py
           file dist/tex_flash
           file dist/tex_flash | grep -q "${{ matrix.arch }}"
-      - name: Smoke test (starts, prints usage, loads hidapi)
+      - name: Smoke test (starts, names itself, carries hidapi)
         run: |
-          ./dist/tex_flash --help
-          python3 - <<'PY'
-          import subprocess, sys
-          # A missing hid module shows up as an import error the first time the tool looks for the keyboard;
-          # with no keyboard attached the run must end with the tool's own "not found" message instead.
-          r = subprocess.run(["./dist/tex_flash", "--lang", "en", "/dev/null"], capture_output=True, text=True)
-          out = r.stdout + r.stderr
-          print(out)
-          sys.exit(1 if ("No module named" in out or "Traceback" in out) else 0)
-          PY
+          ./dist/tex_flash --help | tee help.txt
+          grep -q "^usage: tex_flash " help.txt
+          # hid is only imported once a keyboard is looked for, so check the archive instead of a run.
+          pyi-archive_viewer --list --recursive dist/tex_flash > contents.txt
+          grep -E "(^|[^a-z_])hid([^a-z_]|$)" contents.txt
       - name: Name by CPU
         run: |
           mkdir out
