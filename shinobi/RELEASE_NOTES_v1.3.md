@@ -50,7 +50,17 @@ no delays; Fn+B's answers type as on a US layout.
 
 ## Tested
 
-TESTED_PLACEHOLDER
+On one keyboard (US ANSI, two NiMH AA cells), over USB:
+
+* This release image (`d9178e74...`) flashed with `tex_flash.exe` over the 1.3a test build (2026-11-22), with the
+  bootloader's checksum matching and the keyboard back 0.9 s later. Fn+B typed
+  `v1.3 dflt 2026-11-17-17:05:00 bt89% adc3443 usb z15m tp3 ud100 dip13 idl1s wk0ms`. Fn+Up typed `tp3 ud105`, and
+  Fn+Down stepped back through `ud100`, `ud95` and `ud90`.
+* The 1.3a test build, which differs from this image only in the version string and build date (2026-11-17):
+  Fn+Down six times and Fn+Up four times typed `ud95` down to `ud60` and back to `ud90`; Fn+PgUp played and paused.
+
+Not tested on this image: Fn+PgUp/PgDn, Bluetooth, flashing over the stock firmware or over v1.2, and the updater exe.
+Fn+PgDn sends the media Stop key, which some players (Spotify, browsers) ignore or treat as pause.
 
 Checked off the keyboard (2026-11-17): the image is 28,048 of the 28,076 bytes TEX's bootloader takes, with the
 settings record in place; the editor's byte-identity test passes for v1.0 to v1.3. Host tests of the input logic
