@@ -1,7 +1,7 @@
 name: flasher-macos
 
 # One-file tex_flash for macOS, packaged the way tex_flash.exe is on Windows (PyInstaller --onefile).
-# Each runner builds for its own CPU: macos-14 is Apple silicon (arm64), macos-13 is Intel (x86_64).
+# Each runner builds for its own CPU: macos-15 is Apple silicon (arm64), macos-15-intel is Intel (x86_64).
 # The result is not signed or notarized: macOS blocks it on first run until the user picks Open from the
 # Finder's right-click menu (or runs xattr -d com.apple.quarantine tex_flash).
 on:
@@ -17,9 +17,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - runner: macos-14
+          - runner: macos-15
             arch: arm64
-          - runner: macos-13
+          - runner: macos-15-intel
             arch: x86_64
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 15
