@@ -356,6 +356,12 @@ void ble_flush_keys(uint8_t settle_ms) {
     }
 }
 
+// Fn+B's "bl" field: the module's link state (3 pairing, 4 connected) and slot (0-2) as it last reported them,
+// e.g. 41; 0 before its first status.
+uint8_t ble_link_slot(void) {
+    return status_seen ? status_block[0] * 10 + status_block[1] : 0;
+}
+
 bool ble_pairing(void) {
     return status_seen && status_block[0] == LINK_PAIRING;
 }

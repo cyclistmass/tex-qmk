@@ -426,6 +426,13 @@ extern const uint8_t tex_keymap_custom[];
 // the scale above, the sleep time and the TrackPoint level. The keymap is "dflt" for the default one as built,
 // "cust" once the editor has changed it, or the name of any other keymap (test builds such as sleep30); the
 // compiler folds the name comparison.
+// The end of Fn+B's line, in flash2: flash0's gap holds the rest and no more. "wk": ms from the last wake to the
+// link; "bl": the module's link state and slot (ble_link_slot).
+__attribute__((noinline)) static void type_ble_fields(void) {
+    type_number(ble_wake_ms, "ms bl");
+    type_number(ble_link_slot(), "");
+}
+
 // In flash0's room below the macros (linker script), not flash2: Fn+B is no hot path.
 __attribute__((section(".tex_text0"), noinline)) void battery_report(void) {
     type_text("v" TEX_FW_VERSION " ");
@@ -450,5 +457,5 @@ __attribute__((section(".tex_text0"), noinline)) void battery_report(void) {
     uint16_t idle = idle_gap_s;
     if (idle >= 60) type_number(idle / 60, "m");
     type_number(idle % 60, "s wk");
-    type_number(ble_wake_ms, "ms");
+    type_ble_fields();
 }
