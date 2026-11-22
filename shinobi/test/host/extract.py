@@ -12,8 +12,10 @@ import re
 import sys
 
 PIECES = {
-    "shinobi.c": [
+    "shinobi.h": [
         ("line", r"^#\s+define TEX_FN_LAYER\b"),
+    ],
+    "shinobi.c": [
         ("line", r"^static uint8_t\s+fn_scroll;"),
         ("line", r"^static uint8_t\s+fn_down;"),
         ("line", r"^static uint16_t fn_scroll_time;"),

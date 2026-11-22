@@ -19,6 +19,11 @@
 #define RAW_USAGE_PAGE 0xFF00
 #define RAW_USAGE_ID 0x01
 #define RAW_EPSIZE 64
+// Each USB IN endpoint keeps its last report in a buffer copied from flash at boot (tools/patch_qmk_tree.sh):
+// 32 bytes hold the largest report sent, NKRO (shinobi.c checks), and raw HID keeps none, as GET_REPORT and idle
+// repeats are for the HID keyboard and mouse. Frees 268 bytes of image for v1.3b.
+#define TEX_USB_REPORT_DATA_SIZE 32
+#define TEX_RAW_NO_REPORT_STORAGE
 
 // wait_us() needs a hardware timer here: the M0+ has no cycle counter, so QMK's
 // fallback sleeps whole 1 ms system ticks, and the PS/2 driver's 1 us polling
@@ -43,4 +48,4 @@ extern unsigned char tex_dip;
 #define PS2_MOUSE_SCROLL_DIVISOR_H (14 - tp_level)
 
 // This port's version, typed by Fn+B with the keymap and build date.
-#define TEX_FW_VERSION "1.3"
+#define TEX_FW_VERSION "1.3b"

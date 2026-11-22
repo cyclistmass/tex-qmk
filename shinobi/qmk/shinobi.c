@@ -118,7 +118,9 @@ static void tp_watch_task(void) {
 // Erased flash reads all ones and fails the key: defaults.
 #define SETTINGS_ADDR 0x1FC00U
 #define SETTINGS_KEY 0x5E770000U
+#define SETTINGS_MAC 0x00010000U // cleared in the key (0x5E76): Mac layout flipped (Fn+M); older words read as not flipped
 static uint8_t  sleep_choice = 0xFF; // index into power.c's sleep_minutes; 0xFF = the build's default
+static bool     mac_flip;            // Fn+M: the Mac layout is the opposite of what the DIP switches pick
 static uint32_t settings_word;       // what the page holds; reading it back could hit the flash prefetch buffer
 
 static void fmc_run(uint32_t command) {
@@ -138,7 +140,7 @@ __attribute__((section(".tex_text0b"), noinline)) static void settings_put(uint3
 }
 
 static void settings_save(void) {
-    uint32_t word = SETTINGS_KEY | sleep_choice << 8 | tp_ud << 4 | tp_level;
+    uint32_t word = (mac_flip ? SETTINGS_KEY & ~SETTINGS_MAC : SETTINGS_KEY) | sleep_choice << 8 | tp_ud << 4 | tp_level;
     if (word == settings_word) return;
     settings_put(word);
     settings_word = word;
@@ -166,7 +168,8 @@ static bool settings_selftest(void) {
 // Before ps2_mouse_init() sends the sensitivity.
 void keyboard_pre_init_kb(void) {
     uint32_t word = settings_word = *(volatile uint32_t *)SETTINGS_ADDR;
-    if ((word & 0xFFFF0000U) == SETTINGS_KEY && (word & 15) < 9) {
+    if (((word | SETTINGS_MAC) & 0xFFFF0000U) == SETTINGS_KEY && (word & 15) < 9) {
+        mac_flip     = !(word & SETTINGS_MAC);
         tp_level     = word & 15;
         tp_ud        = (uint8_t)word >> 4;
         sleep_choice = word >> 8;
@@ -190,9 +193,6 @@ extern int tp_buttons; // action.c: the matrix mouse buttons, merged into the PS
 // it. Housekeeping calls this with KC_NO, which only runs out the wait after a release.
 // Fn is MO(TEX_FN_LAYER), the editor's and the default keymap's last layer; another MO() key is an ordinary key
 // here. fn_down counts the Fn keys held (the Fn/Ctrl swap layer has a second one), so Fn ends when the last is let go.
-#ifndef TEX_FN_LAYER
-#    define TEX_FN_LAYER 3
-#endif
 static uint8_t  fn_scroll; // 0 off, 1 Fn down, 2 Fn down and another key pressed, 3 released, waiting
 static uint8_t  fn_down;
 static uint16_t fn_scroll_time;
@@ -309,6 +309,13 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
             }
             settings_save();
             tp_type("");
+        }
+        return false;
+    }
+    if (keycode == MAC_TOGGLE) {
+        if (record->event.pressed) {
+            mac_flip = !mac_flip;
+            settings_save();
         }
         return false;
     }
@@ -561,6 +568,10 @@ void ps2_mouse_moved_user(report_mouse_t *mouse_report) {
 #endif
 }
 
+_Static_assert(sizeof(report_nkro_t) <= TEX_USB_REPORT_DATA_SIZE && sizeof(report_keyboard_t) <= TEX_USB_REPORT_DATA_SIZE &&
+                   sizeof(report_mouse_t) <= TEX_USB_REPORT_DATA_SIZE && sizeof(report_extra_t) <= TEX_USB_REPORT_DATA_SIZE,
+               "a USB report is larger than the buffer config.h gives it");
+
 uint8_t tex_dip;
 
 // DIP switch n closes matrix column 14, row n-1 (stock FUN_4c74 keeps the same bits; FUN_8598 decodes 1-3,
@@ -583,6 +594,7 @@ void housekeeping_task_kb(void) {
     // Exactly one of switches 1-3 on selects profile 1-3; none or several is 0 (stock FUN_8598).
     uint8_t three = tex_dip & 7;
     uint8_t now   = three & (three - 1) ? 0 : three == 4 ? 3 : three;
+    if (mac_flip) now ^= 2; // profiles 2 and 3 are 0 and 1 with the Mac layout
     if (now != profile) {
         profile = now;
         profile_switch_user(profile);

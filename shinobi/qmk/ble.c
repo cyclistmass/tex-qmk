@@ -477,6 +477,7 @@ void bluetooth_send_system(uint16_t usage) {
 static uint8_t  slot_key;  // BLE_SLOT1..3 or BLE_PAIR held, 0 when none
 static uint16_t slot_key_since;
 static bool     slot_key_paired;
+static uint8_t  slot_pending; // CMD_SLOT + k waiting for every key to be up, 0 when none
 
 bool ble_process_record(uint16_t keycode, keyrecord_t *record) {
     if (keycode == BLE_USB) {
@@ -491,15 +492,22 @@ bool ble_process_record(uint16_t keycode, keyrecord_t *record) {
         slot_key_paired = false;
     } else if (slot_key == keycode) {
         if (!slot_key_paired && keycode != BLE_PAIR) {
-            queue_command(CMD_SLOT + (keycode - BLE_SLOT1));
-            connection_set_host_noeeprom(CONNECTION_HOST_BLUETOOTH);
+            slot_pending = CMD_SLOT + (keycode - BLE_SLOT1);
         }
         slot_key = 0;
     }
     return false;
 }
 
+// Stock sends the slot command only once no key is down, Fn included (FUN_5388 before the 0x59A4 table c0 c1 c2).
+// Sent while Fn was still held, it switched hosts on USB but not on battery (Mauro, 2026-11-22). Here it waits for
+// Fn's layer to be off: the slot key itself is already up.
 void ble_housekeeping(void) {
+    if (slot_pending && !layer_state_is(TEX_FN_LAYER)) {
+        queue_command(slot_pending);
+        slot_pending = 0;
+        connection_set_host_noeeprom(CONNECTION_HOST_BLUETOOTH);
+    }
     if (slot_key && !slot_key_paired && timer_elapsed(slot_key_since) >= BLE_PAIR_HOLD_MS) {
         slot_key_paired = true;
         queue_command(CMD_PAIR + (slot_key == BLE_PAIR ? 0 : slot_key - BLE_SLOT1));

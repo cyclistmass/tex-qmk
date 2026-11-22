@@ -426,7 +426,8 @@ extern const uint8_t tex_keymap_custom[];
 // the scale above, the sleep time and the TrackPoint level. The keymap is "dflt" for the default one as built,
 // "cust" once the editor has changed it, or the name of any other keymap (test builds such as sleep30); the
 // compiler folds the name comparison.
-void battery_report(void) {
+// In flash0's room below the macros (linker script), not flash2: Fn+B is no hot path.
+__attribute__((section(".tex_text0"), noinline)) void battery_report(void) {
     type_text("v" TEX_FW_VERSION " ");
     if (__builtin_strcmp(QMK_KEYMAP, "default")) {
         type_text(QMK_KEYMAP);

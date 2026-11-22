@@ -41,10 +41,10 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
         _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______
     ),
-    // Stock Fn tables 0x9E62/0x9E7C. Fn+Mute / Fn+Vol- / Fn+Vol+ pick BLE host slot 1-3 (hold 3 s to pair); Fn+Esc goes back to USB (stock action 0x8D); Fn+B types the battery level; Fn+1..9 set TrackPoint sensitivity, Fn+Down / Fn+Up (also Fn+- / Fn+=) and Fn+0 its up/down speed against left/right (slower, faster, even); Fn+PgUp / Fn+PgDn play/pause and stop, Fn+Left / Fn+Right previous / next track (stock had those on Fn+Down / Fn+Up), Fn+F1..F9 the sleep time (power.c).
+    // Stock Fn tables 0x9E62/0x9E7C. Fn+Mute / Fn+Vol- / Fn+Vol+ pick BLE host slot 1-3 (hold 3 s to pair); Fn+Esc goes back to USB (stock action 0x8D); Fn+B types the battery level; Fn+M flips the Mac layout, remembered (shinobi.c); Fn+1..9 set TrackPoint sensitivity, Fn+Down / Fn+Up (also Fn+- / Fn+=) and Fn+0 its up/down speed against left/right (slower, faster, even); Fn+PgUp / Fn+PgDn play/pause and stop, Fn+Left / Fn+Right previous / next track (stock had those on Fn+Down / Fn+Up), Fn+F1..F9 the sleep time (power.c).
     [_FN] = LAYOUT(
         _______, _______, _______, _______, _______, _______, _______, _______, SLEEP4, KC_MSTP, KC_MNXT, _______,
-        BAT_REPORT, _______, _______, _______, _______, _______, _______, _______, SLEEP3, _______, TP_UD_DOWN, TP_UD_UP,
+        BAT_REPORT, _______, MAC_TOGGLE, _______, _______, _______, _______, _______, SLEEP3, _______, TP_UD_DOWN, TP_UD_UP,
         _______, _______, _______, _______, _______, _______, _______, _______, SLEEP2, _______, KC_MPRV, _______,
         _______, _______, _______, _______, _______, _______, _______, _______, SLEEP1, _______, KC_MPLY, _______,
         _______, _______, _______, _______, _______, _______, _______, _______, BLE_USB, _______, _______, _______,

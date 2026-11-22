@@ -102,4 +102,8 @@ SECTIONS {
     .tex_rodata0 : {
         *(.tex_rodata0)
     } > flash0
+    /* Code that is not on any hot path (section attribute in power.c), in the rest of flash0. */
+    .tex_text0 : {
+        *(.tex_text0)
+    } > flash0
 }

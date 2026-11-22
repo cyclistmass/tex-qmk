@@ -42,7 +42,14 @@ enum shinobi_keycodes {
     TP_UD_DOWN,
     TP_UD_UP,
     TP_UD_EVEN,
+    // Flips the Mac layout (Alt/Win swap) against what DIP switch 2 says, saved with the settings (shinobi.c).
+    MAC_TOGGLE,
 };
+
+// Fn is MO(TEX_FN_LAYER), the default keymap's and the editor's last layer (shinobi.c, ble.c).
+#ifndef TEX_FN_LAYER
+#    define TEX_FN_LAYER 3
+#endif
 
 // ble.c
 bool ble_process_record(uint16_t keycode, keyrecord_t *record);

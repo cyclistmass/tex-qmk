@@ -39,6 +39,8 @@ Switches 4 and 5 work from v1.1 (v1.0 ignores them):
 * **6 (file system mode for TEX's configurator):** not available, because the configurator doesn't work with
   this firmware. Fn+B's `dip` still shows it (from v1.1), like the other five.
 
+From v1.3b, Fn+M flips the Mac layout against what switches 1-3 pick, and the keyboard remembers it.
+
 The DIP switches are separate from the Fn keys: Fn+F1...F9 set the sleep time whatever the switches say.
 
 ### Fn combinations
@@ -51,6 +53,7 @@ The DIP switches are separate from the Fn keys: Fn+F1...F9 set the sleep time wh
 | Fn+Down / Fn+Up / Fn+0 (or Fn - / Fn =) | TrackPoint up/down speed one step slower / one step faster / the same as left/right; types back `tp3 ud90` and so on |
 | Fn+F1 ... Fn+F9 | sleep on battery after 1, 2, 5, 10, 15, 30, 60, 120 min or never; types back `z15m` and so on |
 | Fn+B | types the firmware version and a status, on one line |
+| Fn+M | Mac layout on or off (from v1.3b): flips what DIP switch 2 picks, and is remembered after power off |
 | Fn+PgUp / Fn+PgDn | Play/pause / Stop |
 | Fn+Left / Fn+Right | Previous / next track |
 
