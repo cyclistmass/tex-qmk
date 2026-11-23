@@ -143,8 +143,9 @@ The keyboard runs on two AA cells, or on USB power when the cable is in.
 ## Settings that are saved
 
 The TrackPoint settings, the sleep time and (from v1.3b) the Fn+M Mac layout are saved in the keyboard's flash when you change them. They survive
-battery changes, USB plugging and unplugging, and power cuts. Flashing a firmware, with `tex_flash` or TEX's
-updater, sets them back to the defaults; set them again afterwards.
+battery changes, USB plugging and unplugging, and power cuts. Flashing a firmware with `tex_flash` keeps them too;
+`--reset-settings` sets them back to the defaults. TEX's updater, and `tex_flash` from v1.3 and older, always set
+them back to the defaults; set them again afterwards.
 
 ## Troubleshooting
 

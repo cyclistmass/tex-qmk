@@ -166,6 +166,10 @@ repository contains it.
 * The IAP's erase clears the settings page too: v1.2 set to `tp5 ud90`, reflashed with tex_flash.exe, came up as
   `tp3 ud100` (2026-11-15) [O]. The updater's erase argument 0x1CE, read as 256-byte units, is 0x1CE00 bytes:
   exactly 0x3200 to the end of the 128 KB flash [I], which takes in page 254. TEX's updater sends the same erase.
+* `tex_flash` now erases 0x1CA units, which ends below page 254 whether the erase starts at 0x3000 or 0x3200
+  (pages are 512 bytes, HT32F52342/52 user manual v1.60 section 4). The IAP accepts it and the settings survive:
+  v1.3g set to `ud90`, reflashed with it, came up `ud90` (2026-11-23) [O]. So the argument is a length and the
+  IAP does not erase past it [I from that test]. `--reset-settings` sends the updater's 0x1CE.
 
 ## BLE link
 

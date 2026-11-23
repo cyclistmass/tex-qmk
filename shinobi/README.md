@@ -2,7 +2,7 @@
 
 Open-source [QMK](https://qmk.fm) firmware for the TEX Shinobi BLE5, the 7-row ThinkPad-style keyboard with a
 TrackPoint. It is a full replacement for the stock firmware (AP_0407 V1.04.04). It supports USB, Bluetooth with
-three hosts, the TrackPoint, battery sleep, and settings that survive a power cut (a firmware flash resets them).
+three hosts, the TrackPoint, battery sleep, and settings that survive a power cut and a firmware flash with `tex_flash`.
 
 **Unofficial.** This is not TEX firmware, and TEX does not support it. It is published with TEX's permission, and
 thanks to TEX for sharing the schematic and answering questions. Install it at your own risk. TEX's bootloader is
@@ -38,7 +38,8 @@ Status: v1.3. v1.0 has been in daily use on one Shinobi BLE5 (US layout) over US
 | Fn+Left / Fn+Right | Previous / next track |
 
 The TrackPoint settings and sleep time are saved in flash. They survive a power cut, and every USB plug or unplug is
-a power cut on this keyboard. Flashing a firmware sets them back to the defaults.
+a power cut on this keyboard. Flashing with `tex_flash` keeps them (add `--reset-settings` to clear them); TEX's
+updater, and `tex_flash` from v1.3 and older, set them back to the defaults.
 
 ## Installing
 
