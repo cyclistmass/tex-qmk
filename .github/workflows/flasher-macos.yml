@@ -46,6 +46,18 @@ jobs:
           # hid is only imported once a keyboard is looked for, so check the archive instead of a run.
           pyi-archive_viewer --list --recursive dist/tex_flash > contents.txt
           grep -E "(^|[^a-z_])hid([^a-z_]|$)" contents.txt
+      - name: Smoke test (opens the USB HID layer, finds no keyboard)
+        # A runner has no keyboard, so a real flash can't run here. This loads hidapi inside the packaged file,
+        # enumerates USB HID devices for TEX's vendor ID, and must stop with the no-keyboard message.
+        run: |
+          python3 -I -c "import sys; sys.path.insert(0, 'shinobi/tools/tests'); import test_flasher as t; open('img.bin', 'wb').write(t.good_image())"
+          set +e
+          ./dist/tex_flash img.bin --lang en > run.txt 2>&1
+          code=$?
+          set -e
+          cat run.txt
+          test "$code" -ne 0
+          grep -q "no USB keyboard in the bootloader or the firmware" run.txt
       - name: Name by CPU
         run: |
           mkdir out
