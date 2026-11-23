@@ -12,36 +12,6 @@ The **[owner's manual](MANUAL.md)** covers every key and light, Bluetooth, sleep
 
 Status: v1.4. v1.0 has been in daily use on one Shinobi BLE5 (US layout) over USB and Bluetooth since 2026-11-04.
 
-## What works
-
-* All keys, DIP switches 1-3 on the bottom (Fn/Ctrl swap, Mac layout, both) and the Fn layer, taken from the
-  stock firmware's own tables.
-* TrackPoint with stock sensitivity levels, middle-button scrolling, and a fix for the stock slow-wake bug.
-* Bluetooth: three hosts, pairing, and the battery level reported to the host.
-* Sleep on battery after an idle time you choose. Key presses wake it.
-* After pulling out the USB cable, switch the keyboard off and on before using Bluetooth (as with the stock
-  firmware).
-* Caps Lock LED, low-battery blink, and the pairing blink.
-* TEX's updater still recognises the keyboard. You can flash stock firmware back with it at any time.
-
-## Fn keys
-
-| Keys | Does |
-|---|---|
-| Fn+Mute / Fn+Vol- / Fn+Vol+ | Bluetooth host 1 / 2 / 3. Hold 3 s to pair a new host to that slot |
-| Fn+Esc | back to USB |
-| Fn+M | Mac layout on or off, remembered (from v1.4) |
-| Fn+1 ... Fn+9 | TrackPoint sensitivity 1-9 (default 3); the keyboard types back both TrackPoint settings, e.g. "tp3 ud100" |
-| Fn+Down / Fn+Up / Fn+0 (or Fn - / Fn =) | TrackPoint up/down speed against left/right: a step slower, a step faster, the same (50-200 %); typed back the same way |
-| Fn+F1 ... Fn+F9 | sleep on battery after 1, 2, 5, 10, 15, 30, 60, 120 min or never; typed back (default 15 min) |
-| Fn+B | types one line: firmware version, battery level, power source, sleep time and TrackPoint settings |
-| Fn+PgUp / Fn+PgDn | Play/pause / Stop |
-| Fn+Left / Fn+Right | Previous / next track |
-
-The TrackPoint settings and sleep time are saved in flash. They survive a power cut, and every USB plug or unplug is
-a power cut on this keyboard. Flashing with `tex_flash` keeps them (add `--reset-settings` to clear them); TEX's
-updater, and `tex_flash` from v1.3 and older, set them back to the defaults.
-
 ## Installing
 
 You need the USB cable and a computer: Windows or a Mac for the quick install; Windows, Linux, FreeBSD or OpenBSD
@@ -49,7 +19,7 @@ with Python for option 1; Windows for option 2 (see [Other operating systems](#o
 computer's Bluetooth off before flashing**, so it only talks to the keyboard over USB. All downloads are on the
 [Releases](https://github.com/cyclistmass/tex-qmk/releases) page, each with its SHA-256 sums.
 
-### Quick install: Windows or Mac, no Python
+### Windows or Mac, no Python
 
 1. Download the firmware, [`tex_shinobi_v1.4.bin`](https://github.com/cyclistmass/tex-qmk/releases/download/shinobi-v1.4/tex_shinobi_v1.4.bin), and the
    installer for your computer:
@@ -84,6 +54,59 @@ computer's Bluetooth off before flashing**, so it only talks to the keyboard ove
 
 Your saved settings (TrackPoint, up/down speed, sleep time, Mac layout) are kept. Add `--reset-settings` to clear
 them.
+
+## What works
+
+* All keys, DIP switches 1-3 on the bottom (Fn/Ctrl swap, Mac layout, both) and the Fn layer, taken from the
+  stock firmware's own tables.
+* TrackPoint with stock sensitivity levels, middle-button scrolling, and a fix for the stock slow-wake bug.
+* Bluetooth: three hosts, pairing, and the battery level reported to the host.
+* Sleep on battery after an idle time you choose. Key presses wake it.
+* After pulling out the USB cable, switch the keyboard off and on before using Bluetooth (as with the stock
+  firmware).
+* Caps Lock LED, low-battery blink, and the pairing blink.
+* TEX's updater still recognises the keyboard. You can flash stock firmware back with it at any time.
+
+## Fn keys
+
+| Keys | Does |
+|---|---|
+| Fn+Mute / Fn+Vol- / Fn+Vol+ | Bluetooth host 1 / 2 / 3. Hold 3 s to pair a new host to that slot |
+| Fn+Esc | back to USB |
+| Fn+M | Mac layout on or off, remembered (from v1.4) |
+| Fn+1 ... Fn+9 | TrackPoint sensitivity 1-9 (default 3); the keyboard types back both TrackPoint settings, e.g. "tp3 ud100" |
+| Fn+Down / Fn+Up / Fn+0 (or Fn - / Fn =) | TrackPoint up/down speed against left/right: a step slower, a step faster, the same (50-200 %); typed back the same way |
+| Fn+F1 ... Fn+F9 | sleep on battery after 1, 2, 5, 10, 15, 30, 60, 120 min or never; typed back (default 15 min) |
+| Fn+B | types one line: firmware version, battery level, power source, sleep time, TrackPoint settings and Bluetooth state |
+| Fn+PgUp / Fn+PgDn | Play/pause / Stop |
+| Fn+Left / Fn+Right | Previous / next track |
+
+The TrackPoint settings and sleep time are saved in flash. They survive a power cut, and every USB plug or unplug is
+a power cut on this keyboard. Flashing with `tex_flash` keeps them (add `--reset-settings` to clear them); TEX's
+updater, and `tex_flash` from v1.3 and older, set them back to the defaults.
+
+## Going back to stock
+
+Run TEX's original `AP_0407_4.04.exe` the same way, from a Command Prompt run as administrator. Add `-force` if it says there is nothing to update.
+
+## Known limits
+
+* **After pulling out the USB cable, switch the keyboard off and on.** Otherwise it doesn't type over Bluetooth,
+  although the computer still lists it as connected. TEX's stock firmware does the same (checked 2026-11-15, as
+  were v1.1 and v1.2), so it comes from the hardware or the Bluetooth module, not from this firmware.
+* **Battery percentage** follows alkaline AA cells; NiMH rechargeables show 30-60 % for most of their charge.
+  The scale is set from voltmeter readings (v1.2). Fn+B also types the raw reading.
+* **USB plug and unplug restart the keyboard.** The keyboard's processor sees a power-on reset each
+  time, as if its supply dropped for a moment. Settings are kept.
+* **No Bluetooth firmware updates.** Updates go over USB through TEX's bootloader.
+* **TEX's configurator and macro tool don't work** with this firmware. To remap keys and add shortcuts
+  without a compiler, use the [keymap editor](editor/README.md). Otherwise edit `keymap.c` (see [Building](#building)). VIA/Vial live remapping does not fit yet: TEX's bootloader takes
+  images up to 28,076 bytes; v1.0 is 28,072, v1.1 27,728, v1.2 28,048, v1.3 28,048 and v1.4 28,068.
+* **ISO and JIS boards are untested.** The keymap comes from the stock table, which has the extra ISO key and the
+  JIS keys (Ro, Yen, Kana, Henkan, Muhenkan), so they should work. Please report what you find.
+* Tested on the Shinobi BLE5 with firmware AP_0407 V1.04.04 only.
+
+## Other installation options
 
 ### Option 1: the installer, `tex_flash.py`
 
@@ -142,27 +165,6 @@ wants to check the built-in key: `python -I tex_flash.py tex_shinobi_v1.4.bin AP
 
 Hold Esc while plugging in the USB cable. The keyboard starts in the bootloader, where both options can flash
 it.
-
-## Going back to stock
-
-Run TEX's original `AP_0407_4.04.exe` the same way, from a Command Prompt run as administrator. Add `-force` if it says there is nothing to update.
-
-## Known limits
-
-* **After pulling out the USB cable, switch the keyboard off and on.** Otherwise it doesn't type over Bluetooth,
-  although the computer still lists it as connected. TEX's stock firmware does the same (checked 2026-11-15, as
-  were v1.1 and v1.2), so it comes from the hardware or the Bluetooth module, not from this firmware.
-* **Battery percentage** follows alkaline AA cells; NiMH rechargeables show 30-60 % for most of their charge.
-  The scale is set from voltmeter readings (v1.2). Fn+B also types the raw reading.
-* **USB plug and unplug restart the keyboard.** The keyboard's processor sees a power-on reset each
-  time, as if its supply dropped for a moment. Settings are kept.
-* **No Bluetooth firmware updates.** Updates go over USB through TEX's bootloader.
-* **TEX's configurator and macro tool don't work** with this firmware. To remap keys and add shortcuts
-  without a compiler, use the [keymap editor](editor/README.md). Otherwise edit `keymap.c` (see [Building](#building)). VIA/Vial live remapping does not fit yet: TEX's bootloader takes
-  images up to 28,076 bytes; v1.0 is 28,072, v1.1 27,728, v1.2 28,048, v1.3 28,048 and v1.4 28,068.
-* **ISO and JIS boards are untested.** The keymap comes from the stock table, which has the extra ISO key and the
-  JIS keys (Ro, Yen, Kana, Henkan, Muhenkan), so they should work. Please report what you find.
-* Tested on the Shinobi BLE5 with firmware AP_0407 V1.04.04 only.
 
 ## Building
 

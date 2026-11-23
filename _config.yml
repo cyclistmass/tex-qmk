@@ -1,4 +1,4 @@
 # GitHub Pages: every Markdown file in the repository becomes a page, rebuilt on each push to main.
 title: QMK firmware for TEX keyboards
-description: Unofficial open-source QMK firmware for TEX keyboards
+description: Unofficial open-source QMK firmware for the TEX Shinobi BLE5
 theme: jekyll-theme-primer
