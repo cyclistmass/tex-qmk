@@ -361,12 +361,12 @@ void ble_flush_keys(uint8_t settle_ms) {
     }
 }
 
-static uint8_t slot_tries;
+static uint8_t slot_sent;
 
 // Fn+B's "bl" field: the module's link state (3 pairing, 4 connected) and slot (0-2) as it last reported them,
-// then the tries the last slot tap took (ble_housekeeping), e.g. 411; the tries alone before its first status.
+// then how many slot commands went out since power-on, up to 9 (ble_housekeeping), e.g. 411.
 uint16_t ble_link_slot(void) {
-    return (status_seen ? status_block[0] * 100 + status_block[1] * 10 : 0) + slot_tries;
+    return (status_seen ? status_block[0] * 100 + status_block[1] * 10 : 0) + slot_sent;
 }
 
 bool ble_pairing(void) {
@@ -490,7 +490,7 @@ void bluetooth_send_system(uint16_t usage) {
 static uint8_t  slot_key;  // BLE_SLOT1..3 or BLE_PAIR held, 0 when none
 static uint16_t slot_key_since;
 static bool     slot_key_paired;
-static uint8_t  slot_pending; // CMD_SLOT + k waiting for every key to be up, | 0x10 while tried; 0 when none
+static uint8_t  slot_pending; // CMD_SLOT + k waiting for every key to be up, | 0x10 armed, | 0x20 sent; 0 when none
 
 bool ble_process_record(uint16_t keycode, keyrecord_t *record) {
     if (keycode == BLE_USB) {
@@ -517,12 +517,10 @@ bool ble_process_record(uint16_t keycode, keyrecord_t *record) {
 //
 // The module acks every frame but drops a slot command while the MCU's last '4' differs from its status, or while
 // it is busy (module 0x1bc1e, 0x1b4b8); a command it takes drops the link and stores the new slot in status [9]
-// (0x1f19c). A tap still left v1.3c on bl40 (Mauro, 2026-11-22). So each try is a fresh '4' echo and then the
-// command, repeated every SLOT_RETRY_MS until the module reports the slot, at most SLOT_TRIES times.
-#define SLOT_RETRY_MS 600 // the module reports a change within one 250 ms poll and its answer
-#define SLOT_TRIES 3
-// slot_tries (declared above ble_link_slot): tries for the last slot tap, shown by Fn+B
-static uint16_t slot_tried_at;
+// (0x1f19c). A tap still left v1.3c on bl40 (Mauro, 2026-11-22), so the command goes right after a fresh '4' echo.
+// It goes once, as stock sends it: a command for the slot the module is already on takes another path (0x1f168,
+// state 7) that drops the link, and a tap on the connected slot locked the keyboard in v1.3e (Mauro, 2026-11-23).
+// A tap on the slot the module is already on only moves typing to Bluetooth.
 // C10 after a slot key, as stock does (0x5730-0x588c, mode 0x20000424 = 2): the module reports LINK_PAIRING while it
 // reconnects to a slot as well as while it pairs, so a tap blinks slowly and lights 2 s once connected; only a 3 s
 // hold blinks fast. Otherwise C10 is the Caps Lock indicator of whichever host is active.
@@ -532,22 +530,20 @@ static uint16_t slot_tried_at;
 #define LED_SHOW_MS 2000
 static uint8_t led_mode;
 void ble_housekeeping(void) {
-    if (slot_pending && !(slot_pending & 0x10) && !layer_state_is(TEX_FN_LAYER)) {
-        slot_pending |= 0x10; // armed: 0xD0+k until the module reports slot k
-        slot_tries = 0;
-        led_mode   = LED_SLOT;
+    if (slot_pending && !(slot_pending & 0x30) && !layer_state_is(TEX_FN_LAYER)) {
+        slot_pending |= 0x10; // armed: 0xD0+k until sent
         connection_set_host_noeeprom(CONNECTION_HOST_BLUETOOTH);
-    }
-    if (slot_pending & 0x10) {
-        uint8_t k = slot_pending & 0x03;
-        if ((slot_tries && status_seen && status_block[1] == k) || slot_tries >= SLOT_TRIES) {
-            slot_pending = 0;
-        } else if (!inflight && !cmd_count && (!slot_tries || timer_elapsed(slot_tried_at) >= SLOT_RETRY_MS)) {
-            build(TYPE_STATUS); // a status reply needs no ack
-            queue_command(CMD_SLOT + k);
-            slot_tries++;
-            slot_tried_at = timer_read();
+        if (status_seen && status_block[1] == (slot_pending & 0x03)) {
+            slot_pending = 0; // already on that slot, connected or reconnecting: a command would drop it
+        } else {
+            led_mode = LED_SLOT;
         }
+    }
+    if ((slot_pending & 0x30) == 0x10 && !inflight && !cmd_count) {
+        build(TYPE_STATUS); // a status reply needs no ack
+        queue_command(CMD_SLOT + (slot_pending & 0x03));
+        slot_pending ^= 0x30; // sent: 0xE0+k until the module is connected on slot k
+        if (slot_sent < 9) slot_sent++;
     }
     if (slot_key && !slot_key_paired && timer_elapsed(slot_key_since) >= BLE_PAIR_HOLD_MS) {
         slot_key_paired = true;
@@ -565,8 +561,9 @@ void ble_housekeeping(void) {
             palToggleLine(C10);
         }
     } else if (led_mode == LED_SLOT) {
-        if (!slot_pending && status_block[0] == LINK_CONNECTED) {
-            led_mode = LED_SHOW; // the module took the slot (slot_pending cleared) and is connected again
+        if ((slot_pending & 0x20) && status_block[0] == LINK_CONNECTED && status_block[1] == (slot_pending & 0x03)) {
+            slot_pending = 0;
+            led_mode     = LED_SHOW; // connected again on the new slot
             blink_at = timer_read();
             palClearLine(C10); // on (active low)
         }

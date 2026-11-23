@@ -427,7 +427,7 @@ extern const uint8_t tex_keymap_custom[];
 // "cust" once the editor has changed it, or the name of any other keymap (test builds such as sleep30); the
 // compiler folds the name comparison.
 // The end of Fn+B's line, in flash2: flash0's gap holds the rest and no more. "wk": ms from the last wake to the
-// link; "bl": the module's link state, slot and the last slot tap's tries (ble_link_slot).
+// link; "bl": the module's link state, slot and slot commands sent (ble_link_slot).
 __attribute__((noinline)) static void type_ble_fields(void) {
     type_number(ble_wake_ms, "ms bl");
     type_number(ble_link_slot(), "");
