@@ -489,6 +489,7 @@ void bluetooth_send_system(uint16_t usage) {
 // sends keys over Bluetooth even with USB plugged in; Fn+Esc goes back to USB.
 static uint8_t  slot_key;  // BLE_SLOT1..3 or BLE_PAIR held, 0 when none
 static uint16_t slot_key_since;
+static uint8_t  slot_key_pos; // row << 4 | column
 static bool     slot_key_paired;
 static uint8_t  slot_pending; // CMD_SLOT + k waiting for every key to be up, | 0x10 armed, | 0x20 sent; 0 when none
 
@@ -497,10 +498,18 @@ bool ble_process_record(uint16_t keycode, keyrecord_t *record) {
         if (record->event.pressed) connection_set_host_noeeprom(CONNECTION_HOST_AUTO);
         return false;
     }
-    if (keycode < BLE_SLOT1 || keycode > BLE_PAIR) return true;
+    // The release is matched by key position, not keycode: let go of Fn first and the release comes as the base
+    // layer's KC_VOLD, so the tap was never seen to end and turned into a 3 s pair hold (Mauro, 2026-11-23).
+    uint8_t pos = record->event.key.row << 4 | record->event.key.col;
+    if (!record->event.pressed && slot_key && pos == slot_key_pos) {
+        keycode = slot_key;
+    } else if (keycode < BLE_SLOT1 || keycode > BLE_PAIR) {
+        return true;
+    }
     if (record->event.pressed) {
         if (slot_key) return false; // the first one held wins; this one's release is ignored too
         slot_key        = keycode;
+        slot_key_pos    = pos;
         slot_key_since  = timer_read();
         slot_key_paired = false;
     } else if (slot_key == keycode) {
@@ -533,7 +542,7 @@ void ble_housekeeping(void) {
     if (slot_pending && !(slot_pending & 0x30) && !layer_state_is(TEX_FN_LAYER)) {
         slot_pending |= 0x10; // armed: 0xD0+k until sent
         connection_set_host_noeeprom(CONNECTION_HOST_BLUETOOTH);
-        if (status_seen && status_block[1] == (slot_pending & 0x03)) {
+        if (status_block[1] == (slot_pending & 0x03)) { // 0 before the first status: slot 1 then waits for it
             slot_pending = 0; // already on that slot, connected or reconnecting: a command would drop it
         } else {
             led_mode = LED_SLOT;
