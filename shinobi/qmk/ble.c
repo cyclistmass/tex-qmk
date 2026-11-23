@@ -307,18 +307,23 @@ static void poll_rx(void) {
             uint16_t ncrc   = buf[2] | buf[3] << 8;
             uint16_t length = buf[4] | buf[5] << 8;
             uint8_t  len    = length & 0x7FF;
-            if ((uint16_t)(crc + ncrc) != 0xFFFF || length >> 11 != 0x15 || len > 64) {
-                memmove(buf, buf + 1, --n);
-                continue;
+            bool     header = (uint16_t)(crc + ncrc) == 0xFFFF && length >> 11 == 0x15 && len <= 64;
+            if (header) {
+                if (n < 6 + len) break;
+                if (crc16_xmodem(buf + 6, len, crc16_xmodem(buf + 4, 2, 0)) == crc) {
+                    handle_frame(buf + 6, len);
+                    n = 0;
+                    break;
+                }
             }
-            if (n < 6 + len) break;
-            if (crc16_xmodem(buf + 6, len, crc16_xmodem(buf + 4, 2, 0)) == crc) {
-                handle_frame(buf + 6, len);
-                n = 0;
-            } else {
-                memmove(buf, buf + 1, --n);
+            // Drop the first byte. A plain loop: this was memmove's only caller, 176 bytes of the image. The empty
+            // asm keeps GCC from turning the loop back into a memmove call.
+            n--;
+            for (uint8_t i = 0; i < n; i++) {
+                buf[i] = buf[i + 1];
+                __asm__("");
             }
-            break;
+            if (header) break; // a bad CRC: look again when the next byte comes
         }
     }
 }
@@ -526,9 +531,7 @@ void ble_housekeeping(void) {
     }
     if (slot_pending & 0x10) {
         uint8_t k = slot_pending & 0x03;
-        if (slot_tries && status_seen && status_block[1] == k) {
-            slot_pending = 0;
-        } else if (slot_tries >= SLOT_TRIES) {
+        if ((slot_tries && status_seen && status_block[1] == k) || slot_tries >= SLOT_TRIES) {
             slot_pending = 0;
         } else if (!inflight && !cmd_count && (!slot_tries || timer_elapsed(slot_tried_at) >= SLOT_RETRY_MS)) {
             build(TYPE_STATUS); // a status reply needs no ack
