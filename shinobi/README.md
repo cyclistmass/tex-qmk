@@ -10,7 +10,7 @@ never touched, so you can always go back to the stock firmware (see [Going back 
 
 The **[owner's manual](MANUAL.md)** covers every key and light, Bluetooth, sleep, troubleshooting and known issues.
 
-Status: v1.3. v1.0 has been in daily use on one Shinobi BLE5 (US layout) over USB and Bluetooth since 2026-11-04.
+Status: v1.4. v1.0 has been in daily use on one Shinobi BLE5 (US layout) over USB and Bluetooth since 2026-11-04.
 
 ## What works
 
@@ -30,6 +30,7 @@ Status: v1.3. v1.0 has been in daily use on one Shinobi BLE5 (US layout) over US
 |---|---|
 | Fn+Mute / Fn+Vol- / Fn+Vol+ | Bluetooth host 1 / 2 / 3. Hold 3 s to pair a new host to that slot |
 | Fn+Esc | back to USB |
+| Fn+M | Mac layout on or off, remembered (from v1.4) |
 | Fn+1 ... Fn+9 | TrackPoint sensitivity 1-9 (default 3); the keyboard types back both TrackPoint settings, e.g. "tp3 ud100" |
 | Fn+Down / Fn+Up / Fn+0 (or Fn - / Fn =) | TrackPoint up/down speed against left/right: a step slower, a step faster, the same (50-200 %); typed back the same way |
 | Fn+F1 ... Fn+F9 | sleep on battery after 1, 2, 5, 10, 15, 30, 60, 120 min or never; typed back (default 15 min) |
@@ -43,46 +44,79 @@ updater, and `tex_flash` from v1.3 and older, set them back to the defaults.
 
 ## Installing
 
-You need the USB cable and a PC: Windows, Linux, FreeBSD or OpenBSD for option 1, and Windows for option 2
-(see [Other operating systems](#other-operating-systems)). **Turn the PC's Bluetooth off before flashing** (Settings > Bluetooth &
-devices), so the PC only talks to the keyboard over USB. Downloads are on the
-[Releases](https://github.com/cyclistmass/tex-qmk/releases) page. Each release lists SHA-256 sums.
+You need the USB cable and a computer: Windows or a Mac for the quick install; Windows, Linux, FreeBSD or OpenBSD
+with Python for option 1; Windows for option 2 (see [Other operating systems](#other-operating-systems)). **Turn the
+computer's Bluetooth off before flashing**, so it only talks to the keyboard over USB. All downloads are on the
+[Releases](https://github.com/cyclistmass/tex-qmk/releases) page, each with its SHA-256 sums.
+
+### Quick install: Windows or Mac, no Python
+
+1. Download the firmware, [`tex_shinobi_v1.4.bin`](https://github.com/cyclistmass/tex-qmk/releases/download/shinobi-v1.4/tex_shinobi_v1.4.bin), and the
+   installer for your computer:
+
+   | Computer | Installer |
+   |---|---|
+   | Windows | [`tex_flash.exe`](https://github.com/cyclistmass/tex-qmk/releases/latest/download/tex_flash.exe) |
+   | Mac with Apple silicon (M1 and later) | [`tex_flash_macos_arm64`](https://github.com/cyclistmass/tex-qmk/releases/latest/download/tex_flash_macos_arm64) |
+   | Mac with an Intel processor | [`tex_flash_macos_x86_64`](https://github.com/cyclistmass/tex-qmk/releases/latest/download/tex_flash_macos_x86_64) |
+
+2. Plug the keyboard in with the USB cable and turn the computer's Bluetooth off.
+3. Run the installer on the firmware from the folder you downloaded both to.
+   * **Windows:** open a Command Prompt (no administrator rights needed), then:
+
+         cd /d %USERPROFILE%\Downloads
+         tex_flash.exe tex_shinobi_v1.4.bin
+
+     Windows may warn that the publisher is unknown, as the exe is not signed: More info, then Run anyway.
+   * **Mac:** open Terminal, then (for an Intel Mac, use `tex_flash_macos_x86_64` instead):
+
+         cd ~/Downloads
+         chmod +x tex_flash_macos_arm64
+         xattr -d com.apple.quarantine tex_flash_macos_arm64
+         ./tex_flash_macos_arm64 tex_shinobi_v1.4.bin
+
+     The installer is not signed by Apple; `xattr` lets macOS run it. **Not yet tested with a keyboard on a Mac:**
+     it builds and starts on Apple's Intel and Apple-silicon machines, finds no keyboard there, and stops as it
+     should. Please report what happens on yours.
+4. It takes about 10 seconds. "the firmware is up (04D9:0407)" means success. Press Fn+B in a text editor: the
+   keyboard types a line starting `v1.4 dflt ...`. If a step fails, the installer stops and the keyboard stays in
+   its bootloader, ready for another try.
+
+Your saved settings (TrackPoint, up/down speed, sleep time, Mac layout) are kept. Add `--reset-settings` to clear
+them.
 
 ### Option 1: the installer, `tex_flash.py`
 
 Needs Python 3 with `pip install hidapi`, the `tools` folder from this repository, and the firmware
-`tex_shinobi_v1.3.bin`. Nothing from TEX is needed: the keyboard's firmware key is built in, published with TEX's
+`tex_shinobi_v1.4.bin`. Nothing from TEX is needed: the keyboard's firmware key is built in, published with TEX's
 permission.
 
 From the `tools` folder:
 
-    python -I tex_flash.py tex_shinobi_v1.3.bin
+    python -I tex_flash.py tex_shinobi_v1.4.bin
 
 It takes about 5 seconds. It switches the keyboard to the bootloader, keeps a copy of the version block, writes
-the image, checks the bootloader's checksum, and restarts the keyboard. "the app is up (04D9:0407)" means
-success. Press Fn+B in a text editor: the keyboard types a line starting `v1.3 dflt ...`. If any step fails,
+the image, checks the bootloader's checksum, and restarts the keyboard. "the firmware is up (04D9:0407)" means
+success. Press Fn+B in a text editor: the keyboard types a line starting `v1.4 dflt ...`. If any step fails,
 the installer stops and the keyboard stays in the bootloader, ready for another try or for option 2.
 
-On Windows without Python: the release's `tex_flash.exe` is the same installer in one file. Put it next to
-`tex_shinobi_v1.3.bin` and run `tex_flash.exe tex_shinobi_v1.3.bin` from a Command Prompt in that folder (no
-administrator rights needed). Windows may warn that the publisher is unknown, as the exe is not signed: More
-info, then Run anyway.
+`tex_flash.exe` and the Mac installers of the quick install are this same file packaged with Python and hidapi.
 
 ### Option 2: TEX's updater (Windows, no Python needed)
 
-`tex_shinobi_v1.3_updater.exe` is TEX's AP_0407 V1.04.04 updater with this firmware inside it in place of the
+`tex_shinobi_v1.4_updater.exe` is TEX's AP_0407 V1.04.04 updater with this firmware inside it in place of the
 stock image. Nothing else in the updater is changed. TEX allowed sharing it.
 
 1. Open a Command Prompt as administrator: Start, type `cmd`, right-click Command Prompt, Run as administrator.
    Windows asks for administrator rights for TEX's updater (and for TEX's own `AP_0407_4.04.exe`); in a normal
    Command Prompt it fails with "The requested operation requires elevation".
    Then go to the folder with the exe, for example `cd /d %USERPROFILE%\Downloads`.
-2. Run `tex_shinobi_v1.3_updater.exe -force`.
+2. Run `tex_shinobi_v1.4_updater.exe -force`.
    `-force` is needed because the updater still shows the stock version number and would otherwise say there is
    nothing to update.
 3. Click through the update window as for a normal TEX update. The keyboard switches to its bootloader (USB
    04D9:1407) for about 10 seconds, then comes back as the keyboard (04D9:0407).
-4. Press Fn+B in a text editor. The keyboard types one line starting `v1.3 dflt ...`.
+4. Press Fn+B in a text editor. The keyboard types one line starting `v1.4 dflt ...`.
 
 ### Other operating systems
 
@@ -91,8 +125,9 @@ stock image. Nothing else in the updater is changed. TEX allowed sharing it.
 
 | OS | Status | Install hidapi | Permission rule (once, as root) | Run |
 |---|---|---|---|---|
-| Windows | tested | `pip install hidapi` | none | `python -I tex_flash.py tex_shinobi_v1.3.bin` |
-| Linux | **not yet tested on hardware** | `pip install hidapi` in a venv, or `apt install python3-hid` | copy `tools/unix/70-tex-shinobi.rules` to `/etc/udev/rules.d/`, `udevadm control --reload`, replug | `python3 -I tex_flash.py tex_shinobi_v1.3.bin` |
+| Windows | tested | `pip install hidapi` | none | `python -I tex_flash.py tex_shinobi_v1.4.bin` |
+| macOS | **not yet tested with a keyboard** (the packaged installer starts and looks for it on macOS 15, Intel and Apple silicon) | `pip install hidapi`, or use the quick install | none known | `python3 -I tex_flash.py tex_shinobi_v1.4.bin` |
+| Linux | **not yet tested on hardware** | `pip install hidapi` in a venv, or `apt install python3-hid` | copy `tools/unix/70-tex-shinobi.rules` to `/etc/udev/rules.d/`, `udevadm control --reload`, replug | `python3 -I tex_flash.py tex_shinobi_v1.4.bin` |
 | FreeBSD | **untested** | `pkg install hidapi libusb`, then `pip install hidapi` | group `texflash` and `tools/unix/tex-shinobi.devd.conf` | as Linux |
 | OpenBSD | **untested; no working backend known** (hidapi needs libusb, which needs `uhid` out of the kernel) | - | `/dev/uhid*` group, see the guide | flash from another OS |
 
@@ -100,7 +135,7 @@ Messages are in English, Traditional Chinese, Japanese, German, French or Spanis
 or with `--lang` (for example `--lang de`). **The translations are unreviewed.**
 
 The installer can also take the key from TEX's stock updater or a key file, as a second argument, for anyone who
-wants to check the built-in key: `python -I tex_flash.py tex_shinobi_v1.3.bin AP_0407_4.04.exe`.
+wants to check the built-in key: `python -I tex_flash.py tex_shinobi_v1.4.bin AP_0407_4.04.exe`.
 `python -I tex_key.py AP_0407_4.04.exe xor_key_52.bin` writes the key file.
 
 ### Bootloader by hand
@@ -124,7 +159,7 @@ Run TEX's original `AP_0407_4.04.exe` the same way, from a Command Prompt run as
 * **No Bluetooth firmware updates.** Updates go over USB through TEX's bootloader.
 * **TEX's configurator and macro tool don't work** with this firmware. To remap keys and add shortcuts
   without a compiler, use the [keymap editor](editor/README.md). Otherwise edit `keymap.c` (see [Building](#building)). VIA/Vial live remapping does not fit yet: TEX's bootloader takes
-  images up to 28,076 bytes; v1.0 is 28,072, v1.1 27,728, v1.2 28,048 and v1.3 28,048.
+  images up to 28,076 bytes; v1.0 is 28,072, v1.1 27,728, v1.2 28,048, v1.3 28,048 and v1.4 28,068.
 * **ISO and JIS boards are untested.** The keymap comes from the stock table, which has the extra ISO key and the
   JIS keys (Ro, Yen, Kana, Henkan, Muhenkan), so they should work. Please report what you find.
 * Tested on the Shinobi BLE5 with firmware AP_0407 V1.04.04 only.

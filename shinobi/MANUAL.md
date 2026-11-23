@@ -1,6 +1,6 @@
 # TEX Shinobi BLE5 with QMK: owner's manual
 
-For the QMK firmware v1.0, v1.1, v1.2 and v1.3 from this repository. To install it, see [README.md](README.md#installing).
+For the QMK firmware v1.0 to v1.4 from this repository. To install it, see [README.md](README.md#installing).
 
 ## At a glance
 
@@ -39,7 +39,7 @@ Switches 4 and 5 work from v1.1 (v1.0 ignores them):
 * **6 (file system mode for TEX's configurator):** not available, because the configurator doesn't work with
   this firmware. Fn+B's `dip` still shows it (from v1.1), like the other five.
 
-From v1.3b, Fn+M flips the Mac layout against what switches 1-3 pick, and the keyboard remembers it.
+From v1.4, Fn+M flips the Mac layout against what switches 1-3 pick, and the keyboard remembers it.
 
 The DIP switches are separate from the Fn keys: Fn+F1...F9 set the sleep time whatever the switches say.
 
@@ -53,7 +53,7 @@ The DIP switches are separate from the Fn keys: Fn+F1...F9 set the sleep time wh
 | Fn+Down / Fn+Up / Fn+0 (or Fn - / Fn =) | TrackPoint up/down speed one step slower / one step faster / the same as left/right; types back `tp3 ud90` and so on |
 | Fn+F1 ... Fn+F9 | sleep on battery after 1, 2, 5, 10, 15, 30, 60, 120 min or never; types back `z15m` and so on |
 | Fn+B | types the firmware version and a status, on one line |
-| Fn+M | Mac layout on or off (from v1.3b): flips what DIP switch 2 picks, and is remembered after power off |
+| Fn+M | Mac layout on or off (from v1.4): flips what DIP switch 2 picks, and is remembered after power off |
 | Fn+PgUp / Fn+PgDn | Play/pause / Stop |
 | Fn+Left / Fn+Right | Previous / next track |
 
@@ -89,14 +89,14 @@ up and down. It changes the pointer only: scrolling stays as it was. Saved with 
 
 **Fn+B** types one line, for example:
 
-    v1.3 dflt 2026-11-17-17:05:00 bt85% adc3380 aa z15m tp3 ud100 dip24 idl15m34s wk1420ms
+    v1.4 dflt 2026-11-23-15:10:00 bt85% adc3380 aa z15m tp3 ud100 dip24 idl15m34s wk1420ms bl401
 
 One space separates the fields; within a field the label and value run together. No answer presses Enter, so
 one typed into a chat or a search box doesn't send it.
 
 | Typed | Means | Useful for |
 |---|---|---|
-| `v1.3 dflt 2026-11-17-17:05:00` | Firmware version, keymap and build time. `dflt` is the built-in keymap; `cust` means the keymap editor changed the keys or added macros. A firmware built from another keymap types that keymap's name. | Knowing which firmware is on the keyboard. Quote it in bug reports. |
+| `v1.4 dflt 2026-11-23-15:10:00` | Firmware version, keymap and build time. `dflt` is the built-in keymap; `cust` means the keymap editor changed the keys or added macros. A firmware built from another keymap types that keymap's name. | Knowing which firmware is on the keyboard. Quote it in bug reports. |
 | `bt85%` | Battery level, worked out from `adc`. The percentages follow alkaline cells. | Knowing when to change or charge the cells. NiMH rechargeables show 30-60 % for most of their charge (see [Known issues](#known-issues)). |
 | `adc3380` | The raw battery reading the level comes from: about 1,180 per volt across the two cells. | Checking the scale against a voltmeter across the cells. |
 | `aa` / `usb` | Running on the AA cells, or on USB power. | On USB power the keyboard never sleeps. |
@@ -106,9 +106,10 @@ one typed into a chat or a search box doesn't send it.
 | `dip24` | The DIP switches that are on: here switches 2 and 4. `dip0` means none. | Checking a switch is read after you flip it (see [The DIP switches](#the-dip-switches)). |
 | `idl15m34s` | The last stretch of at least a second with no key and no TrackPoint movement: 15 minutes 34 seconds here, `idl37s` under a minute. Sleep doesn't count: a stretch that included sleep counts only its awake part. | Leave the keyboard alone for a while, then press Fn+B: it should show about how long you left it. If `idl` stays small and the keyboard never sleeps on battery, something keeps it busy, most likely a drifting TrackPoint. |
 | `wk1420ms` | After the last wake from sleep, the milliseconds from the keyboard waking up to the Bluetooth link being back. `wk0ms` if it hasn't slept since it was powered on. | Telling where wake time goes. A large `wk` is Bluetooth reconnecting; if waking feels slow but `wk` is small, the delay is elsewhere (the keyboard's own wake-up, or the computer). |
+| `bl401` | Bluetooth, three digits (from v1.4): the link state (4 connected, 3 reconnecting or pairing, other digits not connected), the slot (0, 1, 2 for Fn+Mute, Vol-, Vol+), and how many slot taps were sent since power-on (up to 9). A single digit, such as `bl0`, means the Bluetooth module hasn't answered yet. Here: connected, slot 1 (Fn+Mute), one tap. | Bug reports about Bluetooth: it shows which slot the keyboard thinks it is on and whether the module answered. |
 
 v1.0 types the version and `bat 85% adc 2900 on bat sleep 15 min tp 3` as two lines, each ending in Enter, and
-`sleep 15 min` and `tp 3` for Fn+F1...F9 and Fn+1...9, with no `dip`, `idl` or `wk`. v1.2 types the same line as v1.3; in v1.2 Fn+Down and Fn+Up are Play and Stop, and only Fn - and Fn = set the
+`sleep 15 min` and `tp 3` for Fn+F1...F9 and Fn+1...9, with no `dip`, `idl` or `wk`. v1.3 types the same line as v1.4 without `bl`. v1.2 types the same line as v1.3; in v1.2 Fn+Down and Fn+Up are Play and Stop, and only Fn - and Fn = set the
 up/down speed. v1.1 types the same line as v1.2 with longer labels: `default` for the keymap (also in
 an editor-made image), `bat85%` and `zzz15m`, and `zzz15m` for Fn+F1...F9.
 
@@ -119,7 +120,10 @@ The keyboard remembers three hosts, one per slot.
 * **Pair:** hold Fn+Mute (slot 1), Fn+Vol- (slot 2) or Fn+Vol+ (slot 3) for 3 seconds. The pairing light blinks.
   On the computer, add a Bluetooth device and pick the keyboard: it shows as "TEX-BLE-" and a number. Pairing a slot again replaces the host it
   had.
-* **Switch:** tap Fn+Mute, Fn+Vol- or Fn+Vol+. The keyboard reconnects to that slot's host.
+* **Switch:** tap Fn+Mute, Fn+Vol- or Fn+Vol+. The keyboard reconnects to that slot's host, which needs no
+  pairing again. The light blinks slowly while it reconnects, then stays on for 2 seconds once connected, as with
+  the stock firmware. Tapping the slot it is already on does nothing. (Before v1.4 a tap often put the slot into
+  pairing instead.)
 * **Back to USB:** Fn+Esc, with the cable plugged in.
 * **After pulling out the USB cable:** switch the keyboard off and on, or Bluetooth won't type. See
   [Known issues](#known-issues).
@@ -178,7 +182,7 @@ them back to the defaults; set them again afterwards.
   you. From v1.1 it also makes sequence macros (a key types a short phrase or a run of keys, 95 bytes in total, 96 in v1.1)
   and mouse movement keys. Macros are typed for the keyboard layout you choose for the computer (US, UK, German,
   French, Spanish, Nordic or Japanese); Fn+B's answers stay US. ([How the editor works](editor/README.md).)
-* **No VIA/Vial live remapping.** TEX's bootloader takes images up to 28,076 bytes; v1.0 is 28,072, v1.1 27,728, v1.2 28,048 and v1.3 28,048. The keymap
+* **No VIA/Vial live remapping.** TEX's bootloader takes images up to 28,076 bytes; v1.0 is 28,072, v1.1 27,728, v1.2 28,048, v1.3 28,048 and v1.4 28,068. The keymap
   editor changes the keymap in the image, so a change takes a flash.
 * **ISO and JIS boards are untested.** The extra keys are in the keymap.
 * **No Bluetooth firmware updates.** Updates go over USB through TEX's bootloader.
