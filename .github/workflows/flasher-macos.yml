@@ -1,0 +1,57 @@
+name: flasher-macos
+
+# One-file tex_flash for macOS, packaged the way tex_flash.exe is on Windows (PyInstaller --onefile).
+# Each runner builds for its own CPU: macos-15 is Apple silicon (arm64), macos-15-intel is Intel (x86_64).
+# The result is not signed or notarized: macOS blocks it on first run until the user picks Open from the
+# Finder's right-click menu (or runs xattr -d com.apple.quarantine tex_flash).
+on:
+  push:
+    paths:
+      - shinobi/tools/**
+      - .github/workflows/flasher-macos.yml
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            arch: arm64
+          - runner: macos-15-intel
+            arch: x86_64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Flasher tests (no keyboard, fake hidapi)
+        run: python3 -I shinobi/tools/tests/test_flasher.py
+      - name: Install PyInstaller and hidapi
+        run: python3 -m pip install -q pyinstaller hidapi
+      - name: Package
+        # hid is imported inside a function, so PyInstaller has to be told about it.
+        run: |
+          python3 -m PyInstaller --onefile --clean --name tex_flash \
+            --paths shinobi/tools --hidden-import hid shinobi/tools/tex_flash.py
+          file dist/tex_flash
+          file dist/tex_flash | grep -q "${{ matrix.arch }}"
+      - name: Smoke test (starts, names itself, carries hidapi)
+        run: |
+          ./dist/tex_flash --help | tee help.txt
+          grep -q "^usage: tex_flash " help.txt
+          # hid is only imported once a keyboard is looked for, so check the archive instead of a run.
+          pyi-archive_viewer --list --recursive dist/tex_flash > contents.txt
+          grep -E "(^|[^a-z_])hid([^a-z_]|$)" contents.txt
+      - name: Name by CPU
+        run: |
+          mkdir out
+          cp dist/tex_flash "out/tex_flash_macos_${{ matrix.arch }}"
+          shasum -a 256 out/*
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tex_flash_macos_${{ matrix.arch }}
+          path: out/tex_flash_macos_${{ matrix.arch }}

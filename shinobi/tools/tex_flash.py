@@ -5,7 +5,7 @@
 usage: python -I tex_flash.py <image.bin> [<key>] [--wait SECONDS] [--lang LANG]
        python -I tex_flash.py <image.bin> [<key>] --dry-run <transcript.jsonl>
 
-Runs unchanged on Windows, Linux, FreeBSD and OpenBSD (Linux and the BSDs need a permission rule, see
+Runs unchanged on Windows, macOS, Linux, FreeBSD and OpenBSD (Linux and the BSDs need a permission rule, see
 unix/README.md). Messages are in English, Traditional Chinese, Japanese, German, French or Spanish (--lang, else
 the system locale; tex_i18n.py); hex dumps and mismatch details stay English for bug reports.
 
@@ -50,7 +50,10 @@ ERASE_ARG = 0x1CE  # the updater's erase report, byte 9 (unaligned): 256-byte un
 KEEP_SETTINGS_ERASE_ARG = 0x1CA
 VERSION_BLOCK = 180  # 3 x 60 bytes, the payloads of `12 20`, `12 21`, `12 22`
 REFUSED = b"\xff\xaa"
-PROG = "tex_flash.exe" if getattr(sys, "frozen", False) else "tex_flash.py"  # the one-file exe names itself
+if getattr(sys, "frozen", False):  # the one-file build names itself: tex_flash.exe on Windows, tex_flash on macOS
+    PROG = "tex_flash.exe" if sys.platform == "win32" else "tex_flash"
+else:
+    PROG = "tex_flash.py"
 
 
 def u32(v):
