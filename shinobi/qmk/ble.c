@@ -417,11 +417,14 @@ static bool report_has(const report_keyboard_t *report, uint8_t code) {
 }
 
 // QMK hands over reports; the module wants press and release events.
-void bluetooth_send_keyboard(report_keyboard_t *report) {
-    uint8_t mods = report->mods ^ last_keyboard.mods;
+// Shared by the 6-key and NKRO reports: one queue_key per modifier that changed.
+__attribute__((noinline)) static void queue_mods(uint8_t now, uint8_t was) {
     for (uint8_t i = 0; i < 8; i++) {
-        if (mods >> i & 1) queue_key(KC_LEFT_CTRL + i, report->mods >> i & 1);
+        if ((now ^ was) >> i & 1) queue_key(KC_LEFT_CTRL + i, now >> i & 1);
     }
+}
+void bluetooth_send_keyboard(report_keyboard_t *report) {
+    queue_mods(report->mods, last_keyboard.mods);
     for (uint8_t i = 0; i < KEYBOARD_REPORT_KEYS; i++) {
         if (last_keyboard.keys[i] && !report_has(report, last_keyboard.keys[i])) queue_key(last_keyboard.keys[i], false);
     }
@@ -437,10 +440,7 @@ bool bluetooth_can_send_nkro(void) {
 
 // The module keeps up to 19 keys down (its own report is not 6KRO).
 void bluetooth_send_nkro(report_nkro_t *report) {
-    uint8_t mods = report->mods ^ last_nkro.mods;
-    for (uint8_t i = 0; i < 8; i++) {
-        if (mods >> i & 1) queue_key(KC_LEFT_CTRL + i, report->mods >> i & 1);
-    }
+    queue_mods(report->mods, last_nkro.mods);
     for (uint8_t i = 0; i < NKRO_REPORT_BITS; i++) {
         uint8_t changed = report->bits[i] ^ last_nkro.bits[i];
         for (uint8_t b = 0; b < 8; b++) {
@@ -523,10 +523,19 @@ bool ble_process_record(uint16_t keycode, keyrecord_t *record) {
 #define SLOT_TRIES 3
 // slot_tries (declared above ble_link_slot): tries for the last slot tap, shown by Fn+B
 static uint16_t slot_tried_at;
+// C10 after a slot key, as stock does (0x5730-0x588c, mode 0x20000424 = 2): the module reports LINK_PAIRING while it
+// reconnects to a slot as well as while it pairs, so a tap blinks slowly and lights 2 s once connected; only a 3 s
+// hold blinks fast. Otherwise C10 is the Caps Lock indicator of whichever host is active.
+#define LED_SLOT 1      // slot tapped: slow blink until connected
+#define LED_PAIR 2      // pair asked: fast blink
+#define LED_SHOW 3      // connected after a tap: on for LED_SHOW_MS
+#define LED_SHOW_MS 2000
+static uint8_t led_mode;
 void ble_housekeeping(void) {
     if (slot_pending && !(slot_pending & 0x10) && !layer_state_is(TEX_FN_LAYER)) {
         slot_pending |= 0x10; // armed: 0xD0+k until the module reports slot k
         slot_tries = 0;
+        led_mode   = LED_SLOT;
         connection_set_host_noeeprom(CONNECTION_HOST_BLUETOOTH);
     }
     if (slot_pending & 0x10) {
@@ -542,19 +551,27 @@ void ble_housekeeping(void) {
     }
     if (slot_key && !slot_key_paired && timer_elapsed(slot_key_since) >= BLE_PAIR_HOLD_MS) {
         slot_key_paired = true;
+        led_mode        = LED_PAIR;
         queue_command(CMD_PAIR + (slot_key == BLE_PAIR ? 0 : slot_key - BLE_SLOT1));
         connection_set_host_noeeprom(CONNECTION_HOST_BLUETOOTH);
     }
 
-    // C10 blinks every 100 ms while the module pairs, as stock does; otherwise
-    // it stays the Caps Lock indicator of whichever host is active.
     static bool     blinking;
     static uint16_t blink_at;
     bool            pairing = ble_pairing();
-    if (pairing && timer_elapsed(blink_at) >= 100) {
-        blink_at = timer_read();
-        palToggleLine(C10);
-    } else if (!pairing && blinking) {
+    if (pairing) {
+        if (timer_elapsed(blink_at) >= (led_mode == LED_PAIR ? 100 : 200)) {
+            blink_at = timer_read();
+            palToggleLine(C10);
+        }
+    } else if (led_mode == LED_SLOT) {
+        if (!slot_pending && status_block[0] == LINK_CONNECTED) {
+            led_mode = LED_SHOW; // the module took the slot (slot_pending cleared) and is connected again
+            blink_at = timer_read();
+            palClearLine(C10); // on (active low)
+        }
+    } else if (led_mode == LED_SHOW ? timer_elapsed(blink_at) >= LED_SHOW_MS : blinking) {
+        led_mode = 0;
         led_update_ports(host_keyboard_led_state());
     }
     blinking = pairing;
