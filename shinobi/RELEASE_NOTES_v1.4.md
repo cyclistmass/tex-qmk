@@ -67,7 +67,20 @@ no delays; Fn+B's answers type as on a US layout.
 
 ## Tested
 
-TESTED-PLACEHOLDER
+On one keyboard (US ANSI, two NiMH AA cells), on 2026-11-23:
+
+* This release image (`5ef2537d...`) flashed over the v1.3g test build with this release's `tex_flash.exe` (the
+  GitHub Actions build, SHA-256 `e7fa1abd...`). The bootloader's checksum matched, the installer reported the saved
+  settings left in place, and the keyboard was back on USB 0.9 s later. Fn+B typed
+  `v1.4 dflt 2026-11-23-15:10:00 bt88% adc3430 usb z15m tp3 ud90 dip13 idl4s wk0ms bl400`: the up/down speed set
+  on v1.3g (`ud90`) survived the flash.
+* On battery over Bluetooth, tapping Fn+Mute, Fn+Vol- and Fn+Vol+ switched between the paired computers without
+  pairing again; Fn+B then typed `... bt50% adc3066 aa ... ud90 ... bl402`. The same slot logic was tested both
+  ways on the v1.3g build.
+* Keeping settings across flashes was also checked on v1.3g: `ud90` set, flashed, still `ud90`.
+
+Not tested on this image: Fn+M, flashing over the stock firmware, the updater exe, and the Mac installers with a keyboard
+(they ran on GitHub's macOS 15 machines, Apple silicon and Intel, and stopped with no keyboard found, as expected).
 
 Checked off the keyboard (2026-11-23): the image is 28,068 of the 28,076 bytes TEX's bootloader takes, with the
 settings record in place; the keymap editor's data for v1.0 to v1.3 is unchanged and v1.4 is added. Host tests of
