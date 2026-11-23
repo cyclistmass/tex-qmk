@@ -55,7 +55,7 @@ enum shinobi_keycodes {
 bool ble_process_record(uint16_t keycode, keyrecord_t *record);
 void ble_housekeeping(void);
 bool ble_pairing(void);
-uint8_t ble_link_slot(void);
+uint16_t ble_link_slot(void);
 void ble_flush_keys(uint8_t settle_ms);
 void ble_set_battery(uint8_t percent);
 void ble_sleep(void);

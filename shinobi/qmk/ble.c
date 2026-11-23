@@ -143,7 +143,7 @@ static bool bluetooth_link_up(void) {
 }
 
 // Builds and sends one frame of the given type (stock FUN_7a50).
-static void build(uint8_t type) {
+__attribute__((noinline)) static void build(uint8_t type) {
     uint8_t frame[4 + 2 * KEYS_PER_FRAME] = {FRAME_MARK, type, seq, 0};
     uint8_t len                           = 4;
 
@@ -356,10 +356,12 @@ void ble_flush_keys(uint8_t settle_ms) {
     }
 }
 
+static uint8_t slot_tries;
+
 // Fn+B's "bl" field: the module's link state (3 pairing, 4 connected) and slot (0-2) as it last reported them,
-// e.g. 41; 0 before its first status.
-uint8_t ble_link_slot(void) {
-    return status_seen ? status_block[0] * 10 + status_block[1] : 0;
+// then the tries the last slot tap took (ble_housekeeping), e.g. 411; the tries alone before its first status.
+uint16_t ble_link_slot(void) {
+    return (status_seen ? status_block[0] * 100 + status_block[1] * 10 : 0) + slot_tries;
 }
 
 bool ble_pairing(void) {
@@ -483,7 +485,7 @@ void bluetooth_send_system(uint16_t usage) {
 static uint8_t  slot_key;  // BLE_SLOT1..3 or BLE_PAIR held, 0 when none
 static uint16_t slot_key_since;
 static bool     slot_key_paired;
-static uint8_t  slot_pending; // CMD_SLOT + k waiting for every key to be up, 0 when none
+static uint8_t  slot_pending; // CMD_SLOT + k waiting for every key to be up, | 0x10 while tried; 0 when none
 
 bool ble_process_record(uint16_t keycode, keyrecord_t *record) {
     if (keycode == BLE_USB) {
@@ -506,13 +508,34 @@ bool ble_process_record(uint16_t keycode, keyrecord_t *record) {
 }
 
 // Stock sends the slot command only once no key is down, Fn included (FUN_5388 before the 0x59A4 table c0 c1 c2).
-// Sent while Fn was still held, it switched hosts on USB but not on battery (Mauro, 2026-11-22). Here it waits for
-// Fn's layer to be off: the slot key itself is already up.
+// Here it waits for Fn's layer to be off: the slot key itself is already up.
+//
+// The module acks every frame but drops a slot command while the MCU's last '4' differs from its status, or while
+// it is busy (module 0x1bc1e, 0x1b4b8); a command it takes drops the link and stores the new slot in status [9]
+// (0x1f19c). A tap still left v1.3c on bl40 (Mauro, 2026-11-22). So each try is a fresh '4' echo and then the
+// command, repeated every SLOT_RETRY_MS until the module reports the slot, at most SLOT_TRIES times.
+#define SLOT_RETRY_MS 600 // the module reports a change within one 250 ms poll and its answer
+#define SLOT_TRIES 3
+// slot_tries (declared above ble_link_slot): tries for the last slot tap, shown by Fn+B
+static uint16_t slot_tried_at;
 void ble_housekeeping(void) {
-    if (slot_pending && !layer_state_is(TEX_FN_LAYER)) {
-        queue_command(slot_pending);
-        slot_pending = 0;
+    if (slot_pending && !(slot_pending & 0x10) && !layer_state_is(TEX_FN_LAYER)) {
+        slot_pending |= 0x10; // armed: 0xD0+k until the module reports slot k
+        slot_tries = 0;
         connection_set_host_noeeprom(CONNECTION_HOST_BLUETOOTH);
+    }
+    if (slot_pending & 0x10) {
+        uint8_t k = slot_pending & 0x03;
+        if (slot_tries && status_seen && status_block[1] == k) {
+            slot_pending = 0;
+        } else if (slot_tries >= SLOT_TRIES) {
+            slot_pending = 0;
+        } else if (!inflight && !cmd_count && (!slot_tries || timer_elapsed(slot_tried_at) >= SLOT_RETRY_MS)) {
+            build(TYPE_STATUS); // a status reply needs no ack
+            queue_command(CMD_SLOT + k);
+            slot_tries++;
+            slot_tried_at = timer_read();
+        }
     }
     if (slot_key && !slot_key_paired && timer_elapsed(slot_key_since) >= BLE_PAIR_HOLD_MS) {
         slot_key_paired = true;
