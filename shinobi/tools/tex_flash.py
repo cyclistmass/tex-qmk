@@ -11,7 +11,9 @@ the system locale; tex_i18n.py); hex dumps and mismatch details stay English for
 
 <image.bin> is the plain app image linked at 0x3200 (a QMK .bin, or a stock image). The keyboard's 52-byte key is
 built in (tex_key.py, published with TEX's permission); <key> is optional and can be TEX's stock updater
-AP_0407_4.04.exe or a 52-byte key file instead. The reports are the vendor
+AP_0407_4.04.exe or a 52-byte key file instead. The settings the firmware saves (TrackPoint speed, up/down,
+sleep time, Mac layout) are kept: the erase stops below their flash page, unlike the updater's; --reset-settings
+erases them as the updater does. The reports are the vendor
 updater's, as recorded from it (PORT_NOTES.md, "Flashing"): erase `1D 00`, write pointer `1E 01`/`1E 00`, 52-byte blocks `1F`, checksum `1D 01`, the version
 block at pointer 0, start `11 01`. The version block is read from the keyboard (`12 20`/`12 21`/`12 22`)
 before the erase and written back unchanged; a valid copy is kept next to the <key> file (else next to
@@ -39,7 +41,13 @@ from tex_i18n import t  # noqa: E402
 
 BLOCK = 52  # the updater's block size; also the key length, so every block starts at key index 0
 APP_PTR = 0x200  # write pointers are relative to 0x3000: the app at 0x3200, the version block at 0
-ERASE_ARG = 0x1CE  # sent by the updater in the erase report at byte 9 (unaligned); meaning not decoded
+ERASE_ARG = 0x1CE  # the updater's erase report, byte 9 (unaligned): 256-byte units, through the settings page
+# The firmware keeps its settings in flash page 254, 0x1FC00-0x1FDFF (512-byte pages, HT32F52342/52 user manual
+# v1.60 section 4). The updater's 0x1CE x 256 bytes ends at 0x1FE00 if the erase starts at 0x3000, or 0x20000 from
+# 0x3200; either way it clears page 254, so every flash used to reset the settings (2026-11-15) [O]. 0x1CA ends at
+# 0x1FA00 or 0x1FC00, below page 254 for both starts, and still clears far past any app image (the slot ends at
+# 0xA0AC). The units are inferred from the updater's value [I]; a flash with it shows whether the IAP agrees.
+KEEP_SETTINGS_ERASE_ARG = 0x1CA
 VERSION_BLOCK = 180  # 3 x 60 bytes, the payloads of `12 20`, `12 21`, `12 22`
 REFUSED = b"\xff\xaa"
 PROG = "tex_flash.exe" if getattr(sys, "frozen", False) else "tex_flash.py"  # the one-file exe names itself
@@ -62,9 +70,13 @@ def write_steps(ptr, data):
     return steps
 
 
-def plan(enc, version_block):
+def erase_report(arg):
+    return [0x1D, 0x00] + [0] * 7 + u32(arg)
+
+
+def plan(enc, version_block, erase_arg=ERASE_ARG):
     """Every report from the erase to the start, in order."""
-    return ([("erase", [0x1D, 0x00] + [0] * 7 + u32(ERASE_ARG), None)]
+    return ([("erase", erase_report(erase_arg), None)]
             + write_steps(APP_PTR, enc)
             + [("checksum", [0x1D, 0x01, 0, 0] + u32(APP_PTR) + u32(len(enc)), word_sum(enc))]
             + write_steps(0, version_block)
@@ -123,6 +135,21 @@ def read_version_block(iap):
     return b"".join(iap.xfer([0x12, sub])[4:64] for sub in (0x20, 0x21, 0x22))
 
 
+def erase(iap, step):
+    """Send the erase; if the IAP refuses the smaller one that keeps the settings, use the updater's own. Either way
+    the erase step is done when this returns, and run() skips it."""
+    try:
+        iap.xfer(step[1], timeout_ms=5000)
+        if step[1] != erase_report(ERASE_ARG):
+            print(t("settings_kept"))
+    except IOError as e:
+        if step[1] == erase_report(ERASE_ARG) or "refused" not in str(e):
+            raise
+        print(t("settings_erase_refused"))
+        iap.xfer(erase_report(ERASE_ARG), timeout_ms=5000)
+    return ("erased", None, None)
+
+
 def run(iap, steps, image_len):
     image_blocks = -(-image_len // BLOCK)
     done, t0 = 0, time.monotonic()
@@ -130,6 +157,8 @@ def run(iap, steps, image_len):
         if kind == "start":
             iap.h.write([0x00] + list(padded(payload)))
             return
+        if kind == "erased":
+            continue
         reply = iap.xfer(payload, timeout_ms=5000 if kind == "erase" else 1000)
         got = struct.unpack_from("<I", reply, 4)[0]
         if kind in ("getptr", "block") and got != expect:
@@ -161,6 +190,7 @@ def parse_args(argv):
     ap.add_argument("image", help=t("help_image"))
     ap.add_argument("key", nargs="?", help=t("help_key"))
     ap.add_argument("--wait", type=float, default=15, metavar="SECONDS", help=t("help_wait"))
+    ap.add_argument("--reset-settings", action="store_true", help=t("help_reset"))
     ap.add_argument("--dry-run", metavar="TRANSCRIPT", help=t("help_dry"))
     ap.add_argument("--lang", type=lang_arg, metavar="LANG", help=t("help_lang"))
     return ap.parse_args(argv)
@@ -237,7 +267,8 @@ def main(argv=None):
         else:
             sys.exit(t("vb_blank_none"))
         print(t("erasing"))
-        steps = plan(enc, vb)
+        steps = plan(enc, vb, ERASE_ARG if args.reset_settings else KEEP_SETTINGS_ERASE_ARG)
+        steps[0] = erase(iap, steps[0])
         run(iap, steps[:-1], len(enc))
         back = read_version_block(iap)
         if back != vb:

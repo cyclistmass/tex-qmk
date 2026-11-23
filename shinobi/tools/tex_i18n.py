@@ -60,6 +60,14 @@ MESSAGES = {
         "fr": "construit les rapports et les compare à une trace du fabricant enregistrée ; le clavier n'est pas ouvert",
         "es": "genera los informes y los compara con una traza grabada del fabricante; no se abre el teclado",
     },
+    "help_reset": {
+        "en": "also erase the saved settings (TrackPoint speed, up/down, sleep time, Mac layout), as TEX's updater does",
+        "zh-TW": "同時抹除已儲存的設定 (TrackPoint 速度、上下比例、休眠時間、Mac 配置),與 TEX 更新程式相同",
+        "ja": "保存された設定 (TrackPoint の速度、上下比率、スリープ時間、Mac 配列) も消去します。TEX のアップデータと同じです",
+        "de": "auch die gespeicherten Einstellungen löschen (TrackPoint-Tempo, Auf/Ab, Ruhezeit, Mac-Belegung), wie TEX' Updater",
+        "fr": "efface aussi les réglages enregistrés (vitesse du TrackPoint, haut/bas, mise en veille, disposition Mac), comme l'outil de TEX",
+        "es": "borra también los ajustes guardados (velocidad del TrackPoint, arriba/abajo, reposo, distribución Mac), como el actualizador de TEX",
+    },
     "help_lang": {
         "en": "message language: en, zh-TW, ja, de, fr, es (default: from the system locale, else en)",
         "zh-TW": "訊息語言:en、zh-TW、ja、de、fr、es(預設:依系統語系,否則 en)",
@@ -179,6 +187,22 @@ MESSAGES = {
         "de": "Löschen und Schreiben",
         "fr": "effacement et écriture",
         "es": "borrando y escribiendo",
+    },
+    "settings_kept": {
+        "en": "  saved settings left in place",
+        "zh-TW": "  已保留儲存的設定",
+        "ja": "  保存された設定はそのまま残しました",
+        "de": "  gespeicherte Einstellungen bleiben erhalten",
+        "fr": "  réglages enregistrés conservés",
+        "es": "  se conservan los ajustes guardados",
+    },
+    "settings_erase_refused": {
+        "en": "  the keyboard refused the erase that keeps the settings; erasing as TEX's updater does, so the settings go back to the defaults",
+        "zh-TW": "  鍵盤拒絕保留設定的抹除方式;改用 TEX 更新程式的抹除,設定將回到預設值",
+        "ja": "  設定を残す消去をキーボードが拒否しました。TEX のアップデータと同じ消去を行うため、設定は初期値に戻ります",
+        "de": "  die Tastatur lehnt das Löschen ohne Einstellungen ab; es wird wie mit TEX' Updater gelöscht, die Einstellungen gehen auf die Standardwerte zurück",
+        "fr": "  le clavier refuse l'effacement qui garde les réglages ; effacement comme l'outil de TEX, les réglages reviennent aux valeurs par défaut",
+        "es": "  el teclado rechazó el borrado que conserva los ajustes; se borra como el actualizador de TEX y los ajustes vuelven a los valores por defecto",
     },
     "blocks": {
         "en": "  {done}/{total} blocks",

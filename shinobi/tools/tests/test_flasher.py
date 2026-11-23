@@ -242,6 +242,55 @@ def test_plan_shape():
     assert tex_flash.word_sum(enc) == sum(struct.unpack("<%dI" % (len(enc) // 4), enc)) & 0xFFFFFFFF
 
 
+SETTINGS_PAGE = 0x1FC00  # shinobi.c SETTINGS_ADDR, flash page 254 of 512 bytes
+
+
+def test_keep_settings_erase_stops_below_the_settings_page_and_covers_the_app():
+    for start in (0x3000, 0x3200):  # where the IAP's erase begins is not known; both must work
+        end = start + tex_flash.KEEP_SETTINGS_ERASE_ARG * 0x100
+        assert 0x3200 + bu.SLOT <= end <= SETTINGS_PAGE, hex(end)
+        assert start + tex_flash.ERASE_ARG * 0x100 > SETTINGS_PAGE  # the updater's erase does clear it
+    assert tex_flash.plan(b"\x00" * 52, b"")[0][1] == tex_flash.erase_report(tex_flash.ERASE_ARG)  # dry run: the vendor's
+    assert tex_flash.plan(b"\x00" * 52, b"", 0x1CA)[0][1][9:13] == [0xCA, 0x01, 0, 0]
+
+
+class FakeIap:
+    def __init__(self, refuse=(), fail=None):
+        self.sent, self.refuse, self.fail = [], refuse, fail
+
+    def xfer(self, payload, timeout_ms=1000):
+        self.sent.append(list(payload))
+        if self.fail:
+            raise IOError(self.fail)
+        if list(payload) in self.refuse:
+            raise IOError(f"IAP refused {bytes(payload[:2]).hex(' ')}")
+        return bytes(payload[:4]) + bytes(60)
+
+
+def test_erase_keeps_settings_or_falls_back_to_the_updaters_erase():
+    keep, full = (tex_flash.erase_report(a) for a in (tex_flash.KEEP_SETTINGS_ERASE_ARG, tex_flash.ERASE_ARG))
+    iap = FakeIap()
+    assert tex_flash.erase(iap, ("erase", keep, None))[0] == "erased" and iap.sent == [keep]
+    iap = FakeIap(refuse=[keep])
+    tex_flash.erase(iap, ("erase", keep, None))
+    assert iap.sent == [keep, full]
+    iap = FakeIap()
+    tex_flash.erase(iap, ("erase", full, None))  # --reset-settings
+    assert iap.sent == [full]
+    for iap, step in ((FakeIap(refuse=[full]), full), (FakeIap(fail="no reply to 1d 00 in 5000 ms"), keep)):
+        try:
+            tex_flash.erase(iap, ("erase", step, None))
+            raise AssertionError("expected IOError")
+        except IOError:
+            assert len(iap.sent) == 1  # a timeout may mean it is erasing: no second erase on top
+
+
+def test_reset_settings_flag():
+    assert tex_flash.parse_args(["fw.bin"]).reset_settings is False
+    assert tex_flash.parse_args(["fw.bin", "--reset-settings"]).reset_settings is True
+    tex_i18n.set_language("en")
+
+
 def transcript_for(steps):
     return [{"dir": "write", "hex": tex_flash.padded(p).hex()} for _, p, _ in steps]
 
