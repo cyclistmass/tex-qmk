@@ -1,7 +1,10 @@
 name: build
 
 on:
+  # Branches only: a release tag points at a commit main has already built, and a second run doubled the queue
+  # and hung on apt (2026-11-23).
   push:
+    branches: ['**']
   pull_request:
   workflow_dispatch:
 
@@ -28,11 +31,14 @@ jobs:
         run: python3 -I shinobi/tools/tests/test_flasher.py
       - name: Install the pinned toolchain
         run: |
-          # The runner's Azure Ubuntu mirror has hung or failed DNS here (2026-11-11); use the main archive.
+          # The runner's Azure Ubuntu mirror hung or failed DNS here (2026-11-11); use the main archive. Runners on the EC2
+          # mirror are left alone.
           grep -rlZ azure.archive.ubuntu.com /etc/apt | xargs -0r sudo sed -i 's|azure.archive.ubuntu.com|archive.ubuntu.com|g'
           apt="sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30"
           $apt update -q
-          $apt install -y -q gcc-arm-none-eabi=15:13.2.rel1-2 binutils-arm-none-eabi libnewlib-arm-none-eabi
+          # No recommends: they add libstdc++-arm-none-eabi-newlib (463 MB, unused by QMK's C build), whose download
+          # stalled a run for 20 min (2026-11-23).
+          $apt install -y -q --no-install-recommends gcc-arm-none-eabi=15:13.2.rel1-2 binutils-arm-none-eabi libnewlib-arm-none-eabi
           python3 -m venv "$RUNNER_TEMP/qmkenv"
           "$RUNNER_TEMP/qmkenv/bin/pip" install -q qmk==1.2.0
           echo "$RUNNER_TEMP/qmkenv/bin" >> "$GITHUB_PATH"

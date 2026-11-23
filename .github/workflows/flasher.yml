@@ -6,6 +6,8 @@ name: flasher
 # Finder's right-click menu (or runs xattr -d com.apple.quarantine tex_flash).
 on:
   push:
+    # Branches only: a release tag would build the same commit again (2026-11-23).
+    branches: ['**']
     paths:
       - shinobi/tools/**
       - .github/workflows/flasher.yml
