@@ -45,7 +45,7 @@ known issues: the [owner's manual](https://github.com/cyclistmass/tex-qmk/blob/m
 * **Fn+M** switches the Mac layout (Alt and Win swapped) on or off without the DIP switches, and the keyboard
   remembers it.
 * **Fn+B** adds `bl` at the end, for Bluetooth bug reports: link state, slot, and slot taps since power-on, for
-  example `bl401` = connected, slot 1, one tap. See the [manual](https://github.com/cyclistmass/tex-qmk/blob/main/shinobi/MANUAL.md#what-the-keyboard-types).
+  example `bl401` = connected, slot 0 (Fn+Mute), one tap. See the [manual](https://github.com/cyclistmass/tex-qmk/blob/main/shinobi/MANUAL.md#what-the-keyboard-types).
 * **Installers for the Mac**, Apple silicon and Intel. `tex_flash.exe` and the Mac installers are now built by
   GitHub Actions from the repository, each tested there before it is packaged.
 
